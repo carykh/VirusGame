@@ -362,16 +362,16 @@ void keyReleased() {
 }
 void keyActions() {
   if(leftDown) {
-    camX -= KEY_STRIDE / (camS) + 0.01;
+    camX -= KEY_STRIDE/camS + 0.01;
   }
   if(rightDown) {
-    camX += KEY_STRIDE / (camS) + 0.01;
+    camX += KEY_STRIDE/camS + 0.01;
   }
   if(upDown) {
-    camY -= KEY_STRIDE / (camS) + 0.01;
+    camY -= KEY_STRIDE/camS + 0.01;
   }
   if(downDown) {
-    camY += KEY_STRIDE / (camS) + 0.01;
+    camY += KEY_STRIDE/camS + 0.01;
   }
 }
 void mouseWheel(MouseEvent event) {
