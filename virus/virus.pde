@@ -330,9 +330,9 @@ void mouseWheel(MouseEvent event) {
   double ZOOM_F = 1.05;
   double thisZoomF = 1;
   float e = event.getCount();
-  if(e == 1){
+  if(e > 0.0){
     thisZoomF = 1/ZOOM_F;
-  }else{
+  }else if(e < 0.0){
     thisZoomF = ZOOM_F;
   }
   double worldX = mouseX/camS+camX;
