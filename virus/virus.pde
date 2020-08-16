@@ -406,19 +406,22 @@ void drawUI(){
     drawCellStats();
   }
   popMatrix();
-  if(selectedCell != UGOcell){
-    drawUGObutton();
-  }
+  drawUGObutton((selectedCell != UGOcell));
 }
-void drawUGObutton(){
+void drawUGObutton(boolean drawUGO){
   fill(80);
   noStroke();
   rect(W_W-130,10,120,140);
   fill(255);
   textAlign(CENTER);
-  textFont(font,48);
-  text("MAKE",W_W-70,70);
-  text("UGO",W_W-70,120);
+  if(drawUGO){
+    textFont(font,48);
+    text("MAKE",W_W-70,70);
+    text("UGO",W_W-70,120);
+  }else{
+    textFont(font,36);
+    text("CANCEL",W_W-70,95);
+  }
 }
 void drawCellStats(){
   boolean isUGO = (selectedCell.x == -1);
