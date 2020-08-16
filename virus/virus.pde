@@ -328,7 +328,7 @@ void detectMouse(){
 }
 void mouseWheel(MouseEvent event) {
   float e = event.getCount();
-  if((camS > 50 || e < 0.0) && (camS < 500 || e > 0.0)) {
+  if((camS > 50 || e < 0.0) && (camS < 1000 || e > 0.0)) {
     double ZOOM_F = 1.05;
     double thisZoomF = 1;
     if(e > 0.0){
