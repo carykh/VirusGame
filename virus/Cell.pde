@@ -181,6 +181,11 @@ class Cell{
         }
       }else if(info[1] == 3){
         die();
+      }else if(info[1] == 8){
+        Particle wasteToPushOut = selectParticleInCell(2);
+        if(wasteToPushOut != null){
+          pushOut(wasteToPushOut);
+        }
       }
     }else if(info[0] == 3 && genome.directionOn == 0){
       if(info[1] == 1 || info[1] == 2){
