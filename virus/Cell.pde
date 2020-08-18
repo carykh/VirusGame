@@ -263,11 +263,9 @@ class Cell{
     for(int pos = start; pos <= end; pos++){
       int index = loopItInt(genome.performerOn+pos,genome.codons.size());
       Codon c = genome.codons.get(index);
-      if(pos-start < memoryParts.length){
-        String memoryPart = memoryParts[pos-start];
-        c.setFullInfo(stringToInfo(memoryPart));
-        laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
-      }
+      String memoryPart = memoryParts[(pos-start) % memoryParts.length];
+      c.setFullInfo(stringToInfo(memoryPart));
+      laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
       useEnergy();
     }
   }
