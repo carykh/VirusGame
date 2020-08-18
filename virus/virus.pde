@@ -28,6 +28,7 @@ int[] codonToEdit = {-1,-1,0,0};
 double[] genomeListDims = {70,430,360,450};
 double[] editListDims = {550,430,180,450};
 double[] arrowToDraw = null;
+Particle selectedUGO = null;
 Cell selectedCell = null;
 Cell UGOcell;
 int lastEditTimeStamp = 0;
@@ -42,6 +43,7 @@ double MIN_ARROW_LENGTH_TO_PRODUCE = 0.4;
 
 double ZOOM_THRESHOLD = 0;//80;
 PFont font;
+
 void setup(){
   font = loadFont("Jygquip1-96.vlw");
   for(int j = 0; j < 3; j++){
@@ -100,6 +102,22 @@ void draw(){
   drawParticles();
   drawExtras();
   drawUI();
+  drawSpeedControl();
+}
+void drawSpeedControl(){
+  fill(80);
+  noStroke();
+  for(int i=0;i<3;i++)
+  {
+    rect(10+i*75,10,65,40);
+  }
+  textFont(font,48);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  text("<<", 43, 30);
+  text(">>", (10+75*2+33), 30);
+  textFont(font,38);
+  text("x"+String.format("%.1f", PLAY_SPEED), (10+75+33), 30);
 }
 void drawExtras(){
   if(arrowToDraw != null){
@@ -167,11 +185,26 @@ void iterate(){
   }
 }
 void drawParticles(){
-  for(int z = 0; z < 3; z++){
+  for(int z = 0; z < 3; z++){//z=0 all food, z=1 all waste, z=2 all UGOs
     ArrayList<Particle> sparticles = particles.get(z);
     for(int i = 0; i < sparticles.size(); i++){
       Particle p = sparticles.get(i);
       p.drawParticle(trueXtoAppX(p.coor[0]),trueYtoAppY(p.coor[1]),trueStoAppS(1));
+    }
+  }
+}
+void checkUGOclick(){
+  clickWorldX = appXtoTrueX(mouseX);
+  clickWorldY = appYtoTrueY(mouseY);
+  for(Particle UGO: particles.get(2)){
+    double dis= euclidLength(new double[]{UGO.coor[0],UGO.coor[1], clickWorldX, clickWorldY});
+    if(dis<=0.15){
+      if(UGO != selectedUGO)
+      {
+        selectedCell=null;
+        selectedUGO=UGO;
+        break;
+      }
     }
   }
 }
@@ -265,11 +298,30 @@ void detectMouse(){
   if (mousePressed){
     arrowToDraw = null;
     if(!wasMouseDown) {
+      
       if(mouseX < W_H){
-        codonToEdit[0] = codonToEdit[1] = -1;
-        clickWorldX = appXtoTrueX(mouseX);
-        clickWorldY = appYtoTrueY(mouseY);
-        canDrag = true;
+
+        if(mouseX>=10 && mouseX <=75 && mouseY>=10 && mouseY <=50)//speed down
+        {
+          if(PLAY_SPEED>0.1)
+          {
+            PLAY_SPEED-=0.1;
+          }
+        }
+        else if(mouseX>=10+2*75 && mouseX <=75+2*75 && mouseY>=10 && mouseY <=50)//speed up
+        {
+          if(PLAY_SPEED<9.9)
+          {
+            PLAY_SPEED+=0.1;
+          }
+        }
+        else
+        {
+          codonToEdit[0] = codonToEdit[1] = -1;
+          clickWorldX = appXtoTrueX(mouseX);
+          clickWorldY = appYtoTrueY(mouseY);
+          canDrag = true;
+        }
       }else{
         if(selectedCell != null){
           if(codonToEdit[0] >= 0){
@@ -280,9 +332,11 @@ void detectMouse(){
         if(selectedCell == UGOcell){
           if((mouseX >= W_H+530 && codonToEdit[0] == -1) || mouseY < 160){
             selectedCell = null;
+            selectedUGO=null;
           }
         }else if(mouseX > W_W-160 && mouseY < 160){
           selectedCell = UGOcell;
+          selectedUGO=null;
         }
         canDrag = false;
       }
@@ -316,8 +370,11 @@ void detectMouse(){
           selectedCell = null;
         }
         if(clickedCell != null && clickedCell.type == 2){
+          selectedUGO=null;
           selectedCell = clickedCell;
         }
+        
+        checkUGOclick();
       }
     }
     clickWorldX = -1;
@@ -405,6 +462,17 @@ void drawUI(){
   if(selectedCell != null){
     drawCellStats();
   }
+  else if(selectedUGO != null)
+  {
+    fill(80);
+    noStroke();
+    rect(10,160,530,W_H-170);
+    fill(255);
+    textFont(font,96);
+    textAlign(LEFT);
+    text("Selected UGO",25,255);
+    drawGenomeAsList(selectedUGO.UGO_genome,genomeListDims);
+  }
   popMatrix();
   drawUGObutton((selectedCell != UGOcell));
 }
@@ -476,7 +544,9 @@ void drawGenomeAsList(Genome g, double[] dims){
   pushMatrix();
   dTranslate(0,appCodonHeight*(g.appRO+0.5));
   if(selectedCell != UGOcell){
-    drawGenomeArrows(w,appCodonHeight);
+    if(selectedUGO == null){
+      drawGenomeArrows(w,appCodonHeight);
+    }
   }
   popMatrix();
   for(int i = 0; i < GENOME_LENGTH; i++){

@@ -74,6 +74,10 @@ class Particle{
     coor = future;
   }
   public void injectGeneticMaterial(double[] futureCoor){
+    if(this==selectedUGO){
+      selectedUGO=null;
+    }
+    
     Cell c = getCellAt(futureCoor,true);
     int injectionLocation = c.genome.rotateOn;
     ArrayList<Codon> toInject = UGO_genome.codons;
@@ -117,15 +121,23 @@ class Particle{
     double ageScale = Math.min(1.0,(frameCount-birthFrame)*AGE_GROW_SPEED);
     scale((float)(s/BIG_FACTOR*ageScale));
     noStroke();
-    if(type == 0){
+    ellipseMode(CENTER);
+    
+    if(type == 0){//food
       fill(255,0,0);
-    }else if(type == 1){
+    }else if(type == 1){//waste
       fill(WASTE_COLOR);
-    }else if(type == 2){
+    }else if(type == 2){//ugo
+      if(this==selectedUGO){
+        fill(0,255,255);
+        ellipse(0,0,0.34*BIG_FACTOR,0.34*BIG_FACTOR);
+        
+      }
       fill(0);
     }
-    ellipseMode(CENTER);
+    
     ellipse(0,0,0.1*BIG_FACTOR,0.1*BIG_FACTOR);
+    
     if(UGO_genome != null){
       UGO_genome.drawCodons();
     }
