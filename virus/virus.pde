@@ -405,7 +405,7 @@ void drawUI(){
   if(selectedCell != null){
     drawCellStats();
   }
-  image(loadImage("nygi6iodek151.jpg"),0,0);
+  //image(loadImage("nygi6iodek151.jpg"),0,0);
   popMatrix();
   drawUGObutton((selectedCell != UGOcell));
 }
