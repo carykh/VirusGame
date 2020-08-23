@@ -150,8 +150,8 @@ void doParticleCountControl(){
   
   ArrayList<Particle> wastes = particles.get(1);
   if(wastes.size() > foodLimit){
-    removeWasteTimer -= (wastes.size()-foodLimit)*REMOVE_WASTE_SPEED_MULTI;
-    if(removeWasteTimer < 0){
+    removeWasteTimer -= (wastes.size()-foodLimit)*REMOVE_WASTE_SPEED_MULTI*PLAY_SPEED;
+    while(removeWasteTimer < 0){
       int choiceIndex = -1;
       int iter = 0;
       while(iter < 50 && (choiceIndex == -1 || getCellAt(wastes.get(choiceIndex).coor,true).type == 2)){
