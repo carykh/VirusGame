@@ -1,3 +1,8 @@
+enum ParticleType{
+  Food,Waste,NGO; 
+}
+
+
 class Particle{
   double[] coor;
   double[] velo;
@@ -84,8 +89,7 @@ class Particle{
     int INJECT_SIZE = UGO_genome.codons.size();
     
     for(int i = 0; i < toInject.size(); i++){
-      int[] info = toInject.get(i).codonInfo;
-      c.genome.codons.add(injectionLocation+i,new Codon(info,1.0));
+      c.genome.codons.add(injectionLocation+i,new Codon(toInject.get(i)));
     }
     if(c.genome.performerOn >= c.genome.rotateOn){
       c.genome.performerOn += INJECT_SIZE;

@@ -22,7 +22,7 @@ class Genome{
     String[] parts = s.split("-");
     for(int i = 0; i < parts.length; i++){
       int[] info = stringToInfo(parts[i]);
-      codons.add(new Codon(info,1.0));
+      codons.add(new Codon(fromIntList(info)));
     }
     appRO = 0;
     appPO = 0;
@@ -124,7 +124,7 @@ class Genome{
     String str = "";
     for(int i = 0; i < codons.size(); i++){
       Codon c = codons.get(i);
-      str = str+infoToString(c.codonInfo);
+      str = str+infoToString(c);
       if(i < codons.size()-1){
         str = str+"-";
       }
@@ -136,7 +136,7 @@ class Genome{
     String str = "";
     for(int i = 0; i < limit; i++){
       Codon c = codons.get(i);
-      str = str+infoToString(c.codonInfo);
+      str = str+infoToString(c);
       if(i < limit-1){
         str = str+"-";
       }

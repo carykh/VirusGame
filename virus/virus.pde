@@ -16,8 +16,8 @@ double removeWasteTimer = 1.0;
 
 double GENE_TICK_ENERGY = 0.014;
 double WALL_DAMAGE = 0.01;
-double CODON_DEGRADE_SPEED = 0.008;
-double EPS = 0.00000001;
+static double CODON_DEGRADE_SPEED = 0.008;
+static double EPS = 0.00000001;
 
 String starterGenome = "46-11-22-33-11-22-33-45-44-57__-67__";
 boolean canDrag = false;
@@ -251,25 +251,27 @@ void checkETclick(){
         codonToEdit[3] = loopCodonInfo(codonToEdit[3]+diff);
       }
     }else{
+      boolean changeMade = false;
       Codon thisCodon = selectedCell.genome.codons.get(codonToEdit[1]);
       if(codonToEdit[0] == 1 && choice == 7){
-        if(thisCodon.codonInfo[1] != 7 ||
-        thisCodon.codonInfo[2] != codonToEdit[2] || thisCodon.codonInfo[3] != codonToEdit[3]){
-          thisCodon.setInfo(1,choice);
-          thisCodon.setInfo(2,codonToEdit[2]);
-          thisCodon.setInfo(3,codonToEdit[3]);
-          if(selectedCell != UGOcell){
-            lastEditTimeStamp = frameCount;
-            selectedCell.tamper();
-          }
+        //we are making a RGL
+        AttributeRGL oldRGL = thisCodon.getAttribute() instanceof AttributeRGL?(AttributeRGL)thisCodon.getAttribute():null;
+        if (oldRGL == null || oldRGL.getStartLocation() != codonToEdit[2] || oldRGL.getEndLocation() != codonToEdit[3]) {
+          thisCodon.setAttribute(new AttributeRGL(codonToEdit[2], codonToEdit[3]));
+          changeMade = true;
         }
       }else{
-        if(thisCodon.codonInfo[codonToEdit[0]] != choice){
-          thisCodon.setInfo(codonToEdit[0],choice);
-          if(selectedCell != UGOcell){
+        if (codonToEdit[0] == 0) {//edit type
+          thisCodon.setType(CodonTypes.values()[choice].v);
+          changeMade = true;
+        } else if (codonToEdit[0] == 1) {//edit attribute
+          thisCodon.setAttribute(CodonAttributes.values()[choice].v);
+          changeMade = true;
+        }
+        if(changeMade && selectedCell != UGOcell){
+            changeMade = true;
             lastEditTimeStamp = frameCount;
             selectedCell.tamper();
-          }
         }
       }
     }
@@ -749,7 +751,7 @@ double loopIt(double x, double len, boolean evenSplit){
   }
   return x;
 }
-int loopItInt(int x, int len){
+static int loopItInt(int x, int len){
   return (x+len*10)%len;
 }
 color intToColor(int[] c){
@@ -759,10 +761,13 @@ color transperize(color col, double trans){
   float alpha = (float)(trans*255);
   return color(red(col),green(col),blue(col),alpha);
 }
-String infoToString(int[] info){
-  String result = info[0]+""+info[1];
-  if(info[1] == 7){
-    result += codonValToChar(info[2])+""+codonValToChar(info[3]);
+String infoToString(CodonPair codon){
+  
+  
+  String result = codon.getType().id+""+codon.getAttribute().id;
+  if(codon.getAttribute() instanceof AttributeRGL){
+    AttributeRGL rgl = (AttributeRGL)codon.getAttribute();
+    result += codonValToChar(rgl.getStartLocation())+""+codonValToChar(rgl.getEndLocation()); //todo made this OOP
   }
   return result;
 }

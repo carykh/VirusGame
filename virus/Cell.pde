@@ -1,3 +1,5 @@
+
+  public final static double E_RECIPROCAL = 0.3678794411;
 class Cell{
   int x;
   int y;
@@ -6,7 +8,6 @@ class Cell{
   Genome genome;
   double geneTimer = 0;
   double energy = 0;
-  double E_RECIPROCAL = 0.3678794411;
   boolean tampered = false;
   ArrayList<ArrayList<Particle>> particlesInCell = new ArrayList<ArrayList<Particle>>(0);
   
@@ -161,55 +162,11 @@ class Cell{
   public void doAction(){
     useEnergy();
     Codon thisCodon = genome.codons.get(genome.rotateOn);
-    int[] info = thisCodon.codonInfo;
-    if(info[0] == 1 && genome.directionOn == 0){
-      if(info[1] == 1 || info[1] == 2){
-        Particle foodToEat = selectParticleInCell(info[1]-1); // digest either "food" or "waste".
-        if(foodToEat != null){
-          eat(foodToEat);
-        }
-      }else if(info[1] == 3){ // digest "wall"
-        energy += (1-energy)*E_RECIPROCAL*0.2;
-        hurtWall(26);
-        laserWall();
-      }
-    }else if(info[0] == 2 && genome.directionOn == 0){
-      if(info[1] == 1 || info[1] == 2){
-        Particle wasteToPushOut = selectParticleInCell(info[1]-1);
-        if(wasteToPushOut != null){
-          pushOut(wasteToPushOut);
-        }
-      }else if(info[1] == 3){
-        die();
-      }
-    }else if(info[0] == 3 && genome.directionOn == 0){
-      if(info[1] == 1 || info[1] == 2){
-        Particle particle = selectParticleInCell(info[1]-1);
-        shootLaserAt(particle);
-      }else if(info[1] == 3){
-        healWall();
-      }
-    }else if(info[0] == 4){
-      if(info[1] == 4){
-        genome.performerOn = genome.getWeakestCodon();
-      }else if(info[1] == 5){
-        genome.directionOn = 1;
-      }else if(info[1] == 6){
-        genome.directionOn = 0;
-      }else if(info[1] == 7){
-        genome.performerOn = loopItInt(genome.rotateOn+info[2],genome.codons.size());
-      }
-    }else if(info[0] == 5 && genome.directionOn == 1){
-      if(info[1] == 7){
-        readToMemory(info[2],info[3]);
-      }
-    }else if(info[0] == 6){
-      if(info[1] == 7 || genome.directionOn == 0){
-        writeFromMemory(info[2],info[3]);
-      }
-    }
+    thisCodon.exec(this);
+    
     genome.hurtCodons();
   }
+  
   void useEnergy(){
     energy = Math.max(0,energy-GENE_TICK_ENERGY);
   }
@@ -221,7 +178,7 @@ class Cell{
     for(int pos = start; pos <= end; pos++){
       int index = loopItInt(genome.performerOn+pos,genome.codons.size());
       Codon c = genome.codons.get(index);
-      memory = memory+infoToString(c.codonInfo);
+      memory = memory+infoToString(c);
       if(pos < end){
         memory = memory+"-";
       }
@@ -388,7 +345,7 @@ class Cell{
       }
     }
   }
-  public Particle selectParticleInCell(int type){
+  public Particle selectParticleInCell(int type){ //type 0=food 1=waste 2=ngo?
     ArrayList<Particle> myList = particlesInCell.get(type);
     if(myList.size() == 0){
       return null;
