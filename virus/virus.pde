@@ -5,7 +5,7 @@ Cell[][] cells = new Cell[WORLD_SIZE][WORLD_SIZE];
 ArrayList<ArrayList<Particle>> particles = new ArrayList<ArrayList<Particle>>(0);
 int foodLimit = 180;
 float BIG_FACTOR = 100;
-float PLAY_SPEED = 0.6;
+float PLAY_SPEED = 5;//0.6;
 double GENE_TICK_TIME = 40.0;
 double margin = 4;
 int START_LIVING_COUNT = 0;
@@ -238,8 +238,19 @@ void checkETclick(){
   double rMouseX = ((mouseX-W_H)-ex)/ew;
   double rMouseY = (mouseY-ey)/eh;
   if(rMouseX >= 0 && rMouseX < 1 && rMouseY >= 0 && rMouseY < 1){
-    int optionCount = CodonInfo.getOptionSize(codonToEdit[0]);
+    Button[] currentButtons = codonToEdit[0]==0?codonTypeButtons:codonAttributeButtons;
+    
+    
+    int optionCount = currentButtons.length;
     int choice = (int)(rMouseY*optionCount);
+    boolean changeMade = currentButtons[choice].onClick(rMouseX, rMouseY);
+    if(changeMade && selectedCell != UGOcell){
+            changeMade = true;
+            lastEditTimeStamp = frameCount;
+            selectedCell.tamper();
+     }
+    
+    
     if(codonToEdit[0] == 1 && choice >= optionCount-2){
       int diff = 1;
       if(rMouseX < 0.5){
@@ -250,31 +261,32 @@ void checkETclick(){
       }else{
         codonToEdit[3] = loopCodonInfo(codonToEdit[3]+diff);
       }
-    }else{
-      boolean changeMade = false;
-      Codon thisCodon = selectedCell.genome.codons.get(codonToEdit[1]);
-      if(codonToEdit[0] == 1 && choice == 7){
-        //we are making a RGL
-        AttributeRGL oldRGL = thisCodon.getAttribute() instanceof AttributeRGL?(AttributeRGL)thisCodon.getAttribute():null;
-        if (oldRGL == null || oldRGL.getStartLocation() != codonToEdit[2] || oldRGL.getEndLocation() != codonToEdit[3]) {
-          thisCodon.setAttribute(new AttributeRGL(codonToEdit[2], codonToEdit[3]));
-          changeMade = true;
-        }
-      }else{
-        if (codonToEdit[0] == 0) {//edit type
-          thisCodon.setType(CodonTypes.values()[choice].v);
-          changeMade = true;
-        } else if (codonToEdit[0] == 1) {//edit attribute
-          thisCodon.setAttribute(CodonAttributes.values()[choice].v);
-          changeMade = true;
-        }
-        if(changeMade && selectedCell != UGOcell){
-            changeMade = true;
-            lastEditTimeStamp = frameCount;
-            selectedCell.tamper();
-        }
-      }
     }
+    //else{
+    //  boolean changeMade = false;
+    //  Codon thisCodon = selectedCell.genome.codons.get(codonToEdit[1]);
+    //  if(codonToEdit[0] == 1 && choice == 7){
+    //    //we are making a RGL
+    //    AttributeRGL oldRGL = thisCodon.getAttribute() instanceof AttributeRGL?(AttributeRGL)thisCodon.getAttribute():null;
+    //    if (oldRGL == null || oldRGL.getStartLocation() != codonToEdit[2] || oldRGL.getEndLocation() != codonToEdit[3]) {
+    //      thisCodon.setAttribute(new AttributeRGL(codonToEdit[2], codonToEdit[3]));
+    //      changeMade = true;
+    //    }
+    //  }else{
+    //    if (codonToEdit[0] == 0) {//edit type
+    //      thisCodon.setType(CodonTypes.values()[choice].v);
+    //      changeMade = true;
+    //    } else if (codonToEdit[0] == 1) {//edit attribute
+    //      thisCodon.setAttribute(CodonAttributes.values()[choice].v);
+    //      changeMade = true;
+    //    }
+    //    if(changeMade && selectedCell != UGOcell){
+    //        changeMade = true;
+    //        lastEditTimeStamp = frameCount;
+    //        selectedCell.tamper();
+    //    }
+    //  }
+    //  }
   }else{
     codonToEdit[0] = codonToEdit[1] = -1;
   }
@@ -312,7 +324,7 @@ void detectMouse(){
         }
         else if(mouseX>=10+2*75 && mouseX <=75+2*75 && mouseY>=10 && mouseY <=50)//speed up
         {
-          if(PLAY_SPEED<9.9)
+          if(PLAY_SPEED<99.9)
           {
             PLAY_SPEED+=0.1;
           }
@@ -432,7 +444,7 @@ void drawArrow(double dx1, double dx2, double dy1, double dy2){
   line(x2,y2,x4,y4);
 }
 String framesToTime(double f){
-  double ticks = f/GENE_TICK_TIME;
+  double ticks = f/GENE_TICK_TIME*PLAY_SPEED;
   String timeStr = nf((float)ticks,0,1);
   if(ticks >= 1000){
     timeStr = (int)(Math.round(ticks))+"";
@@ -517,7 +529,8 @@ void drawCellStats(){
     drawBar(color(210,50,210),selectedCell.wallHealth,"Wall health",360);
   }
   drawGenomeAsList(selectedCell.genome,genomeListDims);
-  drawEditTable(editListDims);
+  drawButtonTable(editListDims, codonToEdit[0]==0?codonTypeButtons:codonAttributeButtons);
+  //drawEditTable(editListDims);
   if(!isUGO){
     textFont(font,32);
     textAlign(LEFT);
@@ -588,6 +601,162 @@ void drawGenomeAsList(Genome g, double[] dims){
   }
   popMatrix();
 }
+
+class Button {
+  private String text;
+  color foreColor;
+  color backColor;
+  
+  public Button(String text, color foreColor, color backColor) {
+    this.text = text;
+    this.foreColor = foreColor;
+    this.backColor = backColor;
+  }
+  
+  public String getText() {
+     return text; 
+  }
+  
+  public boolean onClick(double rMouseX, double rMouseY) {
+    return false;//noOp
+  }
+}
+
+class ButtonChangeRGL extends Button{
+  boolean start;
+  public ButtonChangeRGL(String text, boolean start) {
+    super(text, color(255,255,255), color(90,90,90));
+    this.start = start;
+  }
+  
+  public boolean onClick(double rMouseX, double rMouseY) {
+    int diff = 1;
+    if(rMouseX < 0.5){
+      diff = -1;
+    }
+    
+    if (start) {
+      editRGL.loc += diff;
+    } else {
+      
+      editRGL.end += diff;
+    }
+    return false;
+  }
+}
+
+
+class ButtonCommon extends Button {
+  CommonBase common;
+  
+  public ButtonCommon(CommonBase common) {
+    super(common.toString(), intToColor((common.getTextColor())), intToColor(common.getColor()));
+    this.common = common;
+  }
+  
+  
+  public String getText() {
+     return common.toString(); 
+  }
+
+}
+
+
+
+class ButtonEditAttribute extends ButtonCommon {
+  CodonAttribute attribute;
+  
+  public ButtonEditAttribute(CodonAttribute attribute) {
+    super(attribute);
+    this.attribute = attribute;
+  }
+  
+  public boolean onClick(double rMouseX, double rMouseY) {
+      Codon thisCodon = selectedCell.genome.codons.get(codonToEdit[1]);
+      
+      AttributeRGL oldRGL = thisCodon.getAttribute() instanceof AttributeRGL?(AttributeRGL)thisCodon.getAttribute():null;
+      if (oldRGL == null || oldRGL.getStartLocation() != codonToEdit[2] || oldRGL.getEndLocation() != codonToEdit[3]) {
+        thisCodon.setAttribute(new AttributeRGL(codonToEdit[2], codonToEdit[3]));
+      } else {
+        return false;
+      }
+      thisCodon.setAttribute(attribute);
+      return true;
+  }
+}
+
+Button[] codonAttributeButtons = new Button[CodonAttributes.values().length];
+AttributeRGL editRGL = new AttributeRGL(0,0);
+{
+  ArrayList<Button> buttons = new ArrayList();
+  
+  for(int i = 0; i < CodonAttributes.values().length; i++){
+    CodonAttribute att = CodonAttributes.values()[i].v;
+    if (att instanceof AttributeRGL)att=editRGL;
+    buttons.add(new ButtonEditAttribute(att));
+  }
+  
+  int rglPos = CodonAttributes.RGL00.ordinal();
+  buttons.add(rglPos, new ButtonChangeRGL("- RGL end +", false));
+  buttons.add(rglPos, new ButtonChangeRGL("- RGL start +", true));
+  
+  codonAttributeButtons = buttons.toArray(new Button[buttons.size()]);
+}
+
+class ButtonEditCodonType extends ButtonCommon {
+  CodonType type;
+  
+  public ButtonEditCodonType(CodonType type) {
+    super(type);
+    this.type = type;
+  }
+  
+  public boolean onClick(double rMouseX, double rMouseY) {
+      Codon thisCodon = selectedCell.genome.codons.get(codonToEdit[1]);
+      thisCodon.setType(type);
+      return true;
+  }
+
+}
+
+Button[] codonTypeButtons = new Button[CodonTypes.values().length];
+{
+  for(int i = 0; i < CodonTypes.values().length; i++){
+    codonTypeButtons[i] = new ButtonEditCodonType(CodonTypes.values()[i].v);
+  }
+}
+
+
+void drawButtonTable(double[] dims, Button[] buttons){
+  double x = dims[0];
+  double y = dims[1];
+  double w = dims[2];
+  double h = dims[3];
+  
+  double appW = w-margin*2;
+  textFont(font,30);
+  textAlign(CENTER);
+  
+  int p = codonToEdit[0];
+  int s = codonToEdit[2];
+  int e = codonToEdit[3];
+  if(p >= 0){
+    pushMatrix();
+    dTranslate(x,y);
+    double appChoiceHeight = h/buttons.length;
+    for(int i = 0; i < buttons.length; i++){
+      double appY = appChoiceHeight*i;
+      color fillColor = buttons[i].backColor;
+      color textColor = buttons[i].foreColor;
+      fill(fillColor);
+      dRect(margin,appY+margin,appW,appChoiceHeight-margin*2);
+      fill(textColor);
+      dText(buttons[i].getText(),w*0.5,appY+appChoiceHeight/2+11);
+    }
+    popMatrix();
+  }
+}
+
 void drawEditTable(double[] dims){
   double x = dims[0];
   double y = dims[1];
@@ -604,7 +773,7 @@ void drawEditTable(double[] dims){
   if(p >= 0){
     pushMatrix();
     dTranslate(x,y);
-    int choiceCount = CodonInfo.getOptionSize(codonToEdit[0]);
+    int choiceCount =   CodonInfo.getOptionSize(codonToEdit[0]);
     double appChoiceHeight = h/choiceCount;
     for(int i = 0; i < choiceCount; i++){
       double appY = appChoiceHeight*i;

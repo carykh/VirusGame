@@ -23,7 +23,7 @@ class Codon extends CodonPair{ //this includes health
     return intToColor(p == 0? type.getTextColor():attribute.getTextColor()); //for leg support
   }
   public String getText(int p){
-    return p == 0? type.getName():attribute.getName(); //for leg support
+    return p == 0? type.toString():attribute.toString(); //for leg support
   }
   public boolean hasSubstance(){
     return ((!(type instanceof CodonNone)) || (!(attribute instanceof AttributeNone))); //probably whether this codon can get hurt?
@@ -33,7 +33,6 @@ class Codon extends CodonPair{ //this includes health
       codonHealth -= Math.random()*CODON_DEGRADE_SPEED;
       if(codonHealth <= 0){
         codonHealth = 1;
-        
         type = CodonTypes.None.v;
         attribute = CodonAttributes.None.v;
       }
@@ -119,7 +118,8 @@ enum CodonAttributes{
   WeakLoc(new AttributeWeakLoc()),
   Inward(new AttributeInward()),
   Outward(new AttributeOutward()),
-  RGL00(new AttributeRGL(0, 0));
+  RGL00(new AttributeRGL(0, 0)),
+  NGO(new AttributeNGO());
 
   
   public final CodonAttribute v;
@@ -134,7 +134,6 @@ static class CommonBase {
   int[]  backColor;
   int[]  textColor;
   String name;
-  CodonAttribute attribute;
   
   public CommonBase(int id, int[] backColor, int[] textColor, String name){
     this.id= id;
@@ -275,6 +274,11 @@ static class AttributeWaste extends AttributeParticle {
     super(2, c(100, 65, 0), c(255,255,255), ParticleType.Waste); 
   }
 } 
+static class AttributeNGO extends AttributeParticle {
+  public AttributeNGO() {
+    super(2, c(158, 28, 128), c(255,255,255), ParticleType.NGO); 
+  }
+} 
 static class AttributeWall extends CodonAttribute {
   public AttributeWall() {
     super(3, c(160, 80, 160), c(255,255,255), "wall"); 
@@ -308,8 +312,9 @@ static class AttributeGenomeCursorDirection extends AttributeGenomeCursor {
 
 static class AttributeGenomeLoc extends AttributeGenomeCursor {
   int loc;
+  boolean isRelative;
   
-  public AttributeGenomeLoc(int id, int[] backColor, int[] textColor, String name, int loc) {
+  public AttributeGenomeLoc(int id, int[] backColor, int[] textColor, String name, int loc, boolean isRelative) {
     super(id,backColor, textColor, name); 
     this.loc = loc;
   }
@@ -322,7 +327,7 @@ static class AttributeGenomeLoc extends AttributeGenomeCursor {
     
     
   public void setCursor(Genome genome) {
-    genome.performerOn = loopItInt(genome.rotateOn+getLocation(genome),genome.codons.size());
+    genome.performerOn = isRelative?loopItInt(genome.rotateOn+getLocation(genome),genome.codons.size()):getLocation(genome);
   }
   
   public String toString() {
@@ -333,8 +338,8 @@ static class AttributeGenomeLoc extends AttributeGenomeCursor {
 static class AttributeGenomeRange extends AttributeGenomeLoc {
   int end;
   
-  public AttributeGenomeRange(int id, int[] backColor, int[] textColor, String name, int start, int end) {
-    super(id, backColor, textColor, name, start); 
+  public AttributeGenomeRange(int id, int[] backColor, int[] textColor, String name, int start, int end, boolean isRelative) {
+    super(id, backColor, textColor, name, start, isRelative); 
     this.end = end;
   }
   
@@ -358,7 +363,7 @@ static class AttributeGenomeRange extends AttributeGenomeLoc {
 } 
 static class AttributeWeakLoc extends AttributeGenomeLoc {
   public AttributeWeakLoc() {
-    super(4, c(80, 180, 80), c(255,255,255), "weak loc", -1); //-1 is a placehoder
+    super(4, c(80, 180, 80), c(255,255,255), "weak loc", -1, false); //-1 is a placehoder
   }
   
   public int getLocation(Genome genome) {
@@ -377,7 +382,7 @@ static class AttributeOutward extends AttributeGenomeCursorDirection {
 } 
 static class AttributeRGL extends AttributeGenomeRange {
   public AttributeRGL(int start, int end) {
-    super(7, c(140, 140, 140), c(255,255,255), "RGL", start, end); 
+    super(7, c(140, 140, 140), c(255,255,255), "RGL", start, end, true); 
   }
   
 } 
