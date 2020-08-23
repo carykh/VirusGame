@@ -5,7 +5,7 @@ Cell[][] cells = new Cell[WORLD_SIZE][WORLD_SIZE];
 ArrayList<ArrayList<Particle>> particles = new ArrayList<ArrayList<Particle>>(0);
 int foodLimit = 180;
 float BIG_FACTOR = 100;
-float PLAY_SPEED = 5;//0.6;
+float PLAY_SPEED = 2;//0.6;
 double GENE_TICK_TIME = 40.0;
 double margin = 4;
 int START_LIVING_COUNT = 0;
@@ -19,7 +19,7 @@ double WALL_DAMAGE = 0.01;
 static double CODON_DEGRADE_SPEED = 0.008;
 static double EPS = 0.00000001;
 
-String starterGenome = "46-11-22-33-11-22-33-45-44-57__-67__";
+String starterGenome = "46-11-22-33-11-22-33-45-44-5700-6700";
 boolean canDrag = false;
 double clickWorldX = -1;
 double clickWorldY = -1;
@@ -300,13 +300,24 @@ int loopCodonInfo(int val){
   }
   return val;
 }
-int codonCharToVal(char c){
-  int val = (int)(c) - (int)('A');
-  return val-30;
+
+char[] encording = "0123456789abcdefghijklmnopqrstuvwxyz!£$%^&*()[]{}-_,.<>;:'@#~|\\/=+`¬¦ZYXWVUTSRQPONMLKJIHGFEDCBA".toCharArray();
+HashMap<Character, Integer> decoding = new HashMap();
+{
+  for(int i=-41;i<50;i++) {
+    println(codonValToChar(i) +" " + i);
+    decoding.put(codonValToChar(i), i);
+  }
 }
-String codonValToChar(int i){
-  int val = (i+30) + (int)('A');
-  return (char)val+"";
+
+int codonCharToVal(char c){
+  return decoding.get(c);
+}
+char codonValToChar(int i){
+  if (i < -45) i = 0;
+  if (i >= 50) i = 0;
+  if (i < 0) i = 95 + i;
+  return encording[i];
 }
 void detectMouse(){
   if (mousePressed){
@@ -645,18 +656,36 @@ class ButtonChangeRGL extends Button{
   }
 }
 
+class ButtonChangeMemoryLocation extends Button{
+  public ButtonChangeMemoryLocation(String text) {
+    super(text, color(255,255,255), color(90,90,90));
+  }
+  
+  public boolean onClick(double rMouseX, double rMouseY) {
+    int diff = 1;
+    if(rMouseX < 0.5){
+      diff = -1;
+    }
+    
+    
+     editMemoryLoc.memoryId += diff;
+    return false;
+  }
+}
+
+
 
 class ButtonCommon extends Button {
   CommonBase common;
   
   public ButtonCommon(CommonBase common) {
-    super(common.toString(), intToColor((common.getTextColor())), intToColor(common.getColor()));
+    super(common.getTextSimple(), intToColor((common.getTextColor())), intToColor(common.getColor()));
     this.common = common;
   }
   
   
   public String getText() {
-     return common.toString(); 
+     return common.getTextSimple(); 
   }
 
 }
@@ -687,18 +716,22 @@ class ButtonEditAttribute extends ButtonCommon {
 
 Button[] codonAttributeButtons = new Button[CodonAttributes.values().length];
 AttributeRGL editRGL = new AttributeRGL(0,0);
+AttributeMemoryLocation editMemoryLoc = new AttributeMemoryLocation(0);
 {
   ArrayList<Button> buttons = new ArrayList();
   
   for(int i = 0; i < CodonAttributes.values().length; i++){
     CodonAttribute att = CodonAttributes.values()[i].v;
     if (att instanceof AttributeRGL)att=editRGL;
+    if (att instanceof AttributeMemoryLocation)att=editMemoryLoc;
     buttons.add(new ButtonEditAttribute(att));
   }
   
-  int rglPos = CodonAttributes.RGL00.ordinal();
+  int rglPos = CodonAttributes.RGL00.ordinal() + 1;
   buttons.add(rglPos, new ButtonChangeRGL("- RGL end +", false));
   buttons.add(rglPos, new ButtonChangeRGL("- RGL start +", true));
+  int memLocPos = CodonAttributes.MemoryLocation.ordinal() + 3;
+  buttons.add(memLocPos, new ButtonChangeMemoryLocation("- MemLoc Id +"));
   
   codonAttributeButtons = buttons.toArray(new Button[buttons.size()]);
 }
@@ -757,36 +790,6 @@ void drawButtonTable(double[] dims, Button[] buttons){
   }
 }
 
-void drawEditTable(double[] dims){
-  double x = dims[0];
-  double y = dims[1];
-  double w = dims[2];
-  double h = dims[3];
-  
-  double appW = w-margin*2;
-  textFont(font,30);
-  textAlign(CENTER);
-  
-  int p = codonToEdit[0];
-  int s = codonToEdit[2];
-  int e = codonToEdit[3];
-  if(p >= 0){
-    pushMatrix();
-    dTranslate(x,y);
-    int choiceCount =   CodonInfo.getOptionSize(codonToEdit[0]);
-    double appChoiceHeight = h/choiceCount;
-    for(int i = 0; i < choiceCount; i++){
-      double appY = appChoiceHeight*i;
-      color fillColor = intToColor(CodonInfo.getColor(p,i));
-      color textColor = intToColor(CodonInfo.getTextColor(p,i));
-      fill(fillColor);
-      dRect(margin,appY+margin,appW,appChoiceHeight-margin*2);
-      fill(textColor);
-      dText(CodonInfo.getTextSimple(p, i, s, e),w*0.5,appY+appChoiceHeight/2+11);
-    }
-    popMatrix();
-  }
-}
 color colorInterp(color a, color b, double x){
   float newR = (float)(red(a)+(red(b)-red(a))*x);
   float newG = (float)(green(a)+(green(b)-green(a))*x);
@@ -933,7 +936,7 @@ color transperize(color col, double trans){
 String infoToString(CodonPair codon){
   
   
-  String result = codon.getType().id+""+codon.getAttribute().id;
+  String result = codonValToChar(codon.getType().id)+""+codonValToChar(codon.getAttribute().id);
   if(codon.getAttribute() instanceof AttributeRGL){
     AttributeRGL rgl = (AttributeRGL)codon.getAttribute();
     result += codonValToChar(rgl.getStartLocation())+""+codonValToChar(rgl.getEndLocation()); //todo made this OOP
@@ -943,7 +946,8 @@ String infoToString(CodonPair codon){
 int[] stringToInfo(String str){
   int[] info = new int[4];
   for(int i = 0; i < 2; i++){
-    info[i] = Integer.parseInt(str.substring(i,i+1));
+      char c = str.charAt(i);
+    info[i] = codonCharToVal(c);
   }
   if(info[1] == 7){
     for(int i = 2; i < 4; i++){

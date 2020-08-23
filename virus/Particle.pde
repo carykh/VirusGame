@@ -1,5 +1,5 @@
 enum ParticleType{
-  Food,Waste,NGO; 
+  Food,Waste,UGO; 
 }
 
 

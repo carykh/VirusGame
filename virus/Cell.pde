@@ -16,6 +16,8 @@ class Cell{
   int laserT = -9999;
   int LASER_LINGER_TIME = 30;
   String memory = "";
+  HashMap<Integer, AbsoluteRange> rangeMemory = new HashMap();
+  AbsoluteRange lastRange = new AbsoluteRange(0, -1);
   /*
   0: empty
   1: empty, inaccessible
@@ -36,6 +38,7 @@ class Cell{
     wallHealth = ewh;
     genome = new Genome(eg,false);
     genome.rotateOn = (int)(Math.random()*genome.codons.size());
+    genome.rotateOnNext = genome.loopAroundGenome(genome.rotateOn+1);
     geneTimer = Math.random()*GENE_TICK_TIME;
     energy = 0.5;
   }
@@ -170,13 +173,13 @@ class Cell{
   void useEnergy(){
     energy = Math.max(0,energy-GENE_TICK_ENERGY);
   }
-  void readToMemory(int start, int end){
+  void readToMemory(int start, int end, boolean isRelative){
     memory = "";
     laserTarget = null;
     laserCoor.clear();
     laserT = frameCount;
     for(int pos = start; pos <= end; pos++){
-      int index = loopItInt(genome.performerOn+pos,genome.codons.size());
+      int index = loopItInt((isRelative?genome.performerOn:0)+pos,genome.codons.size());
       Codon c = genome.codons.get(index);
       memory = memory+infoToString(c);
       if(pos < end){
@@ -185,7 +188,7 @@ class Cell{
       laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
     }
   }
-  void writeFromMemory(int start, int end){
+  void writeFromMemory(int start, int end, boolean isRelative){
     if(memory.length() == 0){
       return;
     }
@@ -195,7 +198,7 @@ class Cell{
     if(genome.directionOn == 0){
       writeOutwards();
     }else{
-      writeInwards(start,end);
+      writeInwards(start,end, isRelative);
     }
   }
   public void writeOutwards(){
@@ -214,11 +217,11 @@ class Cell{
       useEnergy();
     }
   }
-  public void writeInwards(int start, int end){
+  public void writeInwards(int start, int end, boolean isRelative){
     laserTarget = null;
     String[] memoryParts = memory.split("-");
     for(int pos = start; pos <= end; pos++){
-      int index = loopItInt(genome.performerOn+pos,genome.codons.size());
+      int index = loopItInt((isRelative?genome.performerOn:0)+pos,genome.codons.size());
       Codon c = genome.codons.get(index);
       if(pos-start < memoryParts.length){
         String memoryPart = memoryParts[pos-start];
@@ -300,7 +303,9 @@ class Cell{
   }
   public void tickGene(){
     geneTimer += GENE_TICK_TIME;
-    genome.rotateOn = (genome.rotateOn+1)%genome.codons.size();
+    
+    genome.rotateOn = genome.rotateOnNext;
+    genome.rotateOnNext = genome.loopAroundGenome(genome.rotateOnNext+1);
   }
   public void hurtWall(double multi){
     if(type >= 2){

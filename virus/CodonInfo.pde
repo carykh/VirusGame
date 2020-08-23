@@ -6,7 +6,7 @@ static class CodonInfo{
   {80,180,80},{0,100,100},
   {0,200,200},{140,140,140},{90,90,90},{90,90,90}}};
   static String[][] names = {{"none","digest","remove","repair","move hand","read","write"},
-  {"none","food","waste","wall","weak loc","inward","outward","RGL", "NGO","- RGL start +","- RGL end +"}};
+  {"none","food","waste","wall","weak loc","inward","outward","RGL", "UGO","- RGL start +","- RGL end +"}};
   public static int[] getColor(int p, int t){
     return CodonInfo.cols[p][t];
   }

@@ -23,7 +23,7 @@ class Codon extends CodonPair{ //this includes health
     return intToColor(p == 0? type.getTextColor():attribute.getTextColor()); //for leg support
   }
   public String getText(int p){
-    return p == 0? type.toString():attribute.toString(); //for leg support
+    return p == 0? type.getTextSimple():attribute.getTextSimple(); //for leg support
   }
   public boolean hasSubstance(){
     return ((!(type instanceof CodonNone)) || (!(attribute instanceof AttributeNone))); //probably whether this codon can get hurt?
@@ -46,11 +46,11 @@ class Codon extends CodonPair{ //this includes health
   }
   
   public void setType(CodonType type) {
-     this.type= type; 
+     this.type= type.clone(); 
   }
   
   public void setAttribute(CodonAttribute attribute) {
-     this.attribute= attribute; 
+     this.attribute= attribute.clone(); 
   }
   
   public void exec(Cell cell) {
@@ -64,7 +64,7 @@ static CodonPair fromIntList(int[] ints) {
   if (att == CodonAttributes.RGL00.v && ints[2] != 0 && ints[3]!=0) {
      att = new AttributeRGL(ints[2], ints[3]);
   }
-  println(type + " " + att);
+  //println(type + " " + att);
   return new CodonPair(type, att);
 }
 
@@ -77,8 +77,8 @@ static class CodonPair{//just information
   }
   
   public CodonPair(CodonType type, CodonAttribute attribute){
-    this.type = type;
-    this.attribute = attribute;
+    this.type = type.clone();
+    this.attribute = attribute.clone();
   }
   
 
@@ -99,7 +99,9 @@ enum CodonTypes{
   Repair(new CodonRepair()),
   MoveHand(new CodonMoveHand()),
   Read(new CodonRead()),
-  Write(new CodonWrite());
+  Write(new CodonWrite()),
+  Goto(new CodonGoto()),
+  MemTo(new CodonMemorizeTo());
 
   
   public final CodonType v;
@@ -119,7 +121,8 @@ enum CodonAttributes{
   Inward(new AttributeInward()),
   Outward(new AttributeOutward()),
   RGL00(new AttributeRGL(0, 0)),
-  NGO(new AttributeNGO());
+  UGO(new AttributeUGO()),
+  MemoryLocation( new AttributeMemoryLocation(0));
 
   
   public final CodonAttribute v;
@@ -129,7 +132,7 @@ enum CodonAttributes{
 }
 
 
-static class CommonBase {
+static class CommonBase implements Cloneable {
      int id;
   int[]  backColor;
   int[]  textColor;
@@ -156,6 +159,17 @@ static class CommonBase {
   public String toString() {
     return getName();
   }
+  
+    public  String getTextSimple(){ 
+    String result = getName().toUpperCase();
+    return result;
+  }
+  
+  public CommonBase clone() {
+    try {
+      return (CommonBase)super.clone(); 
+    } catch(CloneNotSupportedException e) {return null;}
+  }
 }
 
 static int[] c(int v1, int v2, int v3) {
@@ -172,7 +186,10 @@ static class CodonType extends CommonBase {
     super(id, backColor, textColor, name); 
   }
   
-  
+  public CodonType clone() {
+    return (CodonType)super.clone(); 
+  }
+ 
   public void exec(Cell cell, CodonAttribute attribute) {
     //noOP
   }
@@ -183,6 +200,9 @@ static class CodonAttribute extends CommonBase {
     super(id, backColor, textColor, name); 
   }
   
+  public CodonAttribute clone() {
+    return (CodonAttribute)super.clone(); 
+  }
 }
 
   //public void doAction(){
@@ -274,9 +294,9 @@ static class AttributeWaste extends AttributeParticle {
     super(2, c(100, 65, 0), c(255,255,255), ParticleType.Waste); 
   }
 } 
-static class AttributeNGO extends AttributeParticle {
-  public AttributeNGO() {
-    super(2, c(158, 28, 128), c(255,255,255), ParticleType.NGO); 
+static class AttributeUGO extends AttributeParticle {
+  public AttributeUGO() {
+    super(8, c(158, 28, 128), c(255,255,255), ParticleType.UGO); 
   }
 } 
 static class AttributeWall extends CodonAttribute {
@@ -289,7 +309,7 @@ static class AttributeGenomeCursor extends CodonAttribute {
     super(id, backColor, textColor, name); 
   }
   
-  public void setCursor(Genome genome) {//noOP
+  public void setCursor(Cell cell) {//noOP
 }
 } 
 static class AttributeGenomeCursorDirection extends AttributeGenomeCursor {
@@ -305,8 +325,8 @@ static class AttributeGenomeCursorDirection extends AttributeGenomeCursor {
   }
     
     
-  public void setCursor(Genome genome) {
-    genome.directionOn = isInwards()?1:0;
+  public void setCursor(Cell cell) {
+    cell.genome.directionOn = isInwards()?1:0;
   }
 } 
 
@@ -317,17 +337,28 @@ static class AttributeGenomeLoc extends AttributeGenomeCursor {
   public AttributeGenomeLoc(int id, int[] backColor, int[] textColor, String name, int loc, boolean isRelative) {
     super(id,backColor, textColor, name); 
     this.loc = loc;
+    this.isRelative = isRelative;
   }
   
   
   public int getLocation() {return getLocation(null);}
-  public int getLocation(Genome genome) {
+  public int getLocation(Cell cell) {
      return loc; 
   }
     
     
-  public void setCursor(Genome genome) {
-    genome.performerOn = isRelative?loopItInt(genome.rotateOn+getLocation(genome),genome.codons.size()):getLocation(genome);
+  public void setCursor(Cell cell) {
+    cell.genome.performerOn = getAbsoluteLoc(cell);
+    cell.lastRange = new AbsoluteRange(cell.genome.performerOn, 0); 
+  }
+  
+  public int getAbsoluteLoc(Cell cell) {
+    return  getAbsoluteLoc(cell, 0);
+  }
+  public int getAbsoluteLoc(Cell cell, int extraRelative) {
+    int result = isRelative?cell.genome.rotateOn+getLocation(cell):getLocation(cell);
+    result += extraRelative;
+    return cell.genome.loopAroundGenome(result);
   }
   
   public String toString() {
@@ -346,17 +377,16 @@ static class AttributeGenomeRange extends AttributeGenomeLoc {
   
   public int getStartLocation() {return getStartLocation(null);}
   
-  public int getStartLocation(Genome genome) {
-     return getLocation(genome); 
+  public int getStartLocation(Cell cell) {
+     return getLocation(cell); 
   }
   
   
   public int getEndLocation() {return getEndLocation(null);}
-  public int getEndLocation(Genome genome) {
+  public int getEndLocation(Cell cell) {
      return end; 
   }
-  
-  
+    
   public String toString() {
     return name + "(start=" + loc + " ,end=" + end + ")";
   }
@@ -366,8 +396,8 @@ static class AttributeWeakLoc extends AttributeGenomeLoc {
     super(4, c(80, 180, 80), c(255,255,255), "weak loc", -1, false); //-1 is a placehoder
   }
   
-  public int getLocation(Genome genome) {
-     return genome==null?-1:genome.getWeakestCodon(); 
+  public int getLocation(Cell cell) {
+     return cell==null?-1:cell.genome.getWeakestCodon(); 
   }
 } 
 static class AttributeInward extends AttributeGenomeCursorDirection {
@@ -383,6 +413,52 @@ static class AttributeOutward extends AttributeGenomeCursorDirection {
 static class AttributeRGL extends AttributeGenomeRange {
   public AttributeRGL(int start, int end) {
     super(7, c(140, 140, 140), c(255,255,255), "RGL", start, end, true); 
+  }
+  
+  public  String getTextSimple(){ 
+    return super.getTextSimple()+ " ("+loc+" to "+end+")";
+  }
+  
+} 
+static class AbsoluteRange{
+   int start;
+   int length;
+   public AbsoluteRange(int start, int length) {
+      this.start = start;
+      this.length = length;
+   }
+   
+   public int getEnd() {
+     return start+length; 
+   }
+   
+   public int getEndResolved(Genome genome) {
+     return genome.loopAroundGenome(getEnd()); 
+   }
+}
+static class AttributeMemoryLocation extends AttributeGenomeRange {
+  int memoryId;
+  public AttributeMemoryLocation(int memoryId) {
+    super(9, c(255,0,255), c(255,255,255), "MemLoc", -1, -1, false); //-1 is a placehoder
+    this.memoryId = memoryId;
+  }
+  
+  public int getStartLocation(Cell cell) {
+    if (cell == null) return 0;
+     AbsoluteRange r =  cell.rangeMemory.get(memoryId);
+     return r==null?0:r.start; 
+  }
+  
+  
+  public int getEndLocation(Cell cell) {
+    if (cell == null) return 0;
+     AbsoluteRange r =  cell.rangeMemory.get(memoryId);
+     return r==null?0:r.getEnd(); 
+  }
+  
+  
+  public  String getTextSimple(){ 
+    return super.getTextSimple()+ " ("+memoryId+")";
   }
   
 } 
@@ -468,7 +544,7 @@ static class CodonDigest extends CodonType {
   public void exec(Cell cell, CodonAttribute attribute) {
     if (cell.genome.directionOn == 0) {
       if (attribute instanceof AttributeParticle) {
-        Particle foodToEat = cell.selectParticleInCell(((AttributeParticle)attribute).getParticle().ordinal()); // digest either "food" or "waste". (now even NGO is possible!! no attribute for that yet tho)
+        Particle foodToEat = cell.selectParticleInCell(((AttributeParticle)attribute).getParticle().ordinal()); // digest either "food" or "waste". (now even UGO is possible!! no attribute for that yet tho)
         if(foodToEat != null){
           cell.eat(foodToEat);
         }
@@ -488,7 +564,7 @@ static class CodonRemove extends CodonType {
   public void exec(Cell cell, CodonAttribute attribute) {
     if (cell.genome.directionOn == 0) {
       if (attribute instanceof AttributeParticle) {
-        Particle wasteToPushOut = cell.selectParticleInCell(((AttributeParticle)attribute).getParticle().ordinal()); // pushes out either "food" or "waste". (now even NGO is possible!! no attribute for that yet tho)
+        Particle wasteToPushOut = cell.selectParticleInCell(((AttributeParticle)attribute).getParticle().ordinal()); // pushes out either "food" or "waste". (now even UGO is possible!! no attribute for that yet tho)
         if(wasteToPushOut != null){
           cell.pushOut(wasteToPushOut);
         }
@@ -524,7 +600,7 @@ static class CodonMoveHand extends CodonType {
   public void exec(Cell cell, CodonAttribute attribute) {
     Genome genome = cell.genome;
     if(attribute instanceof AttributeGenomeCursor){
-      ((AttributeGenomeCursor)attribute).setCursor(genome);
+      ((AttributeGenomeCursor)attribute).setCursor(cell);
     }
   }
 }
@@ -537,7 +613,12 @@ static class CodonRead extends CodonType {
     Genome genome = cell.genome;
     if (attribute instanceof AttributeGenomeRange) {
       AttributeGenomeRange range = (AttributeGenomeRange)attribute;
-      cell.readToMemory(range.getStartLocation(genome), range.getEndLocation(genome));
+      int start = range.getStartLocation(cell);
+      int end = range.getEndLocation(cell);
+      
+      cell.readToMemory(start, end, range.isRelative);
+      
+      cell.lastRange = new AbsoluteRange(genome.performerOn+start, end-start);
     }
   }
 }
@@ -550,9 +631,41 @@ static class CodonWrite extends CodonType {
     Genome genome = cell.genome;
     if (attribute instanceof AttributeGenomeRange) {
       AttributeGenomeRange range = (AttributeGenomeRange)attribute;
-      cell.writeFromMemory(range.getStartLocation(genome), range.getEndLocation(genome));
+      
+      int start = range.getStartLocation(cell);
+      int end = range.getEndLocation(cell);
+      
+      cell.writeFromMemory(start, end, range.isRelative);
+      
+      cell.lastRange = new AbsoluteRange(genome.performerOn+start, end-start);
     } else {
-      cell.writeFromMemory(0, 0); 
+      cell.writeFromMemory(0, 0, true); 
+    }
+  }
+}
+static class CodonGoto extends CodonType {
+  public CodonGoto() {
+    super(7, c(200, 200, 0), c(255,255,255), "goto"); 
+  }
+  
+  public void exec(Cell cell, CodonAttribute attribute) {
+    Genome genome = cell.genome;
+    if(attribute instanceof AttributeGenomeLoc){
+      genome.rotateOnNext = ((AttributeGenomeLoc)attribute).getAbsoluteLoc(cell);
+      cell.lastRange = new AbsoluteRange(genome.rotateOnNext, 0);
+    }
+  }
+}
+
+static class CodonMemorizeTo extends CodonType {
+  public CodonMemorizeTo() {
+    super(8, c(100, 100, 0), c(255,255,255), "Mem To"); 
+  }
+  
+  public void exec(Cell cell, CodonAttribute attribute) {
+    if(attribute instanceof AttributeMemoryLocation){
+      int memoryId = ((AttributeMemoryLocation)attribute).memoryId;
+      cell.rangeMemory.put(memoryId, cell.lastRange);
     }
   }
 }

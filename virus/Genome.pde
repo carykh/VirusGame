@@ -1,6 +1,7 @@
 class Genome{
   ArrayList<Codon> codons;
   int rotateOn = 0;
+  int rotateOnNext = 1;
   int performerOn = 0;
   int directionOn = 0;
   double appRO = 0;
@@ -59,6 +60,10 @@ class Genome{
     endShape(CLOSE);
     popMatrix();
   }
+  public int loopAroundGenome(int i) {
+     return loopItInt(i, codons.size()); 
+  }
+  
   public void drawCodons(){
     for(int i = 0; i < codons.size(); i++){
       drawCodon(i);
