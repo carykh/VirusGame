@@ -229,68 +229,6 @@ static class CodonAttribute extends CommonBase {
     return (CodonAttribute)super.clone(); 
   }
 }
-
-  //public void doAction(){
-  //  useEnergy();
-  //  Codon thisCodon = genome.codons.get(genome.rotateOn);
-  //  int[] info = thisCodon.codonInfo;
-  //  if(info[0] == 1 && genome.directionOn == 0){
-  //    if(info[1] == 1 || info[1] == 2){
-  //      Particle foodToEat = selectParticleInCell(info[1]-1); // digest either "food" or "waste".
-  //      if(foodToEat != null){
-  //        eat(foodToEat);
-  //      }
-  //    }else if(info[1] == 3){ // digest "wall"
-  //      energy += (1-energy)*E_RECIPROCAL*0.2;
-  //      hurtWall(26);
-  //      laserWall();
-  //    }
-  //  }else if(info[0] == 2 && genome.directionOn == 0){
-  //    if(info[1] == 1 || info[1] == 2){
-  //      Particle wasteToPushOut = selectParticleInCell(info[1]-1);
-  //      if(wasteToPushOut != null){
-  //        pushOut(wasteToPushOut);
-  //      }
-  //    }else if(info[1] == 3){
-  //      die();
-  //    }
-  //  }else if(info[0] == 3 && genome.directionOn == 0){
-  //    if(info[1] == 1 || info[1] == 2){
-  //      Particle particle = selectParticleInCell(info[1]-1);
-  //      shootLaserAt(particle);
-  //    }else if(info[1] == 3){
-  //      healWall();
-  //    }
-  //  }else if(info[0] == 4){
-  //    if(info[1] == 4){
-  //      genome.performerOn = genome.getWeakestCodon();
-  //    }else if(info[1] == 5){
-  //      genome.directionOn = 1;
-  //    }else if(info[1] == 6){
-  //      genome.directionOn = 0;
-  //    }else if(info[1] == 7){
-  //      genome.performerOn = loopItInt(genome.rotateOn+info[2],genome.codons.size());
-  //    }
-  //  }else if(info[0] == 5 && genome.directionOn == 1){
-  //    if(info[1] == 7){
-  //      readToMemory(info[2],info[3]);
-  //    }
-  //  }else if(info[0] == 6){
-  //    if(info[1] == 7 || genome.directionOn == 0){
-  //      writeFromMemory(info[2],info[3]);
-  //    }
-  //  }
-  //  genome.hurtCodons();
-  //}
-  
-  //  static String[][] names = {{"none","digest","remove","repair","move hand","read","write"},  {"none","food","waste","wall","weak loc","inward","outward","RGL","- RGL start +","- RGL end +"}};
-  
-  //{{color(0, 0, 0),color(100, 0, 200),color(180, 160, 10),
-  //color(0, 150, 0),color(200, 0, 100),color(70, 70, 255),
-  //color(0, 0, 220)},
-  //{color(0, 0, 0),color(200, 50, 50),color(100, 65, 0),color(160, 80, 160),
-  //color(80, 180, 80),color(0, 100, 100),
-  //color(0, 200, 200),color(140, 140, 140),color(90, 90, 90),color(90, 90, 90)}};
   
 static class AttributeNone extends CodonAttribute {
   public AttributeNone() {
@@ -576,61 +514,7 @@ static class Attribute extends CodonAttribute {
   
   
   
-  
-  
-  
-    //public void doAction(){
-  //  useEnergy();
-  //  Codon thisCodon = genome.codons.get(genome.rotateOn);
-  //  int[] info = thisCodon.codonInfo;
-  //  if(info[0] == 1 && genome.directionOn == 0){
-  //    if(info[1] == 1 || info[1] == 2){
-  //      Particle foodToEat = selectParticleInCell(info[1]-1); // digest either "food" or "waste".
-  //      if(foodToEat != null){
-  //        eat(foodToEat);
-  //      }
-  //    }else if(info[1] == 3){ // digest "wall"
-  //      energy += (1-energy)*E_RECIPROCAL*0.2;
-  //      hurtWall(26);
-  //      laserWall();
-  //    }
-  //  }else if(info[0] == 2 && genome.directionOn == 0){
-  //    if(info[1] == 1 || info[1] == 2){
-  //      Particle wasteToPushOut = selectParticleInCell(info[1]-1);
-  //      if(wasteToPushOut != null){
-  //        pushOut(wasteToPushOut);
-  //      }
-  //    }else if(info[1] == 3){
-  //      die();
-  //    }
-  //  }else if(info[0] == 3 && genome.directionOn == 0){
-  //    if(info[1] == 1 || info[1] == 2){
-  //      Particle particle = selectParticleInCell(info[1]-1);
-  //      shootLaserAt(particle);
-  //    }else if(info[1] == 3){
-  //      healWall();
-  //    }
-  //  }else if(info[0] == 4){
-  //    if(info[1] == 4){
-  //      genome.performerOn = genome.getWeakestCodon();
-  //    }else if(info[1] == 5){
-  //      genome.directionOn = 1;
-  //    }else if(info[1] == 6){
-  //      genome.directionOn = 0;
-  //    }else if(info[1] == 7){
-  //      genome.performerOn = loopItInt(genome.rotateOn+info[2],genome.codons.size());
-  //    }
-  //  }else if(info[0] == 5 && genome.directionOn == 1){
-  //    if(info[1] == 7){
-  //      readToMemory(info[2],info[3]);
-  //    }
-  //  }else if(info[0] == 6){
-  //    if(info[1] == 7 || genome.directionOn == 0){
-  //      writeFromMemory(info[2],info[3]);
-  //    }
-  //  }
-  //  genome.hurtCodons();
-  //}
+ 
   
 //Define all Types
 static class CodonNone extends CodonType {

@@ -390,31 +390,6 @@ void checkETclick(){
         codonToEdit[3] = loopCodonInfo(codonToEdit[3]+diff);
       }
     }
-    //else{
-    //  boolean changeMade = false;
-    //  Codon thisCodon = selectedCell.genome.codons.get(codonToEdit[1]);
-    //  if(codonToEdit[0] == 1 && choice == 7){
-    //    //we are making a RGL
-    //    AttributeRGL oldRGL = thisCodon.getAttribute() instanceof AttributeRGL?(AttributeRGL)thisCodon.getAttribute():null;
-    //    if (oldRGL == null || oldRGL.getStartLocation() != codonToEdit[2] || oldRGL.getEndLocation() != codonToEdit[3]) {
-    //      thisCodon.setAttribute(new AttributeRGL(codonToEdit[2], codonToEdit[3]));
-    //      changeMade = true;
-    //    }
-    //  }else{
-    //    if (codonToEdit[0] == 0) {//edit type
-    //      thisCodon.setType(CodonTypes.values()[choice].v);
-    //      changeMade = true;
-    //    } else if (codonToEdit[0] == 1) {//edit attribute
-    //      thisCodon.setAttribute(CodonAttributes.values()[choice].v);
-    //      changeMade = true;
-    //    }
-    //    if(changeMade && selectedCell != UGOcell){
-    //        changeMade = true;
-    //        lastEditTimeStamp = frameCount;
-    //        selectedCell.tamper();
-    //    }
-    //  }
-    //  }
   } else{
     codonToEdit[0] = codonToEdit[1] = -1;
     scrollLocked = true;
