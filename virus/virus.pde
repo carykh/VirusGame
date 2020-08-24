@@ -5,19 +5,19 @@ Cell[][] cells = new Cell[WORLD_SIZE][WORLD_SIZE];
 ArrayList<ArrayList<Particle>> particles = new ArrayList<ArrayList<Particle>>(0);
 int foodLimit = 180;
 float BIG_FACTOR = 100;
-float PLAY_SPEED = 2;//0.6;
-double GENE_TICK_TIME = 40.0;
+float PLAY_SPEED = 0.6;
+double GENE_TICK_TIME = 40;// speed up to accomudate that we need to a lot more
 double margin = 4;
 int START_LIVING_COUNT = 0;
 int[] cellCounts = {0,0,0};
 
-double REMOVE_WASTE_SPEED_MULTI = 0.001;
-double removeWasteTimer = 1.0;
+double REMOVE_WASTE_SPEED_MULTI = 0.001f;
+double removeWasteTimer = 1.0f;
 
-double GENE_TICK_ENERGY = 0.014;
-double WALL_DAMAGE = 0.01;
-static double CODON_DEGRADE_SPEED = 0.008;
-static double EPS = 0.00000001;
+double GENE_TICK_ENERGY = 0.014f;
+double WALL_DAMAGE = 0.01f;
+static double CODON_DEGRADE_SPEED = 0.008f;
+static double EPS = 0.00000001f;
 
 String starterGenome = "46-11-22-33-11-22-33-45-44-5700-6700";
 boolean canDrag = false;
@@ -32,17 +32,42 @@ Particle selectedUGO = null;
 Cell selectedCell = null;
 Cell UGOcell;
 int lastEditTimeStamp = 0;
-color handColor = color(0,128,0);
-color TELOMERE_COLOR = color(0,0,0);
-color WASTE_COLOR = color(100,65,0);
-int MAX_CODON_COUNT = 20; // If a cell were to have more codons in its DNA than this number if it were to absorb a cirus particle, it won't absorb it.
+int handColor = color(0,128,0);
+int TELOMERE_COLOR = color(0,0,0);
+int WASTE_COLOR = color(100,65,0);
+int MAX_CODON_COUNT = 40; // If a cell were to have more codons in its DNA than this number if it were to absorb a cirus particle, it won't absorb it.
 
-double SPEED_LOW = 0.01;
-double SPEED_HIGH = 0.02;
-double MIN_ARROW_LENGTH_TO_PRODUCE = 0.4;
+double SPEED_LOW = 0.01f;
+double SPEED_HIGH = 0.02f;
+double MIN_ARROW_LENGTH_TO_PRODUCE = 0.4f;
 
 double ZOOM_THRESHOLD = 0;//80;
 PFont font;
+int flashCursorRed = 0;
+int activeCursorRed = 0;
+boolean activeCursorHighLow = false;
+boolean scrollLocked = true;
+
+
+static char[] encording = "0123456789abcdefghijklmnopqrstuvwxyz!£$%^&*()[]{}_,.<>;:'@#~|\\/=+`¬¦ZYXWVUTSRQPONMLKJIHGFEDCBA".toCharArray(); //do not use '-' it is the seperator char
+static int enMax = encording.length/2 + encording.length%2;
+static int enMin = -encording.length/2;
+static HashMap<Character, Integer> decoding = new HashMap();
+static {
+  for(int i=enMin;i<enMax;i++) {
+    decoding.put(codonValToChar(i), i);
+  }
+}
+
+static int codonCharToVal(char c){
+  return decoding.get(c);
+}
+static char codonValToChar(int i){
+  if (i < enMin) i = 0;
+  if (i >= enMax) i = 0;
+  if (i < 0) i = encording.length + i;
+  return encording[i];
+}
 
 void setup(){
   font = loadFont("Jygquip1-96.vlw");
@@ -218,7 +243,7 @@ void checkGLclick(){
   if(rMouseX >= 0 && rMouseX < 1 && rMouseY >= 0){
     if(rMouseY < 1){
       codonToEdit[0] = (int)(rMouseX*2);
-      codonToEdit[1] = (int)(rMouseY*selectedCell.genome.codons.size());
+      codonToEdit[1] = (int)(rMouseY*min(selectedCell.genome.codons.size(), VIEW_FIELD_DIS_CNT)) + selectedCell.genome.scrollOffset;
     }else if(selectedCell == UGOcell){
       if(rMouseX < 0.5){
         String genomeString = UGOcell.genome.getGenomeStringShortened();
@@ -289,6 +314,7 @@ void checkETclick(){
     //  }
   }else{
     codonToEdit[0] = codonToEdit[1] = -1;
+    scrollLocked = true;
   }
 }
 int loopCodonInfo(int val){
@@ -301,31 +327,14 @@ int loopCodonInfo(int val){
   return val;
 }
 
-char[] encording = "0123456789abcdefghijklmnopqrstuvwxyz!£$%^&*()[]{}-_,.<>;:'@#~|\\/=+`¬¦ZYXWVUTSRQPONMLKJIHGFEDCBA".toCharArray();
-HashMap<Character, Integer> decoding = new HashMap();
-{
-  for(int i=-41;i<50;i++) {
-    println(codonValToChar(i) +" " + i);
-    decoding.put(codonValToChar(i), i);
-  }
-}
 
-int codonCharToVal(char c){
-  return decoding.get(c);
-}
-char codonValToChar(int i){
-  if (i < -45) i = 0;
-  if (i >= 50) i = 0;
-  if (i < 0) i = 95 + i;
-  return encording[i];
-}
 void detectMouse(){
   if (mousePressed){
     arrowToDraw = null;
     if(!wasMouseDown) {
       
       if(mouseX < W_H){
-
+        boolean buttonPressed = true;
         if(mouseX>=10 && mouseX <=75 && mouseY>=10 && mouseY <=50)//speed down
         {
           if(PLAY_SPEED>0.1)
@@ -342,10 +351,16 @@ void detectMouse(){
         }
         else
         {
+          buttonPressed = false;
           codonToEdit[0] = codonToEdit[1] = -1;
           clickWorldX = appXtoTrueX(mouseX);
           clickWorldY = appYtoTrueY(mouseY);
           canDrag = true;
+        }
+        if (buttonPressed) {
+          canDrag = false;
+          wasMouseDown = true;
+          return; //fix bug that moven screen when pressing button
         }
       }else{
         if(selectedCell != null){
@@ -408,10 +423,48 @@ void detectMouse(){
   }
   wasMouseDown = mousePressed;
 }
-void mouseWheel(MouseEvent event) {
-  double ZOOM_F = 1.05;
-  double thisZoomF = 1;
+public void mouseWheel(processing.event.MouseEvent event) {
   float e = event.getCount();
+   if (mouseX > W_H) {
+    double UIX =  mouseX - W_H;
+    double UIY = mouseY;
+    if (selectedCell != null & dimWithinBox(genomeListDims, UIX, UIY)) {
+      Genome g = selectedCell.genome;
+      int GENOME_LENGTH = g.codons.size();
+      int scrollValue = max(1,(int)abs(e)/3)*(int)Math.signum(e);
+     
+      g.scrollOffset = Math.max(0, Math.min(g.scrollOffset + scrollValue , GENOME_LENGTH-VIEW_FIELD_DIS_CNT));
+      
+      if (codonToEdit[1] >= 0) {
+        if (scrollLocked && codonToEdit[1] < g.scrollOffset) {
+          g.scrollOffset = codonToEdit[1];
+          flashCursorRed++;
+        } else if (scrollLocked && codonToEdit[1] >= g.scrollOffset+VIEW_FIELD_DIS_CNT) {
+          println ("setting offset from " + g.scrollOffset + " to " + Math.min(codonToEdit[1]+VIEW_FIELD_DIS_CNT-1, GENOME_LENGTH-VIEW_FIELD_DIS_CNT)); 
+          g.scrollOffset = Math.max(codonToEdit[1]-VIEW_FIELD_DIS_CNT+1, 0);
+          flashCursorRed++;
+        }
+        if (flashCursorRed==1) {
+           activeCursorRed = millis();
+        }
+        if (flashCursorRed>5&(millis()-activeCursorRed)>200) {
+           println("reseting now!");
+           scrollLocked = false;
+           activeCursorRed = 0;
+           flashCursorRed = 0;
+           
+        }
+      } else {
+           scrollLocked = true;
+      }
+    }
+      
+    return;
+  }
+  
+  
+  double ZOOM_F = 1.05f;
+  double thisZoomF = 1;
   if(e == 1){
     thisZoomF = 1/ZOOM_F;
   }else{
@@ -435,7 +488,15 @@ void produceUGO(double[] coor){
     lastEditTimeStamp = frameCount;
   }
 }
-void drawBackground(){
+
+public boolean dimWithinBox(double[] dims, double x, double y) {
+  double dx = dims[0];
+  double dy = dims[1];
+  double w = dims[2] + dx;
+  double h = dims[3] + dy;
+  return dx < x && x <= w && dy < y && y <= h;
+}
+public void drawBackground(){
   background(255);
 }
 void drawArrow(double dx1, double dx2, double dy1, double dy2){
@@ -546,6 +607,11 @@ void drawCellStats(){
     textFont(font,32);
     textAlign(LEFT);
     text("Memory: "+getMemory(selectedCell),25,940);
+    textAlign(RIGHT);
+    int offset = 0;
+    for (HashMap.Entry<Integer, AbsoluteRange> entry : selectedCell.rangeMemory.entrySet()) {
+    text(entry.getKey() + ":" + entry.getValue().toString(),545,440+(offset++)*32);
+    }
   }
 }
 String getMemory(Cell c){
@@ -555,29 +621,45 @@ String getMemory(Cell c){
     return "\""+c.memory+"\"";
   }
 }
-void drawGenomeAsList(Genome g, double[] dims){
+
+final int VIEW_FIELD_DIS_CNT = 16;
+public void drawGenomeAsList(Genome g, double[] dims){
   double x = dims[0];
   double y = dims[1];
   double w = dims[2];
   double h = dims[3];
   int GENOME_LENGTH = g.codons.size();
+  int offset = Math.max(0, Math.min(g.scrollOffset, GENOME_LENGTH-VIEW_FIELD_DIS_CNT));
+  boolean scrolling = false;
+  
+  if (GENOME_LENGTH > VIEW_FIELD_DIS_CNT) {
+    GENOME_LENGTH = VIEW_FIELD_DIS_CNT;
+    scrolling = true;
+  }
+  
+  
   double appCodonHeight = h/GENOME_LENGTH;
   double appW = w*0.5-margin;
   textFont(font,30);
   textAlign(CENTER);
   pushMatrix();
   dTranslate(x,y);
-  pushMatrix();
-  dTranslate(0,appCodonHeight*(g.appRO+0.5));
-  if(selectedCell != UGOcell){
-    if(selectedUGO == null){
-      drawGenomeArrows(w,appCodonHeight);
+  
+  if (g.rotateOn >= offset && g.rotateOn < offset+VIEW_FIELD_DIS_CNT) {
+    pushMatrix();
+    dTranslate(0,appCodonHeight*(g.appRO-offset+0.5f));
+    if(selectedCell != UGOcell){
+      if(selectedUGO == null){
+        drawGenomeArrows(w,appCodonHeight);
+      }
     }
+    popMatrix();
   }
-  popMatrix();
+  
+  double redflashFac = 0;
   for(int i = 0; i < GENOME_LENGTH; i++){
     double appY = appCodonHeight*i;
-    Codon codon = g.codons.get(i);
+    Codon codon = g.codons.get(i+offset);
     for(int p = 0; p < 2; p++){
       double extraX = (w*0.5-margin)*p;
       color fillColor = codon.getColor(p);
@@ -596,13 +678,47 @@ void drawGenomeAsList(Genome g, double[] dims){
       fill(textColor);
       dText(codon.getText(p),extraX+w*0.25,appY+appCodonHeight/2+11);
       
-      if(p == codonToEdit[0] && i == codonToEdit[1]){
-        double highlightFac = 0.5+0.5*sin(frameCount*0.25);
+      if(p == codonToEdit[0] && i + offset == codonToEdit[1]){
+        double highlightFac = 0.5f+0.5f*sin(frameCount*0.25f);
         fill(255,255,255,(float)(highlightFac*140));
         dRect(extraX+margin,appY+margin,appW,appCodonHeight-margin*2);
+        if (flashCursorRed > 0) {
+          
+          redflashFac = sin(frameCount*0.25*4/3); //quick = attention
+          redflashFac *= redflashFac;
+          
+          
+          if (!activeCursorHighLow & redflashFac > 0.99f) {
+            activeCursorHighLow = true;
+          } else if (activeCursorHighLow & redflashFac < 0.01f) {
+            activeCursorHighLow = false;
+            flashCursorRed--;
+            if (millis()-activeCursorRed>400) {
+              flashCursorRed = 0;
+              activeCursorRed = 0;
+            }
+          }
+        
+          fill(255,0,0,(float)(redflashFac*255));
+          dRect(extraX+margin,appY+margin,appW,appCodonHeight-margin*2);
+        }
       }
     }
   }
+  
+  if(scrolling) {
+    pushMatrix();
+    double unit = h/g.codons.size();
+    double scrbar_h = unit*20;
+    double scrbar_y = unit*offset;
+    
+    fill(255);
+    dRect(x+w+40-5,scrbar_y,5,scrbar_h);
+    fill(255,0,0,(float)(redflashFac*255));
+    dRect(x+w+40-5,scrbar_y,5,scrbar_h);
+    popMatrix();
+  }
+  
   if(selectedCell == UGOcell){
     fill(255);
     textFont(font,60);
@@ -673,6 +789,23 @@ class ButtonChangeMemoryLocation extends Button{
   }
 }
 
+class ButtonChangeMark extends Button{
+  public ButtonChangeMark(String text) {
+    super(text, color(255,255,255), color(90,90,90));
+  }
+  
+  public boolean onClick(double rMouseX, double rMouseY) {
+    int diff = 1;
+    if(rMouseX < 0.5){
+      diff = -1;
+    }
+    
+    
+     editMark.markId += diff;
+    return false;
+  }
+}
+
 
 
 class ButtonCommon extends Button {
@@ -717,6 +850,7 @@ class ButtonEditAttribute extends ButtonCommon {
 Button[] codonAttributeButtons = new Button[CodonAttributes.values().length];
 AttributeRGL editRGL = new AttributeRGL(0,0);
 AttributeMemoryLocation editMemoryLoc = new AttributeMemoryLocation(0);
+AttributeMark editMark = new AttributeMark(0);
 {
   ArrayList<Button> buttons = new ArrayList();
   
@@ -724,6 +858,7 @@ AttributeMemoryLocation editMemoryLoc = new AttributeMemoryLocation(0);
     CodonAttribute att = CodonAttributes.values()[i].v;
     if (att instanceof AttributeRGL)att=editRGL;
     if (att instanceof AttributeMemoryLocation)att=editMemoryLoc;
+    if (att instanceof AttributeMark)att=editMark;
     buttons.add(new ButtonEditAttribute(att));
   }
   
@@ -732,6 +867,8 @@ AttributeMemoryLocation editMemoryLoc = new AttributeMemoryLocation(0);
   buttons.add(rglPos, new ButtonChangeRGL("- RGL start +", true));
   int memLocPos = CodonAttributes.MemoryLocation.ordinal() + 3;
   buttons.add(memLocPos, new ButtonChangeMemoryLocation("- MemLoc Id +"));
+  int markPos = CodonAttributes.Mark.ordinal() + 4;
+  buttons.add(markPos, new ButtonChangeMark("- Mark Id +"));
   
   codonAttributeButtons = buttons.toArray(new Button[buttons.size()]);
 }
@@ -790,7 +927,30 @@ void drawButtonTable(double[] dims, Button[] buttons){
   }
 }
 
-color colorInterp(color a, color b, double x){
+public void keyPressed() {
+  
+  if(selectedCell != null){
+    if (keyCode == 67 && (int)key == 3) { //ctrl c
+    String memory = "";
+    for(int pos = 0; pos < selectedCell.genome.codons.size(); pos++){
+      if(pos > 0){
+        memory = memory+"-";
+      }
+      Codon c = selectedCell.genome.codons.get(pos);
+      memory = memory+infoToString(c);
+    }
+    copyStringToClipboard(memory);
+    } else if (keyCode == 86 && (int)key == 22) { //ctrl v
+      String memory = getStringFromClipboard();
+      try {
+        selectedCell.genome = new Genome(memory,false);
+      } catch (Exception e){}
+    }
+  }
+  
+}
+
+public int colorInterp(int a, int b, double x){
   float newR = (float)(red(a)+(red(b)-red(a))*x);
   float newG = (float)(green(a)+(green(b)-green(a))*x);
   float newB = (float)(blue(a)+(blue(b)-blue(a))*x);
@@ -934,26 +1094,14 @@ color transperize(color col, double trans){
   return color(red(col),green(col),blue(col),alpha);
 }
 String infoToString(CodonPair codon){
-  
-  
-  String result = codonValToChar(codon.getType().id)+""+codonValToChar(codon.getAttribute().id);
-  if(codon.getAttribute() instanceof AttributeRGL){
-    AttributeRGL rgl = (AttributeRGL)codon.getAttribute();
-    result += codonValToChar(rgl.getStartLocation())+""+codonValToChar(rgl.getEndLocation()); //todo made this OOP
-  }
+  String result = codonValToChar(codon.getType().id)+""+codonValToChar(codon.getAttribute().id) + codon.getType().saveExtra() + codon.getAttribute().saveExtra();
   return result;
 }
 int[] stringToInfo(String str){
-  int[] info = new int[4];
-  for(int i = 0; i < 2; i++){
+  int[] info = new int[str.length()];
+  for(int i = 0; i < str.length(); i++){
       char c = str.charAt(i);
     info[i] = codonCharToVal(c);
-  }
-  if(info[1] == 7){
-    for(int i = 2; i < 4; i++){
-      char c = str.charAt(i);
-      info[i] = codonCharToVal(c);
-    }
   }
   return info;
 }

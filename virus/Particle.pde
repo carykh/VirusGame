@@ -95,6 +95,7 @@ class Particle{
       c.genome.performerOn += INJECT_SIZE;
     }
     c.genome.rotateOn += INJECT_SIZE;
+    c.genome.rotateOnNext += INJECT_SIZE;
     c.tamper();
     removeParticle();
     Particle newWaste = new Particle(coor,1,-99999);

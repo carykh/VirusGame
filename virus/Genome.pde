@@ -18,6 +18,8 @@ class Genome{
   double CODON_WIDTH = 1.4;
   boolean isUGO;
   
+  int scrollOffset = 0;
+  
   public Genome(String s, boolean isUGOp){
     codons = new ArrayList<Codon>();
     String[] parts = s.split("-");
@@ -149,7 +151,7 @@ class Genome{
     return str;
   }
   String getGenomeStringLengthened(){
-    if(codons.size() == 9){
+    if(codons.size() == 20){
       return getGenomeString();
     }else{
       return getGenomeString()+"-00";

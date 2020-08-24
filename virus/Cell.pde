@@ -18,6 +18,7 @@ class Cell{
   String memory = "";
   HashMap<Integer, AbsoluteRange> rangeMemory = new HashMap();
   AbsoluteRange lastRange = new AbsoluteRange(0, -1);
+  boolean wasSuccess;
   /*
   0: empty
   1: empty, inaccessible
@@ -39,6 +40,14 @@ class Cell{
     genome = new Genome(eg,false);
     genome.rotateOn = (int)(Math.random()*genome.codons.size());
     genome.rotateOnNext = genome.loopAroundGenome(genome.rotateOn+1);
+    
+    //we start at a random position but make sure that we are not in an invalid state!
+    for(int i=0;i<genome.rotateOn;i++) {
+      Codon c = genome.codons.get(i);
+      if (c.getType() instanceof CodonMoveHand) {
+        c.exec(this);
+      }
+    }
     geneTimer = Math.random()*GENE_TICK_TIME;
     energy = 0.5;
   }
@@ -164,8 +173,8 @@ class Cell{
   }
   public void doAction(){
     useEnergy();
-    Codon thisCodon = genome.codons.get(genome.rotateOn);
-    thisCodon.exec(this);
+    Codon thisCodon = genome.codons.get(genome.loopAroundGenome(genome.rotateOn));
+    wasSuccess = thisCodon.exec(this);
     
     genome.hurtCodons();
   }
@@ -179,7 +188,7 @@ class Cell{
     laserCoor.clear();
     laserT = frameCount;
     for(int pos = start; pos <= end; pos++){
-      int index = loopItInt((isRelative?genome.performerOn:0)+pos,genome.codons.size());
+      int index = genome.loopAroundGenome((isRelative?genome.performerOn:0)+pos);
       Codon c = genome.codons.get(index);
       memory = memory+infoToString(c);
       if(pos < end){
@@ -188,6 +197,20 @@ class Cell{
       laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
     }
   }
+  
+  
+  void removeCodons(int start, int end, boolean isRelative){
+    laserTarget = null;
+    laserCoor.clear();
+    laserT = frameCount;
+    for(int pos = start; pos <= end; pos++){
+      int index = genome.loopAroundGenome((isRelative?genome.performerOn:0)+start); //usual constant, but we might wrap around after deleting enough items
+      genome.codons.remove(index);
+      laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
+    }
+  }
+  
+  
   void writeFromMemory(int start, int end, boolean isRelative){
     if(memory.length() == 0){
       return;
@@ -221,7 +244,7 @@ class Cell{
     laserTarget = null;
     String[] memoryParts = memory.split("-");
     for(int pos = start; pos <= end; pos++){
-      int index = loopItInt((isRelative?genome.performerOn:0)+pos,genome.codons.size());
+      int index = genome.loopAroundGenome((isRelative?genome.performerOn:0)+pos);
       Codon c = genome.codons.get(index);
       if(pos-start < memoryParts.length){
         String memoryPart = memoryParts[pos-start];

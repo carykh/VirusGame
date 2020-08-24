@@ -53,19 +53,22 @@ class Codon extends CodonPair{ //this includes health
      this.attribute= attribute.clone(); 
   }
   
-  public void exec(Cell cell) {
-    type.exec(cell, attribute);
+  public boolean exec(Cell cell) {
+    return type.exec(cell, attribute);
   }
 }
 
 static CodonPair fromIntList(int[] ints) {
   CodonType type = CodonTypes.values()[ints[0]].v;
   CodonAttribute att = CodonAttributes.values()[ints[1]].v;
-  if (att == CodonAttributes.RGL00.v && ints[2] != 0 && ints[3]!=0) {
-     att = new AttributeRGL(ints[2], ints[3]);
-  }
-  //println(type + " " + att);
-  return new CodonPair(type, att);
+  
+  
+  CodonPair result = new CodonPair(type, att);
+  
+  //important to only edit the cloned ones from the result!
+  int offset = result.type.processExtra(ints, 2);
+  result.attribute.processExtra(ints, 2);
+  return result;
 }
 
 static class CodonPair{//just information 
@@ -101,8 +104,12 @@ enum CodonTypes{
   Read(new CodonRead()),
   Write(new CodonWrite()),
   Goto(new CodonGoto()),
-  MemTo(new CodonMemorizeTo());
-
+  MemTo(new CodonMemorizeTo()),
+  CondGoto(new CodonCondGoto()),
+  Compare(new CodonCompare()),
+  FindMarker(new CodonFindMarker()),
+  CondMark(new CodonCondMark()),
+  Exists(new CodonExists());
   
   public final CodonType v;
   private CodonTypes(CodonType value) {
@@ -122,7 +129,9 @@ enum CodonAttributes{
   Outward(new AttributeOutward()),
   RGL00(new AttributeRGL(0, 0)),
   UGO(new AttributeUGO()),
-  MemoryLocation( new AttributeMemoryLocation(0));
+  MemoryLocation( new AttributeMemoryLocation(0)),
+  Mark(new AttributeMark(0)),
+  Cursor(new AttributeCursor());
 
   
   public final CodonAttribute v;
@@ -133,7 +142,7 @@ enum CodonAttributes{
 
 
 static class CommonBase implements Cloneable {
-     int id;
+  int id;
   int[]  backColor;
   int[]  textColor;
   String name;
@@ -170,6 +179,16 @@ static class CommonBase implements Cloneable {
       return (CommonBase)super.clone(); 
     } catch(CloneNotSupportedException e) {return null;}
   }
+  
+  public boolean equals(Object o) {
+    return o instanceof CommonBase && ((CommonBase)o).id == id;
+  }
+  
+  public String saveExtra() {return "";}
+  
+  public int processExtra(int[] data, int offset) {
+    return offset; 
+  }
 }
 
 static int[] c(int v1, int v2, int v3) {
@@ -190,7 +209,8 @@ static class CodonType extends CommonBase {
     return (CodonType)super.clone(); 
   }
  
-  public void exec(Cell cell, CodonAttribute attribute) {
+  public boolean exec(Cell cell, CodonAttribute attribute) {
+    return false;
     //noOP
   }
 }
@@ -348,15 +368,15 @@ static class AttributeGenomeLoc extends AttributeGenomeCursor {
     
     
   public void setCursor(Cell cell) {
-    cell.genome.performerOn = getAbsoluteLoc(cell);
+    cell.genome.performerOn = getAbsoluteLoc(cell, false);
     cell.lastRange = new AbsoluteRange(cell.genome.performerOn, 0); 
   }
   
-  public int getAbsoluteLoc(Cell cell) {
-    return  getAbsoluteLoc(cell, 0);
+  public int getAbsoluteLoc(Cell cell, boolean cursor) {
+    return  getAbsoluteLoc(cell, cursor, 0);
   }
-  public int getAbsoluteLoc(Cell cell, int extraRelative) {
-    int result = isRelative?cell.genome.rotateOn+getLocation(cell):getLocation(cell);
+  public int getAbsoluteLoc(Cell cell, boolean cursor, int extraRelative) {
+    int result = isRelative?(cursor?cell.genome.rotateOn:cell.genome.performerOn)+getLocation(cell):getLocation(cell);
     result += extraRelative;
     return cell.genome.loopAroundGenome(result);
   }
@@ -419,6 +439,23 @@ static class AttributeRGL extends AttributeGenomeRange {
     return super.getTextSimple()+ " ("+loc+" to "+end+")";
   }
   
+  
+  
+  public boolean equals(Object o) {
+    AttributeRGL rgl;
+    return o instanceof AttributeRGL &&  super.equals(o) && (rgl=((AttributeRGL)o)).loc == loc && rgl.end == end;
+  }
+  
+  public String saveExtra() {
+    return "" +  codonValToChar(loc) + codonValToChar(end);
+  }
+  
+  public int processExtra(int[] data, int offset) {
+    loc = data[offset++];
+    end = data[offset++];
+    return offset; 
+  }
+  
 } 
 static class AbsoluteRange{
    int start;
@@ -435,6 +472,10 @@ static class AbsoluteRange{
    public int getEndResolved(Genome genome) {
      return genome.loopAroundGenome(getEnd()); 
    }
+   
+   public String toString() {
+     return start + ", " + length;
+   }
 }
 static class AttributeMemoryLocation extends AttributeGenomeRange {
   int memoryId;
@@ -443,7 +484,7 @@ static class AttributeMemoryLocation extends AttributeGenomeRange {
     this.memoryId = memoryId;
   }
   
-  public int getStartLocation(Cell cell) {
+  public int getLocation(Cell cell) {
     if (cell == null) return 0;
      AbsoluteRange r =  cell.rangeMemory.get(memoryId);
      return r==null?0:r.start; 
@@ -461,10 +502,70 @@ static class AttributeMemoryLocation extends AttributeGenomeRange {
     return super.getTextSimple()+ " ("+memoryId+")";
   }
   
+    
+  public boolean equals(Object o) {
+    return o instanceof AttributeMemoryLocation &&  super.equals(o) && ((AttributeMemoryLocation)o).memoryId == memoryId;
+  }
+  
+  public String saveExtra() {
+    return "" + codonValToChar(memoryId);
+  }
+  
+  public int processExtra(int[] data, int offset) {
+    memoryId = data[offset++];
+    return offset; 
+  }
+  
+  public boolean exists(Cell cell) {
+    return cell.rangeMemory.containsKey(memoryId);
+  }
+  
 } 
+
+static class AttributeMark extends CodonAttribute {
+  int markId;
+  public AttributeMark(int markId) {
+    super(10, c(0,200,200), c(255,255,255), "Mark"); //-1 is a placehoder
+    this.markId = markId;
+  }
+  
+  
+  public  String getTextSimple(){ 
+    return super.getTextSimple()+ " ("+markId+")";
+  }
+  
+    
+  public boolean equals(Object o) {
+    return o instanceof AttributeMark &&  super.equals(o) && ((AttributeMark)o).markId == markId;
+  }
+  
+  public String saveExtra() {
+    return "" + codonValToChar(markId);
+  }
+  
+  public int processExtra(int[] data, int offset) {
+    markId = data[offset++];
+    return offset; 
+  }
+  
+} 
+
+
+static class AttributeCursor extends AttributeGenomeLoc {
+  public AttributeCursor() {
+    super(11, c(140, 140, 140), c(255,255,255), "Cursor", -1, false); 
+  }
+  
+  
+    public int getLocation(Cell cell) {
+     return cell==null?-1:cell.genome.rotateOn; 
+  }
+}
+
+
 static class Attribute extends CodonAttribute {
   public Attribute() {
-    super(0, c(255,255,255), c(255,255,255), ""); 
+    super(-1, c(255,255,255), c(255,255,255), ""); 
   }
 } 
   
@@ -532,8 +633,8 @@ static class CodonNone extends CodonType {
     super(0, c(0,0,0), c(255,255,255), "none"); 
   }
   
-  public void exec(Cell cell, CodonAttribute attribute) {
-    //noOP
+  public boolean exec(Cell cell, CodonAttribute attribute) {
+    return false;//noOP
   }
 }
 static class CodonDigest extends CodonType {
@@ -541,19 +642,22 @@ static class CodonDigest extends CodonType {
     super(1, c(180,160,10), c(255,255,255), "digest"); 
   }
   
-  public void exec(Cell cell, CodonAttribute attribute) {
+  public boolean exec(Cell cell, CodonAttribute attribute) {
     if (cell.genome.directionOn == 0) {
       if (attribute instanceof AttributeParticle) {
         Particle foodToEat = cell.selectParticleInCell(((AttributeParticle)attribute).getParticle().ordinal()); // digest either "food" or "waste". (now even UGO is possible!! no attribute for that yet tho)
         if(foodToEat != null){
           cell.eat(foodToEat);
+          return true;
         }
       } else if (attribute instanceof AttributeWall) {
         cell.energy += (1-cell.energy)*E_RECIPROCAL*0.2;
         cell.hurtWall(26);
         cell.laserWall();
+        return true;
       }
     }
+    return false;
   }
 }
 static class CodonRemove extends CodonType {
@@ -561,17 +665,36 @@ static class CodonRemove extends CodonType {
     super(2, c(180, 160, 10), c(255,255,255), "remove"); 
   }
   
-  public void exec(Cell cell, CodonAttribute attribute) {
-    if (cell.genome.directionOn == 0) {
+  public boolean exec(Cell cell, CodonAttribute attribute) {
+    Genome genome = cell.genome;
+    if (genome.directionOn == 0) {
       if (attribute instanceof AttributeParticle) {
         Particle wasteToPushOut = cell.selectParticleInCell(((AttributeParticle)attribute).getParticle().ordinal()); // pushes out either "food" or "waste". (now even UGO is possible!! no attribute for that yet tho)
         if(wasteToPushOut != null){
           cell.pushOut(wasteToPushOut);
+          return true;
         }
       } else if (attribute instanceof AttributeWall) {
         cell.die();
-      }      
+        return true;
+      }
+    } else {
+      if (attribute instanceof AttributeGenomeLoc) {
+        AttributeGenomeLoc loc = (AttributeGenomeLoc)attribute;
+        int start = loc.getLocation(cell);
+        int end = start;
+        if (attribute instanceof AttributeGenomeRange) {
+          AttributeGenomeRange range = (AttributeGenomeRange)attribute;
+          end = range.getEndLocation(cell);
+        }
+        
+        cell.removeCodons(start, end, loc.isRelative);
+        
+        return true;
+      }
     }
+
+    return false;
   }
 }
 static class CodonRepair extends CodonType {
@@ -579,17 +702,20 @@ static class CodonRepair extends CodonType {
     super(3, c(0, 150, 0), c(255,255,255), "repair"); 
   }
   
-  public void exec(Cell cell, CodonAttribute attribute) {
+  public boolean exec(Cell cell, CodonAttribute attribute) {
     if (cell.genome.directionOn == 0) {
       if (attribute instanceof AttributeParticle) {
         Particle particle = cell.selectParticleInCell(((AttributeParticle)attribute).getParticle().ordinal());
         if(particle != null){
           cell.shootLaserAt(particle);
+          return true;
         }
       } else if (attribute instanceof AttributeWall) {
         cell.healWall();
+        return true;
       }      
     }
+    return false;
   }
 }
 static class CodonMoveHand extends CodonType {
@@ -597,11 +723,13 @@ static class CodonMoveHand extends CodonType {
     super(4, c(200, 0, 100), c(255,255,255), "move hand"); 
   }
   
-  public void exec(Cell cell, CodonAttribute attribute) {
+  public boolean exec(Cell cell, CodonAttribute attribute) {
     Genome genome = cell.genome;
     if(attribute instanceof AttributeGenomeCursor){
       ((AttributeGenomeCursor)attribute).setCursor(cell);
+      return true;
     }
+    return false;
   }
 }
 static class CodonRead extends CodonType {
@@ -609,7 +737,7 @@ static class CodonRead extends CodonType {
     super(5, c(70, 70, 255), c(255,255,255), "read"); 
   }
   
-  public void exec(Cell cell, CodonAttribute attribute) {
+  public boolean exec(Cell cell, CodonAttribute attribute) {
     Genome genome = cell.genome;
     if (attribute instanceof AttributeGenomeRange) {
       AttributeGenomeRange range = (AttributeGenomeRange)attribute;
@@ -619,7 +747,9 @@ static class CodonRead extends CodonType {
       cell.readToMemory(start, end, range.isRelative);
       
       cell.lastRange = new AbsoluteRange(genome.performerOn+start, end-start);
+      return true;
     }
+    return false;
   }
 }
 static class CodonWrite extends CodonType {
@@ -627,7 +757,7 @@ static class CodonWrite extends CodonType {
     super(6, c(0, 0, 220), c(255,255,255), "write"); 
   }
   
-  public void exec(Cell cell, CodonAttribute attribute) {
+  public boolean exec(Cell cell, CodonAttribute attribute) {
     Genome genome = cell.genome;
     if (attribute instanceof AttributeGenomeRange) {
       AttributeGenomeRange range = (AttributeGenomeRange)attribute;
@@ -638,8 +768,10 @@ static class CodonWrite extends CodonType {
       cell.writeFromMemory(start, end, range.isRelative);
       
       cell.lastRange = new AbsoluteRange(genome.performerOn+start, end-start);
+      return true;
     } else {
       cell.writeFromMemory(0, 0, true); 
+      return true;
     }
   }
 }
@@ -648,12 +780,14 @@ static class CodonGoto extends CodonType {
     super(7, c(200, 200, 0), c(255,255,255), "goto"); 
   }
   
-  public void exec(Cell cell, CodonAttribute attribute) {
+  public boolean exec(Cell cell, CodonAttribute attribute) {
     Genome genome = cell.genome;
     if(attribute instanceof AttributeGenomeLoc){
-      genome.rotateOnNext = ((AttributeGenomeLoc)attribute).getAbsoluteLoc(cell);
+      genome.rotateOnNext = ((AttributeGenomeLoc)attribute).getAbsoluteLoc(cell, true);
       cell.lastRange = new AbsoluteRange(genome.rotateOnNext, 0);
+      return true;
     }
+    return false;
   }
 }
 
@@ -662,10 +796,120 @@ static class CodonMemorizeTo extends CodonType {
     super(8, c(100, 100, 0), c(255,255,255), "Mem To"); 
   }
   
-  public void exec(Cell cell, CodonAttribute attribute) {
+  public boolean exec(Cell cell, CodonAttribute attribute) {
     if(attribute instanceof AttributeMemoryLocation){
       int memoryId = ((AttributeMemoryLocation)attribute).memoryId;
       cell.rangeMemory.put(memoryId, cell.lastRange);
+      return true;
     }
+    return false;
+  }
+}
+
+static class CodonCondGoto extends CodonType {
+  public CodonCondGoto() {
+    super(9, c(200, 200, 0), c(255,255,255), "cond goto"); 
+  }
+  
+  public boolean exec(Cell cell, CodonAttribute attribute) {
+    Genome genome = cell.genome;
+    if (!cell.wasSuccess) return true;
+    if(attribute instanceof AttributeGenomeLoc){
+      genome.rotateOnNext = ((AttributeGenomeLoc)attribute).getAbsoluteLoc(cell, true);
+      cell.lastRange = new AbsoluteRange(genome.rotateOnNext, 0);
+      return true;
+    }
+    return false;
+  }
+}
+
+static class CodonCompare extends CodonType {
+  public CodonCompare() {
+    super(10, c(200, 100, 0), c(255,255,255), "compare"); 
+  }
+  
+  public boolean exec(Cell cell, CodonAttribute attribute) {
+    Genome genome = cell.genome;
+    if (attribute instanceof AttributeGenomeLoc) {
+      AttributeGenomeLoc loc = (AttributeGenomeLoc)attribute;
+      String oldmemory = cell.memory;
+      int start = loc.getLocation(cell);
+      int end = start;
+      if (attribute instanceof AttributeGenomeRange) {
+        AttributeGenomeRange range = (AttributeGenomeRange)attribute;
+        end = range.getEndLocation(cell);
+      }
+      
+      cell.readToMemory(start, end, loc.isRelative);
+      
+      cell.lastRange = new AbsoluteRange(genome.performerOn+start, end-start);
+      String newmemory = cell.memory;
+      cell.memory = oldmemory;
+      
+      return oldmemory.startsWith(newmemory) || newmemory.startsWith(oldmemory);
+    }
+    return false;
+  }
+}
+
+static class CodonFindMarker extends CodonType {
+  public CodonFindMarker() {
+    super(11, c(0, 200, 200), c(255,255,255), "find marker"); 
+  }
+  
+  public boolean exec(Cell cell, CodonAttribute attribute) {
+    Genome genome = cell.genome;
+    for(int pos = 1; pos < genome.codons.size(); pos++){
+      int index = genome.loopAroundGenome(genome.performerOn+pos);
+      //we dont want to find ourselves!
+      if (index == genome.rotateOn)continue;
+      
+      Codon c = genome.codons.get(index);
+      if (c.getAttribute().equals(attribute)) {
+         cell.lastRange = new AbsoluteRange(index, 0);
+         return true;
+      }
+    }
+    return false;
+  }
+}
+
+
+
+static class CodonCondMark extends CodonType {
+  public CodonCondMark() {
+    super(12, c(0, 200, 200), c(255,255,255), "cond mark"); 
+  }
+  
+  public boolean exec(Cell cell, CodonAttribute attribute) {
+    Genome genome = cell.genome;
+    
+    
+    if (!cell.wasSuccess) return false;
+    
+    int loc = genome.loopAroundGenome(cell.lastRange.start);
+    
+    
+    Codon c = genome.codons.get(loc);
+    c.setAttribute(attribute);
+    
+    return true;
+  }
+}
+
+static class CodonExists extends CodonType {
+  public CodonExists() {
+    super(13, c(200, 100, 50), c(255,255,255), "exists"); 
+  }
+  
+  public boolean exec(Cell cell, CodonAttribute attribute) {
+    Genome genome = cell.genome;
+    if (attribute instanceof AttributeParticle) {
+      Particle particle = cell.selectParticleInCell(((AttributeParticle)attribute).getParticle().ordinal());
+      return particle != null;
+    } else if (attribute instanceof AttributeMemoryLocation) {
+      return ((AttributeMemoryLocation)attribute).exists(cell);
+    }     
+    return false;
   }
 }
