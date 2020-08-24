@@ -6,6 +6,11 @@ class Codon extends CodonPair{ //this includes health
   double codonHealth = 1;
   
   
+  public Codon() {
+    super(CodonTypes.None.v, CodonAttributes.None.v);
+  }
+  
+  
   public Codon(CodonPair codon) {
     super(codon);
   }

@@ -172,11 +172,11 @@ class Cell{
     }
   }
   public void doAction(){
-    useEnergy();
+    if(!DEBUG_WORLD)useEnergy();
     Codon thisCodon = genome.codons.get(genome.loopAroundGenome(genome.rotateOn));
     wasSuccess = thisCodon.exec(this);
     
-    genome.hurtCodons();
+    if(!DEBUG_WORLD)genome.hurtCodons();
   }
   
   void useEnergy(){

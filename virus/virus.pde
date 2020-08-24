@@ -1,3 +1,5 @@
+boolean DEBUG_WORLD = false;
+
 int WORLD_SIZE = 12;
 int W_W = 1728;
 int W_H = 972;
@@ -5,8 +7,8 @@ Cell[][] cells = new Cell[WORLD_SIZE][WORLD_SIZE];
 ArrayList<ArrayList<Particle>> particles = new ArrayList<ArrayList<Particle>>(0);
 int foodLimit = 180;
 float BIG_FACTOR = 100;
-float PLAY_SPEED = 0.6;
-double GENE_TICK_TIME = 40;// speed up to accomudate that we need to a lot more
+float PLAY_SPEED = DEBUG_WORLD?1:0.6;
+double GENE_TICK_TIME = DEBUG_WORLD?20:40;
 double margin = 4;
 int START_LIVING_COUNT = 0;
 int[] cellCounts = {0,0,0};
@@ -19,8 +21,8 @@ double WALL_DAMAGE = 0.01f;
 static double CODON_DEGRADE_SPEED = 0.008f;
 static double EPS = 0.00000001f;
 
-String starterGenome = "46-11-22-33-11-22-33-45-44-5700-6700";
-boolean canDrag = false;
+String starterGenome = DEBUG_WORLD?"33":"46-11-22-33-11-22-33-45-44-5700-6700";
+boolean canDragWorld = false;
 double clickWorldX = -1;
 double clickWorldY = -1;
 boolean DQclick = false;
@@ -47,6 +49,10 @@ int flashCursorRed = 0;
 int activeCursorRed = 0;
 boolean activeCursorHighLow = false;
 boolean scrollLocked = true;
+
+int dragAndDropCodonId = -1;
+double dragAndDropRX;
+double dragAndDropRY;
 
 
 static char[] encording = "0123456789abcdefghijklmnopqrstuvwxyz!£$%^&*()[]{}_,.<>;:'@#~|\\/=+`¬¦ZYXWVUTSRQPONMLKJIHGFEDCBA".toCharArray(); //do not use '-' it is the seperator char
@@ -233,13 +239,94 @@ void checkUGOclick(){
     }
   }
 }
-void checkGLclick(){
+
+void checkGLdrag() {
   double gx = genomeListDims[0];
   double gy = genomeListDims[1];
   double gw = genomeListDims[2];
   double gh = genomeListDims[3];
   double rMouseX = ((mouseX-W_H)-gx)/gw;
   double rMouseY = (mouseY-gy)/gh;
+  
+  Genome g = selectedCell.genome;
+  int GENOME_LENGTH = g.codons.size();
+  if (GENOME_LENGTH > VIEW_FIELD_DIS_CNT) {
+    GENOME_LENGTH = VIEW_FIELD_DIS_CNT;
+  }
+  double appCodonHeight = gh/GENOME_LENGTH;
+  
+  if(rMouseX >= 0 && rMouseX < 1 && rMouseY >= 0 && rMouseY < 1){
+    if(rMouseY < 1){
+  
+      dragAndDropCodonId = (int)(rMouseY*min(g.codons.size(), VIEW_FIELD_DIS_CNT)) + g.scrollOffset;
+      dragAndDropRX = rMouseX * gw;
+      dragAndDropRY = rMouseY * gh - appCodonHeight * (dragAndDropCodonId - g.scrollOffset);
+    }
+  }
+}
+
+
+void releaseGLdrag() {
+  double gx = genomeListDims[0];
+  double gy = genomeListDims[1];
+  double gw = genomeListDims[2];
+  double gh = genomeListDims[3];
+  
+  Genome g = selectedCell.genome;
+  int GENOME_LENGTH = g.codons.size();
+  if (GENOME_LENGTH > VIEW_FIELD_DIS_CNT) {
+    GENOME_LENGTH = VIEW_FIELD_DIS_CNT;
+  }
+  double appCodonHeight = gh/GENOME_LENGTH;
+  
+  double arrowUIX =  mouseX - gx - W_H;
+  double arrowUIY = mouseY - gy + appCodonHeight/2;
+  int arrowRowY = (int)(arrowUIY/appCodonHeight);
+  if (arrowRowY >= 0 && arrowRowY <= GENOME_LENGTH) {
+    Codon dragged =g.codons.get(dragAndDropCodonId);
+    int newId = arrowRowY + g.scrollOffset;
+    if (newId != dragAndDropCodonId) {
+      if (newId > dragAndDropCodonId)newId--;
+      g.codons.remove(dragAndDropCodonId);
+      g.codons.add(newId, dragged);
+    }
+    dragAndDropCodonId = -1;
+  }
+  
+}
+
+void checkGLclick(){
+  if (dragAndDropCodonId > 0)return;
+  double gx = genomeListDims[0];
+  double gy = genomeListDims[1];
+  double gw = genomeListDims[2];
+  double gh = genomeListDims[3];
+  double rMouseX = ((mouseX-W_H)-gx)/gw;
+  double rMouseY = (mouseY-gy)/gh;
+  
+   //add arrow
+  Genome g = selectedCell.genome;
+  int GENOME_LENGTH = g.codons.size();
+  int offset = Math.max(0, Math.min(g.scrollOffset, GENOME_LENGTH-VIEW_FIELD_DIS_CNT));
+  
+  if (GENOME_LENGTH > VIEW_FIELD_DIS_CNT) {
+    GENOME_LENGTH = VIEW_FIELD_DIS_CNT;
+  }
+  
+ 
+  double appCodonHeight = gh/GENOME_LENGTH;
+    
+  double arrowUIX =  mouseX - gx - W_H;
+  double arrowUIY = mouseY - gy + appCodonHeight/2;
+  int arrowRowY = (int)(arrowUIY/appCodonHeight);
+  double arrowH = min(80, (float)appCodonHeight);
+  
+  double crossUIX =  mouseX - gx - W_H - gw;
+  double crossUIY = mouseY - gy;
+  int rowCY = (int)(crossUIY/appCodonHeight);
+
+  
+  
   if(rMouseX >= 0 && rMouseX < 1 && rMouseY >= 0){
     if(rMouseY < 1){
       codonToEdit[0] = (int)(rMouseX*2);
@@ -253,6 +340,13 @@ void checkGLclick(){
         selectedCell = UGOcell = new Cell(-1,-1,2,0,1,genomeString);
       }
     }
+  } else if (arrowRowY >= 0 && arrowRowY <= GENOME_LENGTH && arrowUIX >= -50 && arrowUIX <= 5) {
+      g.codons.add(arrowRowY + offset, new Codon());
+  } else if (rowCY >= 0 && rowCY < GENOME_LENGTH && crossUIX >= -5 && crossUIX <= 50) {
+      g.codons.remove(rowCY + offset);
+      if (g.codons.size() == 0) {
+        g.codons.add(new Codon());
+      }
   }
 }
 void checkETclick(){
@@ -260,8 +354,15 @@ void checkETclick(){
   double ey = editListDims[1];
   double ew = editListDims[2];
   double eh = editListDims[3];
+  
+  //codon rows
   double rMouseX = ((mouseX-W_H)-ex)/ew;
   double rMouseY = (mouseY-ey)/eh;
+  
+ 
+  
+  
+  
   if(rMouseX >= 0 && rMouseX < 1 && rMouseY >= 0 && rMouseY < 1){
     Button[] currentButtons = codonToEdit[0]==0?codonTypeButtons:codonAttributeButtons;
     
@@ -274,9 +375,11 @@ void checkETclick(){
             lastEditTimeStamp = frameCount;
             selectedCell.tamper();
      }
+     
     
+
     
-    if(codonToEdit[0] == 1 && choice >= optionCount-2){
+    if(codonToEdit[0] == 1 && choice >= optionCount-2){ 
       int diff = 1;
       if(rMouseX < 0.5){
         diff = -1;
@@ -312,7 +415,7 @@ void checkETclick(){
     //    }
     //  }
     //  }
-  }else{
+  } else{
     codonToEdit[0] = codonToEdit[1] = -1;
     scrollLocked = true;
   }
@@ -328,10 +431,15 @@ int loopCodonInfo(int val){
 }
 
 
+double dragStartX;
+double dragStartY;
+
 void detectMouse(){
   if (mousePressed){
     arrowToDraw = null;
     if(!wasMouseDown) {
+      dragStartX = mouseX;
+      dragStartY = mouseY;
       
       if(mouseX < W_H){
         boolean buttonPressed = true;
@@ -355,10 +463,10 @@ void detectMouse(){
           codonToEdit[0] = codonToEdit[1] = -1;
           clickWorldX = appXtoTrueX(mouseX);
           clickWorldY = appYtoTrueY(mouseY);
-          canDrag = true;
+          canDragWorld = true;
         }
         if (buttonPressed) {
-          canDrag = false;
+          canDragWorld = false;
           wasMouseDown = true;
           return; //fix bug that moven screen when pressing button
         }
@@ -378,32 +486,41 @@ void detectMouse(){
           selectedCell = UGOcell;
           selectedUGO=null;
         }
-        canDrag = false;
+        canDragWorld = false;
       }
       DQclick = false;
-    }else if(canDrag){
-      double newCX = appXtoTrueX(mouseX);
-      double newCY = appYtoTrueY(mouseY);
-      if(newCX != clickWorldX || newCY != clickWorldY){
-        DQclick = true;
-      }
-      if(selectedCell == UGOcell){
-        stroke(0,0,0);
-        arrowToDraw = new double[]{clickWorldX,clickWorldY,newCX,newCY};
-      }else{
-        camX -= (newCX-clickWorldX);
-        camY -= (newCY-clickWorldY);
+    }else {
+      double dragDistSQ = (dragStartX-mouseX)*(dragStartX-mouseX)+(dragStartY-mouseY)*(dragStartY-mouseY); //this is squared, always compare with sqaured number
+      if(canDragWorld){
+        double newCX = appXtoTrueX(mouseX);
+        double newCY = appYtoTrueY(mouseY);
+        if(newCX != clickWorldX || newCY != clickWorldY){
+          DQclick = true;
+        }
+        if(selectedCell == UGOcell){
+          stroke(0,0,0);
+          arrowToDraw = new double[]{clickWorldX,clickWorldY,newCX,newCY};
+        }else{
+          camX -= (newCX-clickWorldX);
+          camY -= (newCY-clickWorldY);
+        }
+      } else if (selectedCell != null && dragDistSQ > 10 && dragAndDropCodonId < 0) {
+        checkGLdrag();
       }
     }
   }
   if(!mousePressed){
     if(wasMouseDown){
-      if(selectedCell == UGOcell && arrowToDraw != null){
+      if (dragAndDropCodonId >= 0) {
+        releaseGLdrag();
+      } else if(selectedCell == UGOcell && arrowToDraw != null){
         if(euclidLength(arrowToDraw) > MIN_ARROW_LENGTH_TO_PRODUCE){
           produceUGO(arrowToDraw);
         }
       }
-      if(!DQclick && canDrag){
+      
+      
+      if(!DQclick && canDragWorld){
         double[] mCoor = {clickWorldX,clickWorldY};
         Cell clickedCell = getCellAt(mCoor,false);
         if(selectedCell != UGOcell){
@@ -440,7 +557,6 @@ public void mouseWheel(processing.event.MouseEvent event) {
           g.scrollOffset = codonToEdit[1];
           flashCursorRed++;
         } else if (scrollLocked && codonToEdit[1] >= g.scrollOffset+VIEW_FIELD_DIS_CNT) {
-          println ("setting offset from " + g.scrollOffset + " to " + Math.min(codonToEdit[1]+VIEW_FIELD_DIS_CNT-1, GENOME_LENGTH-VIEW_FIELD_DIS_CNT)); 
           g.scrollOffset = Math.max(codonToEdit[1]-VIEW_FIELD_DIS_CNT+1, 0);
           flashCursorRed++;
         }
@@ -448,7 +564,6 @@ public void mouseWheel(processing.event.MouseEvent event) {
            activeCursorRed = millis();
         }
         if (flashCursorRed>5&(millis()-activeCursorRed)>200) {
-           println("reseting now!");
            scrollLocked = false;
            activeCursorRed = 0;
            flashCursorRed = 0;
@@ -604,6 +719,7 @@ void drawCellStats(){
   drawButtonTable(editListDims, codonToEdit[0]==0?codonTypeButtons:codonAttributeButtons);
   //drawEditTable(editListDims);
   if(!isUGO){
+    fill(255);
     textFont(font,32);
     textAlign(LEFT);
     text("Memory: "+getMemory(selectedCell),25,940);
@@ -658,26 +774,13 @@ public void drawGenomeAsList(Genome g, double[] dims){
   
   double redflashFac = 0;
   for(int i = 0; i < GENOME_LENGTH; i++){
+    if (i+offset == dragAndDropCodonId) continue;
     double appY = appCodonHeight*i;
     Codon codon = g.codons.get(i+offset);
+    
+    drawCodon(codon, 0, appY, w, appW, appCodonHeight);
     for(int p = 0; p < 2; p++){
       double extraX = (w*0.5-margin)*p;
-      color fillColor = codon.getColor(p);
-      color textColor = codon.getTextColor(p);
-      fill(0);
-      dRect(extraX+margin,appY+margin,appW,appCodonHeight-margin*2);
-      if(codon.hasSubstance()){
-        fill(fillColor);
-        double trueW = appW*codon.codonHealth;
-        double trueX = extraX+margin;
-        if(p == 0){
-          trueX += appW*(1-codon.codonHealth);
-        }
-        dRect(trueX,appY+margin,trueW,appCodonHeight-margin*2);
-      }
-      fill(textColor);
-      dText(codon.getText(p),extraX+w*0.25,appY+appCodonHeight/2+11);
-      
       if(p == codonToEdit[0] && i + offset == codonToEdit[1]){
         double highlightFac = 0.5f+0.5f*sin(frameCount*0.25f);
         fill(255,255,255,(float)(highlightFac*140));
@@ -707,7 +810,6 @@ public void drawGenomeAsList(Genome g, double[] dims){
   }
   
   if(scrolling) {
-    pushMatrix();
     double unit = h/g.codons.size();
     double scrbar_h = unit*20;
     double scrbar_y = unit*offset;
@@ -716,7 +818,6 @@ public void drawGenomeAsList(Genome g, double[] dims){
     dRect(x+w+40-5,scrbar_y,5,scrbar_h);
     fill(255,0,0,(float)(redflashFac*255));
     dRect(x+w+40-5,scrbar_y,5,scrbar_h);
-    popMatrix();
   }
   
   if(selectedCell == UGOcell){
@@ -726,7 +827,57 @@ public void drawGenomeAsList(Genome g, double[] dims){
     dText("( - )",w*0.25,avgY+11);
     dText("( + )",w*0.75-margin,avgY+11);
   }
+  
+  
+  
+  //drag and drop
+  if (dragAndDropCodonId >= 0 && dragAndDropCodonId<g.codons.size()) {
+    
+    textFont(font,30);
+    textAlign(CENTER);
+    drawCodon(g.codons.get(dragAndDropCodonId), mouseX-x-W_H-dragAndDropRX, mouseY-y-dragAndDropRY, w, appW, appCodonHeight);
+    
+  } else {
+    //add button
+    
+    double arrrowUIX =  mouseX - x - W_H;
+    double arrrowUIY = mouseY - y + appCodonHeight/2;
+    int rowAY = (int)(arrrowUIY/appCodonHeight);
+    if (rowAY >= 0 && rowAY <= GENOME_LENGTH && arrrowUIX >= -70 && arrrowUIX <= 25) {
+      drawAddArrows(0, rowAY*appCodonHeight, min(80, (float)appCodonHeight));
+    }
+    
+    //remove button
+    double crossUIX =  mouseX - x - W_H - w;
+    double crossUIY = mouseY - y;
+    int rowCY = (int)(crossUIY/appCodonHeight);
+    if (rowCY >= 0 && rowCY < GENOME_LENGTH && crossUIX >= -25 && crossUIX <= 70) {
+      drawRemoveCross(w+30, (rowCY+0.5)*appCodonHeight, min(60, (float)(appCodonHeight-2*margin)), 60, 15);
+    }
+  }
+  
   popMatrix();
+}
+
+void drawCodon(Codon codon, double x, double y, double w, double appW, double appCodonHeight) {
+    for(int p = 0; p < 2; p++){
+    double extraX = (w*0.5-margin)*p;
+      color fillColor = codon.getColor(p);
+      color textColor = codon.getTextColor(p);
+      fill(0);
+      dRect(x+extraX+margin,y+margin,appW,appCodonHeight-margin*2);
+      if(codon.hasSubstance()){
+        fill(fillColor);
+        double trueW = appW*codon.codonHealth;
+        double trueX = x+extraX+margin;
+        if(p == 0){
+          trueX += appW*(1-codon.codonHealth);
+        }
+        dRect(trueX,y+margin,trueW,appCodonHeight-margin*2);
+      }
+      fill(textColor);
+      dText(codon.getText(p),x+extraX+w*0.25,y+appCodonHeight/2+11);
+    }
 }
 
 class Button {
@@ -956,6 +1107,52 @@ public int colorInterp(int a, int b, double x){
   float newB = (float)(blue(a)+(blue(b)-blue(a))*x);
   return color(newR, newG, newB);
 }
+void drawAddArrows(double x, double y, float arrowH){
+  dTranslate(x, y);
+  fill(color(100,255,0));
+  beginShape();
+  vertex(-5,0);
+  vertex(-45, -arrowH/2);
+  vertex(-45,  arrowH/2);
+  endShape(CLOSE);
+  dTranslate(-x, -y);
+}
+
+void drawRemoveCross(double x, double y, float cSize, float baseScale, float cWidth){ 
+  cWidth *= cSize/baseScale;
+  
+  dTranslate(x, y);
+  fill(color(160,30,30));
+  beginShape();
+  float min = -cSize/2;
+  float max = cSize/2;
+  float pythagorasC = sqrt(1/(float)2)*cWidth;
+  
+  
+  vertex(min+pythagorasC, min);
+  vertex(min, min+pythagorasC);
+  vertex(max-pythagorasC, max);
+  
+  vertex(max-pythagorasC, max);
+  vertex(max, max-pythagorasC);
+  vertex(min+pythagorasC, min);
+  
+  
+  
+  
+  vertex(min, max-pythagorasC);
+  vertex(min+pythagorasC, max);
+  vertex(max, min+pythagorasC);
+  
+  vertex(max, min+pythagorasC);
+  vertex(max-pythagorasC, min);
+  vertex(min, max-pythagorasC);
+  
+ 
+  endShape(CLOSE);
+  dTranslate(-x, -y);
+}
+
 void drawGenomeArrows(double dw, double dh){
   float w = (float)dw;
   float h = (float)dh;
@@ -1084,6 +1281,7 @@ double loopIt(double x, double len, boolean evenSplit){
   return x;
 }
 static int loopItInt(int x, int len){
+  if (len == 0)return 0;
   return (x+len*10)%len;
 }
 color intToColor(int[] c){
