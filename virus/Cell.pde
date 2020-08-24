@@ -302,10 +302,17 @@ class Cell{
   }
   public void pushOut(Particle waste){
     int[][] dire = {{0,1},{0,-1},{1,0},{-1,0}};
-    int chosen = -1;
-    while(chosen == -1 || cells[y+dire[chosen][1]][x+dire[chosen][0]].type != 0){
-      chosen = (int)random(0,4);
+    boolean canPushOut = false;
+    for(int i = 0; i < 4; i++) {
+      if(!(y+dire[i][1] > WORLD_SIZE - 1 || y+dire[i][1] < 0 || x+dire[i][0] > WORLD_SIZE - 1 || x+dire[i][0] < 0 || cells[y+dire[i][1]][x+dire[i][0]].type != 0)) {
+        canPushOut = true;
+      }
     }
+    if(canPushOut) {
+      int chosen = -1;
+      while(chosen == -1 || y+dire[chosen][1] > WORLD_SIZE - 1 || y+dire[chosen][1] < 0 || x+dire[chosen][0] > WORLD_SIZE - 1 || x+dire[chosen][0] < 0 || cells[y+dire[chosen][1]][x+dire[chosen][0]].type != 0){
+        chosen = (int)random(0,4);
+      }
     double[] oldCoor = waste.copyCoor();
     for(int dim = 0; dim < 2; dim++){
       if(dire[chosen][dim] == -1){
@@ -323,7 +330,9 @@ class Cell{
     n_cell.addParticleToCell(waste);
     laserT = frameCount;
     laserTarget = waste;
+    }
   }
+  
   public void tickGene(){
     geneTimer += GENE_TICK_TIME;
     
