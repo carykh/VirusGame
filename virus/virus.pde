@@ -1,8 +1,11 @@
 boolean DEBUG_WORLD = false;
 
 int WORLD_SIZE = 12;
-int W_W = 1728;
-int W_H = 972;
+final int ORIG_W_W = 1728;
+final int ORIG_W_H = 972;
+int W_W = ORIG_W_W;
+int W_H = ORIG_W_H;
+final double screenRatio = ORIG_W_W/(double)ORIG_W_H;
 Cell[][] cells = new Cell[WORLD_SIZE][WORLD_SIZE];
 ArrayList<ArrayList<Particle>> particles = new ArrayList<ArrayList<Particle>>(0);
 int foodLimit = 180;
@@ -27,8 +30,8 @@ double clickWorldX = -1;
 double clickWorldY = -1;
 boolean DQclick = false;
 int[] codonToEdit = {-1,-1,0,0};
-double[] genomeListDims = {70,430,360,450};
-double[] editListDims = {550,430,180,450};
+Dim genomeListDims = new Dim(70,430,360,450);
+Dim editListDims = new Dim(550,430,180,450);
 double[] arrowToDraw = null;
 Particle selectedUGO = null;
 Cell selectedCell = null;
@@ -53,6 +56,38 @@ boolean scrollLocked = true;
 int dragAndDropCodonId = -1;
 double dragAndDropRX;
 double dragAndDropRY;
+
+static double globalUIScale = 1;
+static class Dim{
+  private final double x;
+  private final double y;
+  private final double w;
+  private final double h;
+  
+  public Dim(double x, double y, double w, double h) {
+     this.x = x; 
+     this.y = y;
+     this.w = w;
+     this.h = h;
+  }
+  
+  public double getX() {
+    return x;  
+  }
+  
+  public double getY() {
+    return y;  
+  }
+  
+  public double getW() {
+    return w;  
+  }
+  
+  public double getH() {
+    return h;  
+  }
+  
+}
 
 
 static char[] encording = "0123456789abcdefghijklmnopqrstuvwxyz!£$%^&*()[]{}_,.<>;:'@#~|\\/=+`¬¦ZYXWVUTSRQPONMLKJIHGFEDCBA".toCharArray(); //do not use '-' it is the seperator char
@@ -94,6 +129,13 @@ void setup(){
   size(1728,972);
   noSmooth();
   UGOcell = new Cell(-1,-1,2,0,1,"00-00-00-00-00");
+  
+  surface.setResizable(true);
+  surface.setSize((int)(W_W * globalUIScale), (int)(W_H * globalUIScale));
+  surface.setResizable(false);
+  //W_W = (int)(ORIG_W_W*globalUIScale);
+  //W_H = (int)(ORIG_W_H*globalUIScale);
+  //camS *=globalUIScale;
 }
 int getTypeFromXY(int preX, int preY){
   int[] weirdo = {0,1,1,2};
@@ -125,6 +167,7 @@ double camY = 0;
 double MIN_CAM_S = ((float)W_H)/WORLD_SIZE;
 double camS = MIN_CAM_S;
 void draw(){
+  scale((float)globalUIScale);
   doParticleCountControl();
   iterate();
   detectMouse();
@@ -142,12 +185,12 @@ void drawSpeedControl(){
   {
     rect(10+i*75,10,65,40);
   }
-  textFont(font,48);
+  setTextFont(font,48);
   fill(255);
   textAlign(CENTER, CENTER);
   text("<<", 43, 30);
   text(">>", (10+75*2+33), 30);
-  textFont(font,38);
+  setTextFont(font,38);
   text("x"+String.format("%.1f", PLAY_SPEED), (10+75+33), 30);
 }
 void drawExtras(){
@@ -241,10 +284,10 @@ void checkUGOclick(){
 }
 
 void checkGLdrag() {
-  double gx = genomeListDims[0];
-  double gy = genomeListDims[1];
-  double gw = genomeListDims[2];
-  double gh = genomeListDims[3];
+  double gx = genomeListDims.getX();
+  double gy = genomeListDims.getY();
+  double gw = genomeListDims.getW();
+  double gh = genomeListDims.getH();
   double rMouseX = ((mouseX-W_H)-gx)/gw;
   double rMouseY = (mouseY-gy)/gh;
   
@@ -268,10 +311,10 @@ void checkGLdrag() {
 
 
 void releaseGLdrag() {
-  double gx = genomeListDims[0];
-  double gy = genomeListDims[1];
-  double gw = genomeListDims[2];
-  double gh = genomeListDims[3];
+  double gx = genomeListDims.getX();
+  double gy = genomeListDims.getY();
+  double gw = genomeListDims.getW();
+  double gh = genomeListDims.getH();
   
   double minX =-0.25*gw;
   double maxX =+1.25*gw;
@@ -302,10 +345,10 @@ void releaseGLdrag() {
 
 void checkGLclick(){
   if (dragAndDropCodonId > 0)return;
-  double gx = genomeListDims[0];
-  double gy = genomeListDims[1];
-  double gw = genomeListDims[2];
-  double gh = genomeListDims[3];
+  double gx = genomeListDims.getX();
+  double gy = genomeListDims.getY();
+  double gw = genomeListDims.getW();
+  double gh = genomeListDims.getH();
   double rMouseX = ((mouseX-W_H)-gx)/gw;
   double rMouseY = (mouseY-gy)/gh;
   
@@ -355,10 +398,10 @@ void checkGLclick(){
   }
 }
 void checkETclick(){
-  double ex = editListDims[0];
-  double ey = editListDims[1];
-  double ew = editListDims[2];
-  double eh = editListDims[3];
+  double ex = editListDims.getX();
+  double ey = editListDims.getY();
+  double ew = editListDims.getW();
+  double eh = editListDims.getH();
   
   //codon rows
   double rMouseX = ((mouseX-W_H)-ex)/ew;
@@ -584,11 +627,11 @@ void produceUGO(double[] coor){
   }
 }
 
-public boolean dimWithinBox(double[] dims, double x, double y) {
-  double dx = dims[0];
-  double dy = dims[1];
-  double w = dims[2] + dx;
-  double h = dims[3] + dy;
+public boolean dimWithinBox(Dim dims, double x, double y) {
+  double dx = dims.getX();
+  double dy = dims.getY();
+  double w = dims.getW() + dx;
+  double h = dims.getH() + dy;
   return dx < x && x <= w && dy < y && y <= h;
 }
 public void drawBackground(){
@@ -632,11 +675,11 @@ void drawUI(){
   noStroke();
   rect(0,0,W_W-W_H,W_H);
   fill(255);
-  textFont(font,48);
+  setTextFont(font,48);
   textAlign(LEFT);
   text(framesToTime(frameCount)+" start",25,60);
   text(framesToTime(frameCount-lastEditTimeStamp)+" edit",25,108);
-  textFont(font,36);
+  setTextFont(font,36);
   text("Healthy: "+cellCounts[0]+" / "+START_LIVING_COUNT,360,50);
   text("Tampered: "+cellCounts[1]+" / "+START_LIVING_COUNT,360,90);
   text("Dead: "+cellCounts[2]+" / "+START_LIVING_COUNT,360,130);
@@ -649,7 +692,7 @@ void drawUI(){
     noStroke();
     rect(10,160,530,W_H-170);
     fill(255);
-    textFont(font,96);
+    setTextFont(font,96);
     textAlign(LEFT);
     text("Selected UGO",25,255);
     drawGenomeAsList(selectedUGO.UGO_genome,genomeListDims);
@@ -664,11 +707,11 @@ void drawUGObutton(boolean drawUGO){
   fill(255);
   textAlign(CENTER);
   if(drawUGO){
-    textFont(font,48);
+    setTextFont(font,48);
     text("MAKE",W_W-70,70);
     text("UGO",W_W-70,120);
   }else{
-    textFont(font,36);
+    setTextFont(font,36);
     text("CANCEL",W_W-70,95);
   }
 }
@@ -681,11 +724,11 @@ void drawCellStats(){
     rect(540,160,200,270);
   }
   fill(255);
-  textFont(font,96);
+  setTextFont(font,96);
   textAlign(LEFT);
   text(selectedCell.getCellName(),25,255);
   if(!isUGO){
-    textFont(font,32);
+    setTextFont(font,32);
     text("Inside this cell,",555,200);
     text("there are:",555,232);
     text(count(selectedCell.getParticleCount(-1),"particle"),555,296);
@@ -700,7 +743,7 @@ void drawCellStats(){
   //drawEditTable(editListDims);
   if(!isUGO){
     fill(255);
-    textFont(font,32);
+    setTextFont(font,32);
     textAlign(LEFT);
     text("Memory: "+getMemory(selectedCell),25,940);
     textAlign(RIGHT);
@@ -718,12 +761,16 @@ String getMemory(Cell c){
   }
 }
 
+void setTextFont(PFont font, float size) {
+  textFont(font,size);
+}
+
 final int VIEW_FIELD_DIS_CNT = 16;
-public void drawGenomeAsList(Genome g, double[] dims){
-  double x = dims[0];
-  double y = dims[1];
-  double w = dims[2];
-  double h = dims[3];
+public void drawGenomeAsList(Genome g, Dim dims){
+  double x = dims.getX();
+  double y = dims.getY();
+  double w = dims.getW();
+  double h = dims.getH();
   int GENOME_LENGTH = g.codons.size();
   int offset = Math.max(0, Math.min(g.scrollOffset, GENOME_LENGTH-VIEW_FIELD_DIS_CNT));
   boolean scrolling = false;
@@ -736,7 +783,7 @@ public void drawGenomeAsList(Genome g, double[] dims){
   
   double appCodonHeight = h/GENOME_LENGTH;
   double appW = w*0.5-margin;
-  textFont(font,30);
+  setTextFont(font,30);
   textAlign(CENTER);
   pushMatrix();
   dTranslate(x,y);
@@ -803,7 +850,7 @@ public void drawGenomeAsList(Genome g, double[] dims){
   
   if(selectedCell == UGOcell){
     fill(255);
-    textFont(font,60);
+    setTextFont(font,60);
     double avgY = (h+height-y)/2;
     dText("( - )",w*0.25,avgY+11);
     dText("( + )",w*0.75-margin,avgY+11);
@@ -829,7 +876,7 @@ public void drawGenomeAsList(Genome g, double[] dims){
       drawAddArrows(w, rowAY*appCodonHeight, min(80, (float)appCodonHeight), true);
     }
     
-    textFont(font,30);
+    setTextFont(font,30);
     textAlign(CENTER);
     drawCodon(g.codons.get(dragAndDropCodonId), mouseX-x-W_H-dragAndDropRX, mouseY-y-dragAndDropRY, w, appW, appCodonHeight);
     
@@ -1043,14 +1090,14 @@ Button[] codonTypeButtons = new Button[CodonTypes.values().length];
 }
 
 
-void drawButtonTable(double[] dims, Button[] buttons){
-  double x = dims[0];
-  double y = dims[1];
-  double w = dims[2];
-  double h = dims[3];
+void drawButtonTable(Dim dims, Button[] buttons){
+  double x = dims.getX();
+  double y = dims.getY();
+  double w = dims.getW();
+  double h = dims.getH();
   
   double appW = w-margin*2;
-  textFont(font,30);
+  setTextFont(font,30);
   textAlign(CENTER);
   
   int p = codonToEdit[0];
@@ -1188,7 +1235,7 @@ void drawBar(color col, double stat, String s, double y){
   fill(col);
   rect(25,(float)y,(float)(stat*500),60);
   fill(0);
-  textFont(font,48);
+  setTextFont(font,48);
   textAlign(LEFT);
   text(s+": "+nf((float)(stat*100),0,1)+"%",35,(float)y+47);
 }
