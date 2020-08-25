@@ -261,6 +261,7 @@ void checkGLdrag() {
       dragAndDropCodonId = (int)(rMouseY*min(g.codons.size(), VIEW_FIELD_DIS_CNT)) + g.scrollOffset;
       dragAndDropRX = rMouseX * gw;
       dragAndDropRY = rMouseY * gh - appCodonHeight * (dragAndDropCodonId - g.scrollOffset);
+      codonToEdit[0] = codonToEdit[1] = -1;
     }
   }
 }
@@ -272,6 +273,10 @@ void releaseGLdrag() {
   double gw = genomeListDims[2];
   double gh = genomeListDims[3];
   
+  double minX =-0.25*gw;
+  double maxX =+1.25*gw;
+  
+  
   Genome g = selectedCell.genome;
   int GENOME_LENGTH = g.codons.size();
   if (GENOME_LENGTH > VIEW_FIELD_DIS_CNT) {
@@ -282,7 +287,7 @@ void releaseGLdrag() {
   double arrowUIX =  mouseX - gx - W_H;
   double arrowUIY = mouseY - gy + appCodonHeight/2;
   int arrowRowY = (int)(arrowUIY/appCodonHeight);
-  if (arrowRowY >= 0 && arrowRowY <= GENOME_LENGTH) {
+  if (arrowRowY >= 0 && arrowRowY <= GENOME_LENGTH && arrowUIX > minX && arrowUIX <= maxX) {
     Codon dragged =g.codons.get(dragAndDropCodonId);
     int newId = arrowRowY + g.scrollOffset;
     if (newId != dragAndDropCodonId) {
@@ -290,8 +295,8 @@ void releaseGLdrag() {
       g.codons.remove(dragAndDropCodonId);
       g.codons.add(newId, dragged);
     }
-    dragAndDropCodonId = -1;
   }
+  dragAndDropCodonId = -1;
   
 }
 
@@ -754,6 +759,7 @@ public void drawGenomeAsList(Genome g, double[] dims){
     Codon codon = g.codons.get(i+offset);
     
     drawCodon(codon, 0, appY, w, appW, appCodonHeight);
+    
     for(int p = 0; p < 2; p++){
       double extraX = (w*0.5-margin)*p;
       if(p == codonToEdit[0] && i + offset == codonToEdit[1]){
@@ -803,10 +809,25 @@ public void drawGenomeAsList(Genome g, double[] dims){
     dText("( + )",w*0.75-margin,avgY+11);
   }
   
-  
+   
+  double arrowUIX =  mouseX - x - W_H;
+  double arrrowUIY = mouseY - y + appCodonHeight/2;
+  int rowAY = (int)(arrrowUIY/appCodonHeight);
   
   //drag and drop
   if (dragAndDropCodonId >= 0 && dragAndDropCodonId<g.codons.size()) {
+    
+    
+    double minX =-0.25*w;
+    double maxX =+1.25*w;
+  
+    if (rowAY >= 0 && rowAY <= GENOME_LENGTH && arrowUIX > minX && arrowUIX <= maxX) {
+      
+      fill(255);
+      drawAddArrows(0, rowAY*appCodonHeight, min(80, (float)appCodonHeight), false);
+      
+      drawAddArrows(w, rowAY*appCodonHeight, min(80, (float)appCodonHeight), true);
+    }
     
     textFont(font,30);
     textAlign(CENTER);
@@ -815,11 +836,10 @@ public void drawGenomeAsList(Genome g, double[] dims){
   } else {
     //add button
     
-    double arrrowUIX =  mouseX - x - W_H;
-    double arrrowUIY = mouseY - y + appCodonHeight/2;
-    int rowAY = (int)(arrrowUIY/appCodonHeight);
-    if (rowAY >= 0 && rowAY <= GENOME_LENGTH && arrrowUIX >= -70 && arrrowUIX <= 25) {
-      drawAddArrows(0, rowAY*appCodonHeight, min(80, (float)appCodonHeight));
+    if (rowAY >= 0 && rowAY <= GENOME_LENGTH && arrowUIX >= -70 && arrowUIX <= 25) {
+      
+      fill(color(100,255,0));
+      drawAddArrows(0, rowAY*appCodonHeight, min(80, (float)appCodonHeight), false);
     }
     
     //remove button
@@ -1082,13 +1102,12 @@ public int colorInterp(int a, int b, double x){
   float newB = (float)(blue(a)+(blue(b)-blue(a))*x);
   return color(newR, newG, newB);
 }
-void drawAddArrows(double x, double y, float arrowH){
+void drawAddArrows(double x, double y, float arrowH, boolean left){
   dTranslate(x, y);
-  fill(color(100,255,0));
   beginShape();
-  vertex(-5,0);
-  vertex(-45, -arrowH/2);
-  vertex(-45,  arrowH/2);
+  vertex(left?5:-5,0);
+  vertex(left?45:-45, -arrowH/2);
+  vertex(left?45:-45,  arrowH/2);
   endShape(CLOSE);
   dTranslate(-x, -y);
 }
