@@ -12,6 +12,8 @@ class Genome{
   float HAND_LEN = 7;
   double[][] codonShape = {{-2,0},{-2,2},{-1,3},{0,3},{1,3},{2,2},{2,0},{0,0}};
   double[][] telomereShape = {{-2,2},{-1,3},{0,3},{1,3},{2,2},{2,-2},{1,-3},{0,-3},{-1,-3},{-2,-2}};
+  double[][] epigeneticsShape = {{1.5,2},{1.5,4},{1.75,4.2},{2,4},{3,3.33},{2.5,3},{2,2.66},{2,2},{1.75,2}};
+  double[][] epigeneticsMiddleShape = {{-0.5, 2.8}, {-0.3, 3.2}, {-0.2, 3.6}, {-0.1, 3.8}, {0, 3.8}, {0.1, 3.8}, {0.2, 3.6}, {0.3, 3.2}, {0.5, 2.8}, {0,3}};
   
   int ZERO_CH = (int)('0');
   double CODON_DIST = 17;
@@ -78,11 +80,15 @@ class Genome{
     int VIS_GENOME_LENGTH = max(4,codons.size());
     double CODON_ANGLE = (double)(1.0)/VIS_GENOME_LENGTH*2*PI;
     double PART_ANGLE = CODON_ANGLE/5.0;
-    double baseAngle = -PI/2+i*CODON_ANGLE;
+    double angleMulti = codons.size() == 2 && i == 1?2:i; //special case 2 codons
+    if (codons.size() == 3)angleMulti*=4/3.0; //special case 3 codons
+    double baseAngle = -PI/2+angleMulti*CODON_ANGLE;
     pushMatrix();
     rotate((float)(baseAngle));
     
     Codon c = codons.get(i);
+    
+    //used up codons
     if(c.codonHealth != 1.0){
       beginShape();
       fill(TELOMERE_COLOR);
@@ -94,6 +100,78 @@ class Genome{
       }
     }
     endShape(CLOSE);
+    
+    
+    
+    
+    //epigenetics
+    
+    boolean flagMiddleEpiSet = false;
+    boolean flagStartEpiSet = false;
+    for (int mf:c.memorySetFrom) {
+      fill(memoryIdColor(mf));
+      if (c.memorySetTo.contains(mf)) {
+         println(mf + " flagMiddleEpiSet:" + flagMiddleEpiSet);
+        if (!flagMiddleEpiSet) {
+          flagMiddleEpiSet = true;
+          float[] ellipseData = new float[6];
+          beginShape();
+          for(int v = 0; v < epigeneticsMiddleShape.length; v++){
+            double[] cv = epigeneticsMiddleShape[v];
+            double ang = cv[0]*PART_ANGLE*c.codonHealth;
+            double dist = cv[1]*CODON_WIDTH+CODON_DIST;
+            
+            float x = (float)(Math.cos(ang)*dist);
+            float y = (float)(Math.sin(ang)*dist);
+            vertex(x, y);
+            if (v >= 3 && v <= 5) {
+              int index = (v-3)*2;
+              ellipseData[index+0] = x;
+              ellipseData[index+1] = y;
+            }
+          }
+          endShape(CLOSE);
+          float diameter = sqrt((ellipseData[0]-ellipseData[4])*(ellipseData[0]-ellipseData[4]) + (ellipseData[1]-ellipseData[5])*(ellipseData[1]-ellipseData[5]));
+          noStroke();
+          ellipseMode(CENTER);
+          ellipse(ellipseData[2], ellipseData[3],diameter*3 ,diameter*3);
+        }
+      } else {
+         println(mf + " flagStartEpiSet:" + flagStartEpiSet);
+         if (!flagStartEpiSet) {
+           
+          beginShape();
+          flagStartEpiSet = true;
+          for(int v = 0; v < epigeneticsShape.length; v++){
+            double[] cv = epigeneticsShape[v];
+            double ang = cv[0]*PART_ANGLE*c.codonHealth;
+            double dist = cv[1]*CODON_WIDTH+CODON_DIST;
+            vertex((float)(Math.cos(ang)*dist),(float)(Math.sin(ang)*dist));
+          }
+          endShape(CLOSE);
+        }
+      }
+      if (flagMiddleEpiSet && flagStartEpiSet)break; //really only care for the first one for each case
+    }
+    
+    for (int mf:c.memorySetTo) {
+       if (c.memorySetFrom.contains(mf)) {
+        continue;
+      }
+      fill(memoryIdColor(mf));
+      beginShape();
+      for(int v = 0; v < epigeneticsShape.length; v++){
+        double[] cv = epigeneticsShape[v];
+        double ang = -cv[0]*PART_ANGLE*c.codonHealth;
+        double dist = cv[1]*CODON_WIDTH+CODON_DIST;
+        vertex((float)(Math.cos(ang)*dist),(float)(Math.sin(ang)*dist));
+      }
+      endShape(CLOSE);
+      break; //really only care for the first one
+    }
+    
+    
+    //codons
     for(int p = 0; p < 2; p++){
       beginShape();
       fill(c.getColor(p));
@@ -105,6 +183,11 @@ class Genome{
       }
       endShape(CLOSE);
     }
+    
+   
+    
+    
+     
     popMatrix();
   }
   void hurtCodons(){

@@ -1,3 +1,8 @@
+import java.util.HashSet;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 class Codon extends CodonPair{ //this includes health
   //id 0 = kind of colon
   
@@ -61,6 +66,18 @@ class Codon extends CodonPair{ //this includes health
   public boolean exec(Cell cell) {
     return type.exec(cell, attribute);
   }
+  
+  public final HashSet<Integer> memorySetFrom = new HashSet();
+  public final HashSet<Integer> memorySetTo = new HashSet();
+}
+
+public color memoryIdColor(int id) {
+  id += 45; //make sure its positive
+  //90 possible ids, 90 colours
+  float angle = 45+22.5 /*major angle*/ + 4 /*minor angle*/;
+  float hue = angle*id%360/360; 
+ 
+  return java.awt.Color.HSBtoRGB(hue,0.7,0.7);
 }
 
 static CodonPair fromIntList(int[] ints) {
@@ -136,7 +153,8 @@ enum CodonAttributes{
   UGO(new AttributeUGO()),
   MemoryLocation( new AttributeMemoryLocation(0)),
   Mark(new AttributeMark(0)),
-  Cursor(new AttributeCursor());
+  Cursor(new AttributeCursor()),
+  Degree(new AttributeDegree(0));
 
   
   public final CodonAttribute v;
@@ -427,17 +445,52 @@ static class AttributeMemoryLocation extends AttributeGenomeRange {
     this.memoryId = memoryId;
   }
   
+  public void setValue(Cell cell, AbsoluteRange r) {
+    List<Codon> codons = cell.genome.codons;
+    int start = r.start;
+    int end = r.getEndResolved(cell.genome);
+    cell.laserT = cell.getFrameCount();
+    cell.laserCoor.add(cell.getCodonCoor(start,cell.genome.CODON_DIST));
+    cell.laserCoor.add(cell.getCodonCoor(end,cell.genome.CODON_DIST));
+    for(int i = 0; i < codons.size();i++) {
+      if (i == start) {
+        codons.get(i).memorySetFrom.add(memoryId);
+      } else {
+        codons.get(i).memorySetFrom.remove(memoryId);
+      }
+      if (i == end) {
+        codons.get(i).memorySetTo.add(memoryId);
+      } else {
+        codons.get(i).memorySetTo.remove(memoryId);
+      }
+    }
+  }
+  
   public int getLocation(Cell cell) {
     if (cell == null) return 0;
-     AbsoluteRange r =  cell.rangeMemory.get(memoryId);
-     return r==null?0:r.start; 
+    List<Codon> codons = cell.genome.codons;
+    for(int i = 0; i < codons.size();i++) {
+      if (codons.get(i).memorySetFrom.contains(memoryId)) {
+        cell.laserT = cell.getFrameCount();
+        cell.laserCoor.add(cell.getCodonCoor(i,cell.genome.CODON_DIST));
+        return i;
+      }
+    }
+    return -1; 
   }
   
   
   public int getEndLocation(Cell cell) {
     if (cell == null) return 0;
-     AbsoluteRange r =  cell.rangeMemory.get(memoryId);
-     return r==null?0:r.getEnd(); 
+    List<Codon> codons = cell.genome.codons;
+    for(int i = 0; i < codons.size();i++) {
+      if (codons.get(i).memorySetTo.contains(memoryId)) {
+        cell.laserT = cell.getFrameCount();
+        cell.laserCoor.add(cell.getCodonCoor(i,cell.genome.CODON_DIST));
+        return i;
+      }
+    }
+    return -1; 
   }
   
   
@@ -460,7 +513,14 @@ static class AttributeMemoryLocation extends AttributeGenomeRange {
   }
   
   public boolean exists(Cell cell) {
-    return cell.rangeMemory.containsKey(memoryId);
+    if (cell == null) return false;
+    List<Codon> codons = cell.genome.codons;
+    for(int i = 0; i < codons.size();i++) {
+      if (codons.get(i).memorySetTo.contains(memoryId)) {
+        return true;
+      }
+    }
+    return false; 
   }
   
 } 
@@ -500,10 +560,57 @@ static class AttributeCursor extends AttributeGenomeLoc {
   }
   
   
-    public int getLocation(Cell cell) {
+  public int getLocation(Cell cell) {
      return cell==null?-1:cell.genome.rotateOn; 
   }
 }
+
+static class AttributeDegree extends AttributeGenomeLoc {
+  int degMajor;
+  int degMinor;
+  public AttributeDegree(int degree) {
+    super(12, c(140,140,140), c(255,255,255), "Degree", -1, false); //-1 is a placehoder
+    setDegree(degree);
+  }
+  
+  void setDegree(int degree) {
+    degree +=360;
+    degree %=360;
+    degMinor = degree%90-45;
+    degMajor = degree/90;
+  }
+  
+  int getDegree() {
+     return ((degMinor+45)+90*degMajor)%360;
+  }
+  
+  
+  public  String getTextSimple(){ 
+    return getDegree() + " " + super.getTextSimple();
+  }
+  
+    
+  public boolean equals(Object o) {
+    return o instanceof AttributeDegree &&  super.equals(o) && ((AttributeDegree)o).getDegree() == getDegree();
+  }
+  
+  public String saveExtra() {
+    return "" + codonValToChar(degMajor) + codonValToChar(degMinor);
+  }
+  
+  public int processExtra(int[] data, int offset) {
+    degMajor = data[offset++];
+    degMinor = data[offset++];
+    return offset; 
+  }
+  
+  public int getLocation(Cell cell) {
+    int size = cell.genome.codons.size();
+    println(getDegree() + " " +  (getDegree()/(double)360*size) + " " + ((int)((getDegree()/(double)360*size)*2+1))/2%size + " " + (((int)((getDegree()/(double)360*size)*2+1))/2%size+1) + "/" + size );
+     return ((int)((getDegree()/(double)360*size)*2+1))/2%size; //the *2+1 is there is there to have 0.5 rounding up
+  }
+  
+} 
 
 
 static class Attribute extends CodonAttribute {
@@ -687,8 +794,7 @@ static class CodonMemorizeTo extends CodonType {
   
   public boolean exec(Cell cell, CodonAttribute attribute) {
     if(attribute instanceof AttributeMemoryLocation){
-      int memoryId = ((AttributeMemoryLocation)attribute).memoryId;
-      cell.rangeMemory.put(memoryId, cell.lastRange);
+      ((AttributeMemoryLocation)attribute).setValue(cell, cell.lastRange);
       return true;
     }
     return false;

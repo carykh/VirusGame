@@ -748,9 +748,29 @@ void drawCellStats(){
     text("Memory: "+getMemory(selectedCell),25,940);
     textAlign(RIGHT);
     int offset = 0;
-    for (HashMap.Entry<Integer, AbsoluteRange> entry : selectedCell.rangeMemory.entrySet()) {
-    text(entry.getKey() + ":" + entry.getValue().toString(),545,440+(offset++)*32);
+    
+    {
+      List<Codon> codons = selectedCell.genome.codons;
+      SortedSet<Integer> foundIds = new TreeSet(); //i know this is very wasteful of objects but we cannot do better than this, luckily just once per frame
+      HashMap<Integer, Integer> from = new HashMap(); 
+      HashMap<Integer, Integer> to = new HashMap(); 
+      for(int i = 0; i < codons.size();i++) {
+        Codon c = codons.get(i);
+        foundIds.addAll(c.memorySetFrom);
+        for(int j:c.memorySetFrom) {
+          from.put(j, i);
+        }
+        for(int j:c.memorySetTo) {
+          to.put(j, i);
+        }
+      }
+      for (int i:foundIds) {
+        text(i + ":" + from.get(i) + ", " + to.get(i),545,440+(offset++)*32);
+      }
     }
+    
+    
+    
   }
 }
 String getMemory(Cell c){
@@ -940,6 +960,17 @@ class Button {
   public boolean onClick(double rMouseX, double rMouseY) {
     return false;//noOp
   }
+  
+  protected void drawButton(double x, double y, double w, double h, color back, color fore, String text) {
+    fill(back);
+    dRect(x,y,w,h);
+    fill(fore);
+    dText(text,x+w*0.5,y+h/2+11);
+  }
+  
+  public void drawButton(double x, double y, double w, double h) {
+    drawButton(x,y,w,h,backColor,foreColor, getText());
+  }
 }
 
 class ButtonChangeRGL extends Button{
@@ -1000,6 +1031,45 @@ class ButtonChangeMark extends Button{
 }
 
 
+class ButtonChangeDegree extends Button{
+  public ButtonChangeDegree(String text) {
+    super(text, color(255,255,255), color(90,90,90));
+  }
+  
+  public boolean onClick(double rMouseX, double rMouseY) {
+    int id = (int)(rMouseX*5);
+    println(id + " " +rMouseX);
+    
+    switch (id) {
+      case 0:
+        editDegree.setDegree(editDegree.getDegree()-45);
+      break;
+      case 1:
+        editDegree.setDegree(editDegree.getDegree()-1);
+      break;
+      case 2:
+        editDegree.setDegree(0);
+      break;
+      case 3:
+        editDegree.setDegree(editDegree.getDegree()+1);
+      break;
+      case 4:
+        editDegree.setDegree(editDegree.getDegree()+45);
+      break;
+    }
+    return false;
+  }
+  
+  private String[] buttons = {"--", "-", "0", "+", "++"};
+  public void drawButton(double x, double y, double w, double h) {
+    double offset = w/5;
+    for(int i=0;i<5;i++) {
+        drawButton(x+offset*i,y,w/5,h,backColor,foreColor, buttons[i]);
+    }
+  }
+}
+
+
 
 class ButtonCommon extends Button {
   CommonBase common;
@@ -1044,14 +1114,16 @@ Button[] codonAttributeButtons = new Button[CodonAttributes.values().length];
 AttributeRGL editRGL = new AttributeRGL(0,0);
 AttributeMemoryLocation editMemoryLoc = new AttributeMemoryLocation(0);
 AttributeMark editMark = new AttributeMark(0);
+AttributeDegree editDegree = new AttributeDegree(0);
 {
   ArrayList<Button> buttons = new ArrayList();
   
   for(int i = 0; i < CodonAttributes.values().length; i++){
     CodonAttribute att = CodonAttributes.values()[i].v;
-    if (att instanceof AttributeRGL)att=editRGL;
+    if (att instanceof AttributeRGL)att=editRGL;  //todo OOP this
     if (att instanceof AttributeMemoryLocation)att=editMemoryLoc;
     if (att instanceof AttributeMark)att=editMark;
+    if (att instanceof AttributeDegree)att=editDegree;
     buttons.add(new ButtonEditAttribute(att));
   }
   
@@ -1062,6 +1134,8 @@ AttributeMark editMark = new AttributeMark(0);
   buttons.add(memLocPos, new ButtonChangeMemoryLocation("- MemLoc Id +"));
   int markPos = CodonAttributes.Mark.ordinal() + 4;
   buttons.add(markPos, new ButtonChangeMark("- Mark Id +"));
+  int degPos = CodonAttributes.Degree.ordinal() + 5;
+  buttons.add(degPos, new ButtonChangeDegree("-- -  0  + ++"));
   
   codonAttributeButtons = buttons.toArray(new Button[buttons.size()]);
 }
@@ -1109,12 +1183,7 @@ void drawButtonTable(Dim dims, Button[] buttons){
     double appChoiceHeight = h/buttons.length;
     for(int i = 0; i < buttons.length; i++){
       double appY = appChoiceHeight*i;
-      color fillColor = buttons[i].backColor;
-      color textColor = buttons[i].foreColor;
-      fill(fillColor);
-      dRect(margin,appY+margin,appW,appChoiceHeight-margin*2);
-      fill(textColor);
-      dText(buttons[i].getText(),w*0.5,appY+appChoiceHeight/2+11);
+      buttons[i].drawButton(margin,appY+margin,appW,appChoiceHeight-margin*2);
     }
     popMatrix();
   }

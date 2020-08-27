@@ -16,7 +16,6 @@ class Cell{
   int laserT = -9999;
   int LASER_LINGER_TIME = 30;
   String memory = "";
-  HashMap<Integer, AbsoluteRange> rangeMemory = new HashMap();
   AbsoluteRange lastRange = new AbsoluteRange(0, -1);
   boolean wasSuccess;
   /*
@@ -125,6 +124,9 @@ class Cell{
         double[] targetCoor = laserTarget.coor;
         daLine(handCoor,targetCoor);
       }
+    } else {
+      laserTarget = null;
+      laserCoor.clear();
     }
   }
   public void drawEnergy(){
@@ -410,5 +412,9 @@ class Cell{
     }else{
       return particlesInCell.get(t).size();
     }
+  }
+  
+  int getFrameCount() {
+    return frameCount;  
   }
 }
