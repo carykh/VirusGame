@@ -1,4 +1,6 @@
 
+import java.util.Random;
+
   public final static double E_RECIPROCAL = 0.3678794411;
 class Cell{
   int x;
@@ -37,17 +39,23 @@ class Cell{
     dire = ed;
     wallHealth = ewh;
     genome = new Genome(eg,false);
-    genome.rotateOn = (int)(Math.random()*genome.codons.size());
-    genome.rotateOnNext = genome.loopAroundGenome(genome.rotateOn+1);
+    
+    Random rnd = new Random(x << 16 + y + 1337); //seed based on coords
+    
+    int startpos = rnd.nextInt(genome.codons.size());
+    
+    genome.rotateOn = 0;
+    genome.rotateOnNext = genome.loopAroundGenome(1);
     
     //we start at a random position but make sure that we are not in an invalid state!
-    for(int i=0;i<genome.rotateOn;i++) {
-      Codon c = genome.codons.get(i);
-      if (c.getType() instanceof CodonMoveHand) {
-        c.exec(this);
-      }
+    for(int i=0;i<startpos;i++) {
+       doAction();
+       tickGene();
     }
-    geneTimer = Math.random()*GENE_TICK_TIME;
+    laserCoor.clear(); //dont display all the preexecuted actions at once
+    laserTarget = null;
+    
+    geneTimer = rnd.nextDouble()*GENE_TICK_TIME;
     energy = 0.5;
   }
   void drawCell(double x, double y, double s){
@@ -111,8 +119,8 @@ class Cell{
     popMatrix();
   }
   public void drawLaser(){
-    if(frameCount < laserT+LASER_LINGER_TIME){
-      double alpha = (double)((laserT+LASER_LINGER_TIME)-frameCount)/LASER_LINGER_TIME;
+    if(frameCount < laserT+(LASER_LINGER_TIME/PLAY_SPEED)){
+      double alpha = (double)((laserT+LASER_LINGER_TIME)-frameCount)/LASER_LINGER_TIME/PLAY_SPEED;
       stroke(transperize(handColor,alpha));
       strokeWeight((float)(0.033333*BIG_FACTOR));
       double[] handCoor = getHandCoor();
@@ -202,11 +210,16 @@ class Cell{
   
   
   void removeCodons(int start, int end, boolean isRelative){
+    
+    
     laserTarget = null;
     laserCoor.clear();
     laserT = frameCount;
     for(int pos = start; pos <= end; pos++){
       int index = genome.loopAroundGenome((isRelative?genome.performerOn:0)+start); //usual constant, but we might wrap around after deleting enough items
+      if (genome.rotateOnNext > index) {
+        genome.rotateOnNext--;
+      }
       genome.codons.remove(index);
       laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
     }
@@ -336,6 +349,7 @@ class Cell{
   }
   
   public void tickGene(){
+    
     geneTimer += GENE_TICK_TIME;
     
     genome.rotateOn = genome.rotateOnNext;
@@ -343,7 +357,7 @@ class Cell{
   }
   public void hurtWall(double multi){
     if(type >= 2){
-      wallHealth -= WALL_DAMAGE*multi;
+      wallHealth -= WALL_DAMAGE*multi*(DEBUG_WORLD?0.4:1);
       if(wallHealth <= 0){
         die();
       }
@@ -416,5 +430,9 @@ class Cell{
   
   int getFrameCount() {
     return frameCount;  
+  }
+  
+  public void DEBUG_SET_PLAY_SPEED(float d) {
+    PLAY_SPEED = d; 
   }
 }

@@ -111,7 +111,6 @@ class Genome{
     for (int mf:c.memorySetFrom) {
       fill(memoryIdColor(mf));
       if (c.memorySetTo.contains(mf)) {
-         println(mf + " flagMiddleEpiSet:" + flagMiddleEpiSet);
         if (!flagMiddleEpiSet) {
           flagMiddleEpiSet = true;
           float[] ellipseData = new float[6];
@@ -137,7 +136,6 @@ class Genome{
           ellipse(ellipseData[2], ellipseData[3],diameter*3 ,diameter*3);
         }
       } else {
-         println(mf + " flagStartEpiSet:" + flagStartEpiSet);
          if (!flagStartEpiSet) {
            
           beginShape();

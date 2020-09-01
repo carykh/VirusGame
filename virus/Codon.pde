@@ -131,7 +131,11 @@ enum CodonTypes{
   Compare(new CodonCompare()),
   FindMarker(new CodonFindMarker()),
   CondMark(new CodonCondMark()),
-  Exists(new CodonExists());
+  Exists(new CodonExists()),
+  ReturnTo(new CodonReturnTo()),
+  MoveHandBack(new CodonMoveHandBack()),
+  Range(new CodonRange()),
+  AddTo(new CodonAddTo());
   
   public final CodonType v;
   private CodonTypes(CodonType value) {
@@ -426,6 +430,12 @@ static class AbsoluteRange{
       this.length = length;
    }
    
+   
+   public AbsoluteRange(int start, int length, Genome genome) {
+      this(start, length);
+      if (length < 0) length+=genome.codons.size();
+   }
+   
    public int getEnd() {
      return start+length; 
    }
@@ -464,6 +474,13 @@ static class AttributeMemoryLocation extends AttributeGenomeRange {
         codons.get(i).memorySetTo.remove(memoryId);
       }
     }
+  }
+  
+  public AbsoluteRange getValue(Cell cell) {
+    int start = getLocation(cell);
+    int end = getEndLocation(cell);
+    int length = end-start;
+    return new AbsoluteRange(start, length);
   }
   
   public int getLocation(Cell cell) {
@@ -606,8 +623,7 @@ static class AttributeDegree extends AttributeGenomeLoc {
   
   public int getLocation(Cell cell) {
     int size = cell.genome.codons.size();
-    println(getDegree() + " " +  (getDegree()/(double)360*size) + " " + ((int)((getDegree()/(double)360*size)*2+1))/2%size + " " + (((int)((getDegree()/(double)360*size)*2+1))/2%size+1) + "/" + size );
-     return ((int)((getDegree()/(double)360*size)*2+1))/2%size; //the *2+1 is there is there to have 0.5 rounding up
+    return ((int)((getDegree()/(double)360*size)*2+1))/2%size; //the *2+1 is there is there to have 0.5 rounding up
   }
   
 } 
@@ -676,17 +692,25 @@ static class CodonRemove extends CodonType {
       }
     } else {
       if (attribute instanceof AttributeGenomeLoc) {
-        AttributeGenomeLoc loc = (AttributeGenomeLoc)attribute;
-        int start = loc.getLocation(cell);
-        int end = start;
-        if (attribute instanceof AttributeGenomeRange) {
-          AttributeGenomeRange range = (AttributeGenomeRange)attribute;
-          end = range.getEndLocation(cell);
-        }
+        cell.DEBUG_SET_PLAY_SPEED(0);
+        println(cell.x + " " + cell.y);
+        return false;
         
-        cell.removeCodons(start, end, loc.isRelative);
         
-        return true;
+        //AttributeGenomeLoc loc = (AttributeGenomeLoc)attribute;
+        //int start = loc.getLocation(cell);
+        //int end = start;
+        //if (attribute instanceof AttributeGenomeRange) {
+        //  AttributeGenomeRange range = (AttributeGenomeRange)attribute;
+        //  end = range.getEndLocation(cell);
+        //}
+        
+        //cell.removeCodons(start, end, loc.isRelative);
+        //cell.lastRange = new AbsoluteRange(loc.isRelative?genome.performerOn+start:start, end-start, cell.genome);
+        //println("remove: last.start=" + cell.lastRange.start);
+        
+        
+        //return true;
       }
     }
 
@@ -715,14 +739,27 @@ static class CodonRepair extends CodonType {
   }
 }
 static class CodonMoveHand extends CodonType {
+  boolean direction;
+  
   public CodonMoveHand() {
-    super(4, c(200, 0, 100), c(255,255,255), "move hand"); 
+    this(4, "move hand", true); 
+  }
+  
+  protected CodonMoveHand(int index, String name, boolean direction) {
+    super(index, c(200, 0, 100), c(255,255,255), name); 
+    this.direction = direction;
   }
   
   public boolean exec(Cell cell, CodonAttribute attribute) {
     Genome genome = cell.genome;
     if(attribute instanceof AttributeGenomeCursor){
       ((AttributeGenomeCursor)attribute).setCursor(cell);
+      return true;
+    } else if(attribute instanceof AttributeMark){
+      int markpos = findMark(cell, attribute, direction, true, false);
+      if (markpos == -1)return false;
+      genome.performerOn = markpos;
+      cell.lastRange = new AbsoluteRange(genome.performerOn, 0);
       return true;
     }
     return false;
@@ -772,14 +809,27 @@ static class CodonWrite extends CodonType {
   }
 }
 static class CodonGoto extends CodonType {
+  boolean direction;
+  
   public CodonGoto() {
-    super(7, c(200, 200, 0), c(255,255,255), "goto"); 
+    this(7, "goto", true); 
+  }
+  
+  protected CodonGoto(int index, String name, boolean direction) {
+    super(index, c(200, 200, 0), c(255,255,255), name); 
+    this.direction = direction;
   }
   
   public boolean exec(Cell cell, CodonAttribute attribute) {
     Genome genome = cell.genome;
     if(attribute instanceof AttributeGenomeLoc){
       genome.rotateOnNext = ((AttributeGenomeLoc)attribute).getAbsoluteLoc(cell, true);
+      cell.lastRange = new AbsoluteRange(genome.rotateOnNext, 0);
+      return true;
+    } else if(attribute instanceof AttributeMark){
+      int markpos = findMark(cell, attribute, direction, false, false);
+      if (markpos == -1)return false;
+      genome.rotateOnNext = markpos;
       cell.lastRange = new AbsoluteRange(genome.rotateOnNext, 0);
       return true;
     }
@@ -801,23 +851,18 @@ static class CodonMemorizeTo extends CodonType {
   }
 }
 
-static class CodonCondGoto extends CodonType {
+static class CodonCondGoto extends CodonGoto {
   public CodonCondGoto() {
-    super(9, c(200, 200, 0), c(255,255,255), "cond goto"); 
+    super(9 , "cond goto", true); 
   }
   
   public boolean exec(Cell cell, CodonAttribute attribute) {
     Genome genome = cell.genome;
     if (!cell.wasSuccess) return true;
-    if(attribute instanceof AttributeGenomeLoc){
-      genome.rotateOnNext = ((AttributeGenomeLoc)attribute).getAbsoluteLoc(cell, true);
-      cell.lastRange = new AbsoluteRange(genome.rotateOnNext, 0);
-      return true;
-    }
-    return false;
+    return super.exec(cell, attribute);
   }
 }
-
+ 
 static class CodonCompare extends CodonType {
   public CodonCompare() {
     super(10, c(200, 100, 0), c(255,255,255), "compare"); 
@@ -841,6 +886,11 @@ static class CodonCompare extends CodonType {
       String newmemory = cell.memory;
       cell.memory = oldmemory;
       
+      if (!(oldmemory.startsWith(newmemory) || newmemory.startsWith(oldmemory))) {
+        
+        println(cell.x + ", " + cell.y + ": " + oldmemory + "  =  " + newmemory + " == " + (oldmemory.startsWith(newmemory) || newmemory.startsWith(oldmemory)));
+      }
+      
       return oldmemory.startsWith(newmemory) || newmemory.startsWith(oldmemory);
     }
     return false;
@@ -853,20 +903,31 @@ static class CodonFindMarker extends CodonType {
   }
   
   public boolean exec(Cell cell, CodonAttribute attribute) {
-    Genome genome = cell.genome;
-    for(int pos = 1; pos < genome.codons.size(); pos++){
-      int index = genome.loopAroundGenome(genome.performerOn+pos);
-      //we dont want to find ourselves!
-      if (index == genome.rotateOn)continue;
-      
-      Codon c = genome.codons.get(index);
-      if (c.getAttribute().equals(attribute)) {
-         cell.lastRange = new AbsoluteRange(index, 0);
-         return true;
-      }
+    int markpos = findMark(cell, attribute, true, true, true);
+    if (markpos == -1) {
+      return false;
+    } else {
+       cell.lastRange = new AbsoluteRange(markpos, 0);
+       return true;
     }
-    return false;
   }
+}
+
+static int findMark(Cell cell, CodonAttribute attribute, boolean forewards, boolean useHand, boolean requireMajor) {
+  Genome genome = cell.genome;
+  int step = forewards?1:-1;
+  int offset = useHand?genome.performerOn:genome.rotateOn;
+  for(int pos = step; pos*step < genome.codons.size(); pos+=step){
+    int index = genome.loopAroundGenome(offset+pos);
+    //we dont want to find ourselves!
+    if (index == genome.rotateOn)continue;
+    
+    Codon c = genome.codons.get(index);
+    if (c.getAttribute().equals(attribute) && (requireMajor || c.getType().equals(CodonTypes.None.v))) {
+       return index;
+    }
+  }
+  return -1;
 }
 
 
@@ -905,6 +966,54 @@ static class CodonExists extends CodonType {
     } else if (attribute instanceof AttributeMemoryLocation) {
       return ((AttributeMemoryLocation)attribute).exists(cell);
     }     
+    return false;
+  }
+}
+
+static class CodonReturnTo extends CodonGoto {
+  public CodonReturnTo() {
+    super(14 , "return to", false); 
+  }
+}
+
+static class CodonMoveHandBack extends CodonMoveHand {
+  public CodonMoveHandBack() {
+    super(15, "move hand back", false);
+  }
+}
+
+static class CodonRange extends CodonType {
+  public CodonRange() {
+    super(16, c(0, 200, 200), c(255,255,255), "range"); 
+  }
+  
+  public boolean exec(Cell cell, CodonAttribute attribute) {
+    int before = findMark(cell, attribute, false, true, false);
+    int after = findMark(cell, attribute, true, true, false);
+    if (before == -1 || after == -1) {
+      return false;
+    } else {
+       cell.lastRange = new AbsoluteRange(after-before, after-before);
+       return true;
+    }
+  }
+}
+
+
+static class CodonAddTo extends CodonType {
+  public CodonAddTo() {
+    super(17, c(100, 100, 0), c(255,255,255), "add To"); 
+  }
+  
+  public boolean exec(Cell cell, CodonAttribute attribute) {
+    Genome genome = cell.genome;
+    if(attribute instanceof AttributeMemoryLocation){
+      AttributeMemoryLocation mem = ((AttributeMemoryLocation)attribute);
+      AbsoluteRange old = mem.getValue(cell);
+      AbsoluteRange absolute = new AbsoluteRange(genome.loopAroundGenome(cell.lastRange.start +old.start), cell.lastRange.length +old.length);
+      mem.setValue(cell, absolute);
+      return true;
+    }
     return false;
   }
 }

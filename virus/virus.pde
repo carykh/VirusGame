@@ -1,4 +1,4 @@
-boolean DEBUG_WORLD = false;
+boolean DEBUG_WORLD = true;
 
 int WORLD_SIZE = 12;
 final int ORIG_W_W = 1728;
@@ -10,7 +10,7 @@ Cell[][] cells = new Cell[WORLD_SIZE][WORLD_SIZE];
 ArrayList<ArrayList<Particle>> particles = new ArrayList<ArrayList<Particle>>(0);
 int foodLimit = 180;
 float BIG_FACTOR = 100;
-float PLAY_SPEED = DEBUG_WORLD?1:0.6;
+float PLAY_SPEED = DEBUG_WORLD?0.1:0.6;
 double GENE_TICK_TIME = DEBUG_WORLD?20:40;
 double margin = 4;
 int START_LIVING_COUNT = 0;
@@ -24,7 +24,8 @@ double WALL_DAMAGE = 0.01f;
 static double CODON_DEGRADE_SPEED = 0.008f;
 static double EPS = 0.00000001f;
 
-String starterGenome = DEBUG_WORLD?"33":"46-11-22-33-11-22-33-45-44-5700-6700";
+String starterGenome = DEBUG_WORLD?"0-0-0".replace("0", "0a0-0aA-46-11-22-33-11-22-33-11-22-33-28-9a1-7a2-0a1-28-97A0-ga0-h93-7aA-0a2-45-d93-993-4b-4a0-890-490-4a0-891-491-4a0-892-4b-893-0a2-590-a91-9a1-a92-9a4-491-2700-891-eaA-0a4-490-2700-890-eaA-0a1-a92-9a5-492-2700-892-eaA-0a5-490-4710-890-491-4710-891-492-4710-892-eaA-00-00"):"46-11-22-33-11-22-33-45-44-5700-6700";
+//"0a0-0aA-46-33-33-33-28-9a1-7a2-0a1-28-97A0-ga0-h93-7aA-0a2-45-d93-993-4b-4a0-890-490-4a0-891-491-4a0-892-4b-893-0a2-590-a91-9a1-a92-9a4-491-2700-891-ea2-0a4-490-2700-890-ea2-0a1-a92-9a5-492-2700-892-ea2-0a5-490-4710-890-491-4710-891-492-4710-892-eaA-00-00-0a0-0aA-46-33-33-33-28-9a1-7a2-0a1-28-97A0-ga0-h93-7aA-0a2-45-d93-993-4b-4a0-890-490-4a0-891-491-4a0-892-4b-893-0a2-590-a91-9a1-a92-9a4-491-2700-891-ea2-0a4-490-2700-890-ea2-0a1-a92-9a5-492-2700-892-ea2-0a5-490-4710-890-491-4710-891-492-4710-892-eaA-00-00-0a0-0aA-46-33-33-33-28-9a1-7a2-0a1-28-97A0-ga0-h93-7aA-0a2-45-d93-993-4b-4a0-890-490-4a0-891-491-4a0-892-4b-893-0a2-590-a91-9a1-a92-9a4-491-2700-891-ea2-0a4-490-2700-890-ea2-0a1-a92-9a5-492-2700-892-ea2-0a5-490-4710-890-491-4710-891-492-4710-892-eaA-00-00"
 boolean canDragWorld = false;
 double clickWorldX = -1;
 double clickWorldY = -1;
@@ -40,7 +41,7 @@ int lastEditTimeStamp = 0;
 int handColor = color(0,128,0);
 int TELOMERE_COLOR = color(0,0,0);
 int WASTE_COLOR = color(100,65,0);
-int MAX_CODON_COUNT = 40; // If a cell were to have more codons in its DNA than this number if it were to absorb a cirus particle, it won't absorb it.
+int MAX_CODON_COUNT = 300; // If a cell were to have more codons in its DNA than this number if it were to absorb a cirus particle, it won't absorb it.
 
 double SPEED_LOW = 0.01f;
 double SPEED_HIGH = 0.02f;
@@ -1037,9 +1038,7 @@ class ButtonChangeDegree extends Button{
   }
   
   public boolean onClick(double rMouseX, double rMouseY) {
-    int id = (int)(rMouseX*5);
-    println(id + " " +rMouseX);
-    
+    int id = (int)(rMouseX*5);    
     switch (id) {
       case 0:
         editDegree.setDegree(editDegree.getDegree()-45);
