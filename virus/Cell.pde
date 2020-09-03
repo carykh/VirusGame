@@ -28,6 +28,9 @@ class Cell{
   4: gene-removing cell
   */
   int dire;
+  
+  boolean debugFlag = false;
+  
   public Cell(int ex, int ey, int et, int ed, double ewh, String eg){
     for(int j = 0; j < 3; j++){
       ArrayList<Particle> newList = new ArrayList<Particle>(0);
@@ -39,6 +42,8 @@ class Cell{
     dire = ed;
     wallHealth = ewh;
     genome = new Genome(eg,false);
+    
+    debugFlag = x == 6 && y == 4; //if we only want to inspect one cell
     
     Random rnd = new Random(x << 16 + y + 1337); //seed based on coords
     
@@ -54,6 +59,8 @@ class Cell{
     }
     laserCoor.clear(); //dont display all the preexecuted actions at once
     laserTarget = null;
+    
+    genome.iterate(); //update drawing postions
     
     geneTimer = rnd.nextDouble()*GENE_TICK_TIME;
     energy = 0.5;
@@ -168,29 +175,33 @@ class Cell{
   }
   public void iterate(){
     if(type == 2){
-      if(energy > 0){
-        double oldGT = geneTimer;
+      if(energy > 0){ 
         geneTimer -= PLAY_SPEED;
-        if(geneTimer <= GENE_TICK_TIME/2.0 && oldGT > GENE_TICK_TIME/2.0){
-          doAction();
-        }
-        if(geneTimer <= 0){
-          tickGene();
-        }
+        do{
+          if(geneTimer <= GENE_TICK_TIME/2.0 && didTickGene){
+            doAction();
+          }
+          if(geneTimer <= 0 && didAction){
+            tickGene();
+          }
+        } while (geneTimer <= 0);//on high speeds we might needs to do multiple interations per frame
       }
       genome.iterate();
     }
   }
   public void doAction(){
+    didAction = true; //this is added to make sure that the genes really operate in the right order
+    if (!didTickGene)return;
+    didTickGene = false;
     if(!DEBUG_WORLD)useEnergy();
-    Codon thisCodon = genome.codons.get(genome.loopAroundGenome(genome.rotateOn));
+    Codon thisCodon = genome.codons.get(genome.rotateOn);
     wasSuccess = thisCodon.exec(this);
     
     if(!DEBUG_WORLD)genome.hurtCodons();
   }
   
   void useEnergy(){
-    energy = Math.max(0,energy-GENE_TICK_ENERGY);
+    energy = Math.max(0,energy-(GENE_TICK_ENERGY*GENE_TICK_TIME/40));
   }
   void readToMemory(int start, int end, boolean isRelative){
     memory = "";
@@ -348,7 +359,16 @@ class Cell{
     }
   }
   
+  boolean didAction = false;
+  boolean didTickGene = true;
   public void tickGene(){
+    didTickGene = true; //this is added to make sure that the genes really operate in the right order
+    if (!didAction) {
+      geneTimer += GENE_TICK_TIME/2;
+      doAction();
+      return;
+    }
+    didAction = false;
     
     geneTimer += GENE_TICK_TIME;
     

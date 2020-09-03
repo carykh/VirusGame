@@ -691,26 +691,22 @@ static class CodonRemove extends CodonType {
         return true;
       }
     } else {
-      if (attribute instanceof AttributeGenomeLoc) {
-        cell.DEBUG_SET_PLAY_SPEED(0);
-        println(cell.x + " " + cell.y);
-        return false;
+      if (attribute instanceof AttributeGenomeLoc) {       
+        
+        AttributeGenomeLoc loc = (AttributeGenomeLoc)attribute;
+        int start = loc.getLocation(cell);
+        int end = start;
+        if (attribute instanceof AttributeGenomeRange) {
+          AttributeGenomeRange range = (AttributeGenomeRange)attribute;
+          end = range.getEndLocation(cell);
+        }
+        
+        cell.removeCodons(start, end, loc.isRelative);
+        cell.lastRange = new AbsoluteRange(loc.isRelative?genome.performerOn+start:start, end-start, cell.genome);
+        println("remove: last.start=" + cell.lastRange.start);
         
         
-        //AttributeGenomeLoc loc = (AttributeGenomeLoc)attribute;
-        //int start = loc.getLocation(cell);
-        //int end = start;
-        //if (attribute instanceof AttributeGenomeRange) {
-        //  AttributeGenomeRange range = (AttributeGenomeRange)attribute;
-        //  end = range.getEndLocation(cell);
-        //}
-        
-        //cell.removeCodons(start, end, loc.isRelative);
-        //cell.lastRange = new AbsoluteRange(loc.isRelative?genome.performerOn+start:start, end-start, cell.genome);
-        //println("remove: last.start=" + cell.lastRange.start);
-        
-        
-        //return true;
+        return true;
       }
     }
 
