@@ -1,4 +1,4 @@
-boolean DEBUG_WORLD = true;
+boolean DEBUG_WORLD = false;
 boolean AdvGenome = false;
 
 int WORLD_SIZE = 12;
