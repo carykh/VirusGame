@@ -703,7 +703,6 @@ static class CodonRemove extends CodonType {
         
         cell.removeCodons(start, end, loc.isRelative);
         cell.lastRange = new AbsoluteRange(loc.isRelative?genome.performerOn+start:start, end-start, cell.genome);
-        println("remove: last.start=" + cell.lastRange.start);
         
         
         return true;
@@ -881,11 +880,6 @@ static class CodonCompare extends CodonType {
       cell.lastRange = new AbsoluteRange(genome.performerOn+start, end-start);
       String newmemory = cell.memory;
       cell.memory = oldmemory;
-      
-      if (!(oldmemory.startsWith(newmemory) || newmemory.startsWith(oldmemory))) {
-        
-        println(cell.x + ", " + cell.y + ": " + oldmemory + "  =  " + newmemory + " == " + (oldmemory.startsWith(newmemory) || newmemory.startsWith(oldmemory)));
-      }
       
       return oldmemory.startsWith(newmemory) || newmemory.startsWith(oldmemory);
     }
