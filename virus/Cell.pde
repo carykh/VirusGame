@@ -21,7 +21,7 @@ class Cell {
    2: normal cell
    3: waste management cell
    4: gene-removing cell
-   */
+  */
   int dire;
   public Cell(int ex, int ey, int et, int ed, double ewh, String eg) {
     for (int j = 0; j < 3; j++) {
@@ -236,26 +236,32 @@ class Cell {
     laserCoor.clear();
     laserT = frameCount;
     if (genome.directionOn == 0) {
-      writeOutwards();
+      writeOutwards(start, end);
     } else {
       writeInwards(start, end);
     }
   }
-  public void writeOutwards() {
+  public void writeOutwards(int start, int end) {
     double theta = Math.random()*2*Math.PI;
     double ugo_vx = Math.cos(theta);
     double ugo_vy = Math.sin(theta);
     double[] startCoor = getHandCoor();
     double[] newUGOcoor = new double[]{startCoor[0], startCoor[1], startCoor[0]+ugo_vx, startCoor[1]+ugo_vy};
-    Particle newUGO = new Particle(newUGOcoor, 2, memory, frameCount);
+
+    String[] memoryParts = memory.split("-");
+    String[] UGOmemoryParts = memoryParts;
+    for (int i = 0; i < memoryParts.length*(end - start); i++) {
+      useEnergy();
+    }
+    for (int i = 0; i < (end - start); i++) {
+      UGOmemoryParts = concat(UGOmemoryParts, memoryParts);
+    }
+    String UGOmemory = join(UGOmemoryParts, "-");
+
+    Particle newUGO = new Particle(newUGOcoor, 2, UGOmemory, frameCount);
     particles.get(2).add(newUGO);
     newUGO.addToCellList();
     laserTarget = newUGO;
-
-    String[] memoryParts = memory.split("-");
-    for (int i = 0; i < memoryParts.length; i++) {
-      useEnergy();
-    }
   }
   public void writeInwards(int start, int end) {
     laserTarget = null;
@@ -263,11 +269,9 @@ class Cell {
     for (int pos = start; pos <= end; pos++) {
       int index = loopItInt(genome.performerOn+pos, genome.codons.size());
       Codon c = genome.codons.get(index);
-      if (pos-start < memoryParts.length) {
-        String memoryPart = memoryParts[pos-start];
-        c.setFullInfo(stringToInfo(memoryPart));
-        laserCoor.add(getCodonCoor(index, genome.CODON_DIST));
-      }
+      String memoryPart = memoryParts[(pos-start) % memoryParts.length]; //repeat pattern if out of bounds
+      c.setFullInfo(stringToInfo(memoryPart));
+      laserCoor.add(getCodonCoor(index, genome.CODON_DIST));
       useEnergy();
     }
   }
