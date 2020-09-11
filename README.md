@@ -6,7 +6,7 @@ Code: [GitHub](https://github.com/carykh/VirusGame)
 This fork adds multiple features to the core game:
 - auto formatted code
 - Cells are now revivable via a left click
-- The maximal codon size of a cell has been increased from 20 to 200
+- The maximum codon size of a cell has been increased from 20 to 200
 - writing outwards now repeats the pattern if RGL is anything other than 0
 - writing inwards now repeats the pattern if the RGL is larger than the cell memory
 ## How to run
