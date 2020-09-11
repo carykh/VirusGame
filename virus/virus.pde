@@ -318,7 +318,7 @@ void detectMouse() {
         if (clickedCell != null && clickedCell.type == 2) {
           selectedCell = clickedCell;
         }
-        if (clickedCell != null && clickedCell.type == 0 && (int)clickWorldY != 0 && (int)clickWorldX != 0 && (int)clickWorldY != 11 && (int)clickWorldX != 11) {
+        if (clickedCell != null && clickedCell.type == 0) {
           cells[(int)clickWorldY][(int)clickWorldX] = new Cell((int)clickWorldX, (int)clickWorldY, 2, 0, 1, starterGenome);
           START_LIVING_COUNT++;
           cellCounts[0]++;
