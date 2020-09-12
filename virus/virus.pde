@@ -19,7 +19,7 @@ double WALL_DAMAGE = 0.01;
 double CODON_DEGRADE_SPEED = 0.008;
 double EPS = 0.00000001;
 
-String starterGenome = "46-11-22-33-11-22-33-45-44-57__-67__";
+String starterGenome = "46-11-22-33-11-22-33-45-44-58__-68__";
 boolean canDrag = false;
 double clickWorldX = -1;
 double clickWorldY = -1;
@@ -219,7 +219,7 @@ void checkETclick(){
       }
     }else{
       Codon thisCodon = selectedCell.genome.codons.get(codonToEdit[1]);
-      if(codonToEdit[0] == 1 && choice == 7){
+      if(codonToEdit[0] == 1 && choice == 8){
         if(thisCodon.codonInfo[1] != 7 ||
         thisCodon.codonInfo[2] != codonToEdit[2] || thisCodon.codonInfo[3] != codonToEdit[3]){
           thisCodon.setInfo(1,choice);
@@ -691,7 +691,7 @@ color transperize(color col, double trans){
 }
 String infoToString(int[] info){
   String result = info[0]+""+info[1];
-  if(info[1] == 7){
+  if(info[1] == 8){
     result += codonValToChar(info[2])+""+codonValToChar(info[3]);
   }
   return result;
@@ -701,7 +701,7 @@ int[] stringToInfo(String str){
   for(int i = 0; i < 2; i++){
     info[i] = Integer.parseInt(str.substring(i,i+1));
   }
-  if(info[1] == 7){
+  if(info[1] == 8){
     for(int i = 2; i < 4; i++){
       char c = str.charAt(i);
       info[i] = codonCharToVal(c);

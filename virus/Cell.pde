@@ -174,8 +174,16 @@ class Cell{
         laserWall();
       }
     }else if(info[0] == 2 && genome.directionOn == 0){
-      if(info[1] == 1 || info[1] == 2){
-        Particle wasteToPushOut = selectParticleInCell(info[1]-1);
+      if(info[1] == 1 || info[1] == 2 || info[1] == 7){
+        int to_push = 0;
+        if(info[1] == 1)
+          to_push = 0;
+        else if(info[1] == 2)
+          to_push = 1;
+        else
+          to_push = 2;
+
+        Particle wasteToPushOut = selectParticleInCell(to_push);
         if(wasteToPushOut != null){
           pushOut(wasteToPushOut);
         }
@@ -196,16 +204,20 @@ class Cell{
         genome.directionOn = 1;
       }else if(info[1] == 6){
         genome.directionOn = 0;
-      }else if(info[1] == 7){
+      }else if(info[1] == 8){
         genome.performerOn = loopItInt(genome.rotateOn+info[2],genome.codons.size());
       }
     }else if(info[0] == 5 && genome.directionOn == 1){
-      if(info[1] == 7){
+      if(info[1] == 8){
         readToMemory(info[2],info[3]);
       }
     }else if(info[0] == 6){
-      if(info[1] == 7 || genome.directionOn == 0){
+      if(info[1] == 8 || genome.directionOn == 0){
         writeFromMemory(info[2],info[3]);
+      }
+    }else if(info[0] == 7){
+      if(info[1] == 8){
+        removeMemory(info[2],info[3]);
       }
     }
     genome.hurtCodons();
@@ -269,6 +281,26 @@ class Cell{
         laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
       }
       useEnergy();
+    }
+  }
+  public void removeMemory(int start, int end){
+    memory = "";
+    laserTarget = null;
+    laserCoor.clear();
+    laserT = frameCount;
+
+    ArrayList<Codon> to_remove = new ArrayList<Codon>();
+    int remCount = 0;
+
+    for(int pos = start; pos <= end; pos++){
+      int index = loopItInt(genome.performerOn+pos,genome.codons.size());
+      to_remove.add(genome.codons.get(index));
+      remCount++;
+      laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
+    }
+
+    for(int i = 0; i < remCount; i++){
+      genome.codons.remove(to_remove.get(i));
     }
   }
   public void healWall(){
