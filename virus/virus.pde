@@ -50,6 +50,7 @@ double MIN_ARROW_LENGTH_TO_PRODUCE = 0.4f;
 
 double ZOOM_THRESHOLD = 0;//80;
 PFont font;
+float scalefactor;
 int flashCursorRed = 0;
 int activeCursorRed = 0;
 boolean activeCursorHighLow = false;
@@ -128,8 +129,9 @@ void setup(){
       }
     }
   }
-  size(1728,972);
+  fullScreen();
   noSmooth();
+  scalefactor = (float)width/1728;
   UGOcell = new Cell(-1,-1,2,0,1,"00-00-00-00-00");
   
   surface.setResizable(true);
@@ -174,6 +176,7 @@ void draw(){
   iterate();
   detectMouse();
   drawBackground();
+  scale(scalefactor);
   drawCells();
   drawParticles();
   drawExtras();
@@ -270,8 +273,8 @@ void drawParticles(){
   }
 }
 void checkUGOclick(){
-  clickWorldX = appXtoTrueX(mouseX);
-  clickWorldY = appYtoTrueY(mouseY);
+  clickWorldX = appXtoTrueX((mouseX/scalefactor));
+  clickWorldY = appYtoTrueY((mouseY/scalefactor));
   for(Particle UGO: particles.get(2)){
     double dis= euclidLength(new double[]{UGO.coor[0],UGO.coor[1], clickWorldX, clickWorldY});
     if(dis<=0.15){
@@ -290,8 +293,8 @@ void checkGLdrag() {
   double gy = genomeListDims.getY();
   double gw = genomeListDims.getW();
   double gh = genomeListDims.getH();
-  double rMouseX = ((mouseX-W_H)-gx)/gw;
-  double rMouseY = (mouseY-gy)/gh;
+  double rMouseX = (((mouseX/scalefactor)-W_H)-gx)/gw;
+  double rMouseY = ((mouseY/scalefactor)-gy)/gh;
   
   Genome g = selectedCell.genome;
   int GENOME_LENGTH = g.codons.size();
@@ -329,8 +332,8 @@ void releaseGLdrag() {
   }
   double appCodonHeight = gh/GENOME_LENGTH;
   
-  double arrowUIX =  mouseX - gx - W_H;
-  double arrowUIY = mouseY - gy + appCodonHeight/2;
+  double arrowUIX =  (mouseX/scalefactor) - gx - W_H;
+  double arrowUIY = (mouseY/scalefactor) - gy + appCodonHeight/2;
   int arrowRowY = (int)(arrowUIY/appCodonHeight);
   if (arrowRowY >= 0 && arrowRowY <= GENOME_LENGTH && arrowUIX > minX && arrowUIX <= maxX) {
     Codon dragged =g.codons.get(dragAndDropCodonId);
@@ -351,8 +354,8 @@ void checkGLclick(){
   double gy = genomeListDims.getY();
   double gw = genomeListDims.getW();
   double gh = genomeListDims.getH();
-  double rMouseX = ((mouseX-W_H)-gx)/gw;
-  double rMouseY = (mouseY-gy)/gh;
+  double rMouseX = (((mouseX/scalefactor)-W_H)-gx)/gw;
+  double rMouseY = ((mouseY/scalefactor)-gy)/gh;
   
    //add arrow
   Genome g = selectedCell.genome;
@@ -366,13 +369,13 @@ void checkGLclick(){
  
   double appCodonHeight = gh/GENOME_LENGTH;
     
-  double arrowUIX =  mouseX - gx - W_H;
-  double arrowUIY = mouseY - gy + appCodonHeight/2;
+  double arrowUIX =  (mouseX/scalefactor) - gx - W_H;
+  double arrowUIY = (mouseY/scalefactor) - gy + appCodonHeight/2;
   int arrowRowY = (int)(arrowUIY/appCodonHeight);
   double arrowH = min(80, (float)appCodonHeight);
   
-  double crossUIX =  mouseX - gx - W_H - gw;
-  double crossUIY = mouseY - gy;
+  double crossUIX =  (mouseX/scalefactor) - gx - W_H - gw;
+  double crossUIY = (mouseY/scalefactor) - gy;
   int rowCY = (int)(crossUIY/appCodonHeight);
 
   
@@ -406,8 +409,8 @@ void checkETclick(){
   double eh = editListDims.getH();
   
   //codon rows
-  double rMouseX = ((mouseX-W_H)-ex)/ew;
-  double rMouseY = (mouseY-ey)/eh;
+  double rMouseX = (((mouseX/scalefactor)-W_H)-ex)/ew;
+  double rMouseY = ((mouseY/scalefactor)-ey)/eh;
   
  
   
@@ -463,19 +466,19 @@ void detectMouse(){
   if (mousePressed){
     arrowToDraw = null;
     if(!wasMouseDown) {
-      dragStartX = mouseX;
-      dragStartY = mouseY;
+      dragStartX = (mouseX/scalefactor);
+      dragStartY = (mouseY/scalefactor);
       
-      if(mouseX < W_H){
+      if((mouseX/scalefactor) < W_H){
         boolean buttonPressed = true;
-        if(mouseX>=10 && mouseX <=75 && mouseY>=10 && mouseY <=50)//speed down
+        if((mouseX/scalefactor)>=10 && (mouseX/scalefactor) <=75 && (mouseY/scalefactor)>=10 && (mouseY/scalefactor) <=50)//speed down
         {
           if(PLAY_SPEED>0.1)
           {
             PLAY_SPEED-=0.1;
           }
         }
-        else if(mouseX>=10+2*75 && mouseX <=75+2*75 && mouseY>=10 && mouseY <=50)//speed up
+        else if((mouseX/scalefactor)>=10+2*75 && (mouseX/scalefactor) <=75+2*75 && (mouseY/scalefactor)>=10 && (mouseY/scalefactor) <=50)//speed up
         {
           if(PLAY_SPEED<99.9)
           {
@@ -486,8 +489,8 @@ void detectMouse(){
         {
           buttonPressed = false;
           codonToEdit[0] = codonToEdit[1] = -1;
-          clickWorldX = appXtoTrueX(mouseX);
-          clickWorldY = appYtoTrueY(mouseY);
+          clickWorldX = appXtoTrueX((mouseX/scalefactor));
+          clickWorldY = appYtoTrueY((mouseY/scalefactor));
           canDragWorld = true;
         }
         if (buttonPressed) {
@@ -503,11 +506,11 @@ void detectMouse(){
           checkGLclick();
         }
         if(selectedCell == UGOcell){
-          if((mouseX >= W_H+530 && codonToEdit[0] == -1) || mouseY < 160){
+          if(((mouseX/scalefactor) >= W_H+530 && codonToEdit[0] == -1) || (mouseY/scalefactor) < 160){
             selectedCell = null;
             selectedUGO=null;
           }
-        }else if(mouseX > W_W-160 && mouseY < 160){
+        }else if((mouseX/scalefactor) > W_W-160 && (mouseY/scalefactor) < 160){
           selectedCell = UGOcell;
           selectedUGO=null;
         }
@@ -515,10 +518,10 @@ void detectMouse(){
       }
       DQclick = false;
     }else {
-      double dragDistSQ = (dragStartX-mouseX)*(dragStartX-mouseX)+(dragStartY-mouseY)*(dragStartY-mouseY); //this is squared, always compare with sqaured number
+      double dragDistSQ = (dragStartX-(mouseX/scalefactor))*(dragStartX-(mouseX/scalefactor))+(dragStartY-(mouseY/scalefactor))*(dragStartY-(mouseY/scalefactor)); //this is squared, always compare with sqaured number
       if(canDragWorld){
-        double newCX = appXtoTrueX(mouseX);
-        double newCY = appYtoTrueY(mouseY);
+        double newCX = appXtoTrueX((mouseX/scalefactor));
+        double newCY = appYtoTrueY((mouseY/scalefactor));
         if(newCX != clickWorldX || newCY != clickWorldY){
           DQclick = true;
         }
@@ -567,9 +570,9 @@ void detectMouse(){
 }
 public void mouseWheel(processing.event.MouseEvent event) {
   float e = event.getCount();
-   if (mouseX > W_H) {
-    double UIX =  mouseX - W_H;
-    double UIY = mouseY;
+   if ((mouseX/scalefactor) > W_H) {
+    double UIX =  (mouseX/scalefactor) - W_H;
+    double UIY = (mouseY/scalefactor);
     if (selectedCell != null & dimWithinBox(genomeListDims, UIX, UIY)) {
       Genome g = selectedCell.genome;
       int GENOME_LENGTH = g.codons.size();
@@ -610,8 +613,8 @@ public void mouseWheel(processing.event.MouseEvent event) {
   }else{
     thisZoomF = ZOOM_F;
   }
-  double worldX = mouseX/camS+camX;
-  double worldY = mouseY/camS+camY;
+  double worldX = (mouseX/scalefactor)/camS+camX;
+  double worldY = (mouseY/scalefactor)/camS+camY;
   camX = (camX-worldX)/thisZoomF+worldX;
   camY = (camY-worldY)/thisZoomF+worldY;
   camS *= thisZoomF;
@@ -879,8 +882,8 @@ public void drawGenomeAsList(Genome g, Dim dims){
   }
   
    
-  double arrowUIX =  mouseX - x - W_H;
-  double arrrowUIY = mouseY - y + appCodonHeight/2;
+  double arrowUIX =  (mouseX/scalefactor) - x - W_H;
+  double arrrowUIY = (mouseY/scalefactor) - y + appCodonHeight/2;
   int rowAY = (int)(arrrowUIY/appCodonHeight);
   
   //drag and drop
@@ -900,7 +903,7 @@ public void drawGenomeAsList(Genome g, Dim dims){
     
     setTextFont(font,30);
     textAlign(CENTER);
-    drawCodon(g.codons.get(dragAndDropCodonId), mouseX-x-W_H-dragAndDropRX, mouseY-y-dragAndDropRY, w, appW, appCodonHeight);
+    drawCodon(g.codons.get(dragAndDropCodonId), (mouseX/scalefactor)-x-W_H-dragAndDropRX, (mouseY/scalefactor)-y-dragAndDropRY, w, appW, appCodonHeight);
     
   } else {
     //add button
@@ -912,8 +915,8 @@ public void drawGenomeAsList(Genome g, Dim dims){
     }
     
     //remove button
-    double crossUIX =  mouseX - x - W_H - w;
-    double crossUIY = mouseY - y;
+    double crossUIX =  (mouseX/scalefactor) - x - W_H - w;
+    double crossUIY = (mouseY/scalefactor) - y;
     int rowCY = (int)(crossUIY/appCodonHeight);
     if (rowCY >= 0 && rowCY < GENOME_LENGTH && crossUIX >= -25 && crossUIX <= 70) {
       drawRemoveCross(w+30, (rowCY+0.5)*appCodonHeight, min(60, (float)(appCodonHeight-2*margin)), 60, 15);
