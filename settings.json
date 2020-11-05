@@ -1,0 +1,18 @@
+{
+    "seed": -1,
+    "quality": 1,
+    "genome": "46-11-22-33-11-22-33-45-44-57__-67__",
+    "editor_default": "00-00-00-00-00",
+    "gene_tick_time": 40.0,
+    "max_food": 180,
+    "max_waste": 180,
+    "codon_degrade_speed": 0.008,
+    "wall_damage": 0.01,
+    "gene_tick_energy": 0.014,
+    "waste_disposal_chance_high": 0.4,
+    "waste_disposal_chance_low": 0.05,
+    "max_codon_count": 24,
+    "laser_linger_time": 30,
+    "age_grow_speed": 0.08,
+    "min_length_to_produce": 0.4
+}
