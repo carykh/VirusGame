@@ -14,10 +14,6 @@ class Codon{
     public String getText(int p){
         return CodonInfo.getText(p, info);
     }
-    
-    public String _getText() {
-        return CodonInfo._getText(info); 
-    }
   
     public boolean hasSubstance(){
         return info[0] != 0 || info[1] != 0;
@@ -72,12 +68,17 @@ class Codon{
           case 2: // REMOVE //
               if(!inwards){
                   if(info[1] == 1 || info[1] == 2){
-                      Particle wasteToPushOut = c.selectParticleInCell( ParticleType.fromId(info[1] - 1) );
-                      if(wasteToPushOut != null){
-                          c.pushOut(wasteToPushOut);
+                      Particle p = c.selectParticleInCell( ParticleType.fromId(info[1] - 1) );
+                      if(p != null){
+                          c.pushOut(p);
                       }
                   }else if(info[1] == 3){
                       c.die();
+                  }else if(info[2] == 10) {
+                      Particle p = c.selectParticleInCell( ParticleType.UGO );
+                      if(p != null){
+                          c.pushOut(p);
+                      }
                   }
               }
               break;

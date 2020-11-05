@@ -113,11 +113,12 @@ class Renderer {
     
     void drawCredits() {
         pushMatrix();
-        translate(height - 32, 0);
-        fill(0);
-        textFont(font, 32);
+        translate(4, height - 6);
+        fill( transperize(color(0), 0.8) );
+        noStroke();
+        textFont(font, 18);
         textAlign(LEFT);
-        text( "TETSTSTST", 0, 0);
+        text("Copyright (C) 2020 Cary Huang & magistermaks", 0, 0);
         popMatrix();
     }
 
@@ -136,7 +137,7 @@ class Renderer {
         vertex(w+45,40);
         endShape(CLOSE);
         noStroke();
-        rect(0,-h/2,w,h);
+        rect(0, -h/2, w, h);
     }
 
     void drawBar(color col, double stat, String s, double y){

@@ -117,10 +117,10 @@ class Editor {
             int optionCount = CodonInfo.getOptionSize(codonToEdit[0]);
             int choice = (int) (rmy * optionCount);
             
-            if(codonToEdit[0] == 1 && choice >= optionCount-2){
+            if(codonToEdit[0] == 1 && (choice == 8 || choice == 9)){
               
                 int diff = (rmx < 0.5) ? -1 : 1;
-                int index = (choice == optionCount - 2) ? 2 : 3;
+                int index = (choice == 8) ? 2 : 3;
                 
                 codonToEdit[index] = loopCodonInfo(codonToEdit[index] + diff);
                 

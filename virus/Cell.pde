@@ -383,10 +383,6 @@ class Cell{
         ArrayList<Particle> myList = pc.get(type);
         if(myList.size() == 0){
       
-            if( type == ParticleType.Waste ) {
-                return selectParticleInCell( ParticleType.UGO );
-            }
-      
             return null;
         }else{
             int choiceIndex = (int)(Math.random()*myList.size());
