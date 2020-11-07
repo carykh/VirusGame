@@ -17,10 +17,10 @@ class Settings {
     public double gene_tick_energy;
     public int world_size;
     public int[][] map_data;
-    public int quality;
     public double waste_disposal_chance_high;
     public double waste_disposal_chance_low;
     public double waste_disposal_chance_random;
+    public double cell_wall_protection;
     public int particles_per_rand_update;
     public int max_codon_count;
     public int laser_linger_time;
@@ -32,7 +32,6 @@ class Settings {
         settings = loadJSONObject("settings.json");
         world = loadJSONObject("world.json");
         
-        quality = settings.getInt("quality"); // graphics quality - 0, 1 or 2
         genome = settings.getString("genome");
         editor_default = settings.getString("editor_default");
         gene_tick_time = settings.getDouble("gene_tick_time");
@@ -44,12 +43,12 @@ class Settings {
         waste_disposal_chance_high = settings.getDouble("waste_disposal_chance_high");
         waste_disposal_chance_low = settings.getDouble("waste_disposal_chance_low");
         waste_disposal_chance_random = settings.getDouble("waste_disposal_chance_random");
+        cell_wall_protection = settings.getDouble("cell_wall_protection");
         particles_per_rand_update = settings.getInt("particles_per_rand_update");
         max_codon_count = settings.getInt("max_codon_count");
         laser_linger_time = settings.getInt("laser_linger_time");
         age_grow_speed = settings.getDouble("age_grow_speed");
         min_length_to_produce = settings.getDouble("min_length_to_produce");
-        loadSeed( settings.getInt("seed") );
         world_size = world.getInt("world_size") + 2;
         loadWorld( world.getJSONArray("map"), world_size - 2 );
     
@@ -63,12 +62,6 @@ class Settings {
             for( int x = 0; x < size; x ++ ) {
                 map_data[x][y] = row.getInt(x);
             }
-        }
-    }
-    
-    public void loadSeed( int seed ) {
-        if( seed != -1 ) {
-            randomSeed( seed );
         }
     }
   

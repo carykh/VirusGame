@@ -52,11 +52,15 @@ class UGO extends Particle {
        
         Cell fc = world.getCellAt(future[0], future[1]);
         if( fc != null ) {
-         
-            if(type == ParticleType.UGO && ct == CellType.Empty && ft == CellType.Normal && genome.codons.size()+fc.genome.codons.size() <= settings.max_codon_count){
-                return injectGeneticMaterial(fc);
-            }else if(type == ParticleType.UGO && ft == CellType.Shell && ct == CellType.Empty ){
-                return injectGeneticMaterial(fc);
+          
+            if( fc.wall * settings.cell_wall_protection < random(0,1) || fc.type == CellType.Shell ) {
+                
+                if(type == ParticleType.UGO && ct == CellType.Empty && ft == CellType.Normal && genome.codons.size()+fc.genome.codons.size() <= settings.max_codon_count){
+                    return injectGeneticMaterial(fc);
+                }else if(type == ParticleType.UGO && ft == CellType.Shell && ct == CellType.Empty ){
+                    return injectGeneticMaterial(fc);
+                }
+              
             }
           
         }
