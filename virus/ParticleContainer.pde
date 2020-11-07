@@ -41,5 +41,17 @@ class ParticleContainer {
     public int count() {
         return foods.size() + wastes.size() + ugos.size();
     }
+    
+    public void randomTick() {
+        if( frameCount % 10 == 0 ) {
+            int c = count() / settings.particles_per_rand_update;
+        
+            for( ; c > 0; c -- ) {
+                ArrayList<Particle> array = get( ParticleType.fromId( randomInt(0, 2) ) );
+                int index = randomInt(0, array.size() - 1);
+                if( index != -1 ) array.get( index ).randomTick();
+            }
+        }
+    }
   
 }

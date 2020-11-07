@@ -36,7 +36,7 @@ class Cell{
     }
     
     public boolean isHandInwards() {
-        return genome.directionOn == 1;
+        return genome.inwards;
     }
   
     void drawSelf() {
@@ -212,7 +212,7 @@ class Cell{
             if(pos < end){
                 memory = memory+"-";
             }
-            laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
+            laserCoor.add(getCodonCoor(index,CODON_DIST));
         }
     }
     
@@ -221,10 +221,10 @@ class Cell{
         laserTarget = null;
         laserCoor.clear();
         laserT = frameCount;
-        if(genome.directionOn == 0){
-            writeOutwards();
-        }else{
+        if( genome.inwards ){
             writeInwards(start,end);
+        }else{
+            writeOutwards();
         }
     }
     
@@ -253,7 +253,7 @@ class Cell{
             if(pos-start < memoryParts.length){
                 String memoryPart = memoryParts[pos-start];
                 c.setFullInfo(stringToInfo(memoryPart));
-                laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
+                laserCoor.add(getCodonCoor(index,CODON_DIST));
             }
             useEnergy( settings.gene_tick_energy );
         }
@@ -293,10 +293,10 @@ class Cell{
     
     public double[] getHandCoor(){
         double r = HAND_DIST;
-        if(genome.directionOn == 0){
-            r += HAND_LEN;
-        }else{
+        if( genome.inwards ){
             r -= HAND_LEN;
+        }else{
+            r += HAND_LEN;
         }
         return getCodonCoor(genome.performerOn,r);
     }
@@ -353,7 +353,7 @@ class Cell{
   
     public void die(){
         for(int i = 0; i < genome.codons.size(); i++){
-            Particle newWaste = new Particle( getCodonCoor(i, genome.CODON_DIST), ParticleType.Waste, -99999 );
+            Particle newWaste = new Particle( getCodonCoor(i, CODON_DIST), ParticleType.Waste, -99999 );
             world.addParticle( newWaste );
         }
         
@@ -382,7 +382,11 @@ class Cell{
     public Particle selectParticleInCell(ParticleType type){
         ArrayList<Particle> myList = pc.get(type);
         if(myList.size() == 0){
-      
+            
+            if( type == ParticleType.Waste ) {
+                return selectParticleInCell( ParticleType.UGO );
+            }
+          
             return null;
         }else{
             int choiceIndex = (int)(Math.random()*myList.size());

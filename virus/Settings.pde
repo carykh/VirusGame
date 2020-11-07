@@ -20,6 +20,8 @@ class Settings {
     public int quality;
     public double waste_disposal_chance_high;
     public double waste_disposal_chance_low;
+    public double waste_disposal_chance_random;
+    public int particles_per_rand_update;
     public int max_codon_count;
     public int laser_linger_time;
     public double age_grow_speed;
@@ -41,6 +43,8 @@ class Settings {
         gene_tick_energy = settings.getDouble("gene_tick_energy");
         waste_disposal_chance_high = settings.getDouble("waste_disposal_chance_high");
         waste_disposal_chance_low = settings.getDouble("waste_disposal_chance_low");
+        waste_disposal_chance_random = settings.getDouble("waste_disposal_chance_random");
+        particles_per_rand_update = settings.getInt("particles_per_rand_update");
         max_codon_count = settings.getInt("max_codon_count");
         laser_linger_time = settings.getInt("laser_linger_time");
         age_grow_speed = settings.getDouble("age_grow_speed");

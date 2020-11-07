@@ -109,6 +109,12 @@ class Particle{
           
     }
     
+    public void randomTick() {
+        if( type == ParticleType.Waste ) {
+            if( random(0, 1) < settings.waste_disposal_chance_random && world.getCellAt(coor[0], coor[1]) == null ) removeParticle(null);
+        }
+    }
+    
     private void border( int wid ) {
         if( type == ParticleType.Waste ) {
             if( world.pc.wastes.size() > settings.max_waste && random(0, 1) < settings.waste_disposal_chance_high ) removeParticle(null);

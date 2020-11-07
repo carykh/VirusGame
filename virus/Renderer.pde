@@ -114,7 +114,7 @@ class Renderer {
     void drawCredits() {
         pushMatrix();
         translate(4, height - 6);
-        fill( transperize(color(0), 0.8) );
+        fill( COPYRIGHT_TEXT_COLOR );
         noStroke();
         textFont(font, 18);
         textAlign(LEFT);

@@ -60,6 +60,7 @@ class World {
             }
         }
         
+        pc.randomTick();
         pc.add( queue );
     }
     

@@ -13,6 +13,7 @@ final color HAND_COLOR = color(0, 128, 0);
 final color TELOMERE_COLOR = color(0, 0, 0);
 final color ENERGY_COLOR = color(255, 255, 0);
 final color WALL_COLOR = color(210, 50, 210);
+final color COPYRIGHT_TEXT_COLOR = color(0, 0, 0, 200);
 final float HAND_DIST = 32;
 final float HAND_LEN = 7;
 final double SPEED_LOW = 0.01;
@@ -24,6 +25,11 @@ final double MARGIN = 4;
 final double DETAIL_THRESHOLD = 10;
 final double[] GENOME_LIST_DIMS = {70, 430, 360, 450};
 final double[] EDIT_LIST_DIMS = {550, 430, 180, 450};
+final double CODON_DIST = 17;
+final double CODON_DIST_UGO = 10.6;
+final double CODON_WIDTH = 1.4;
+final double[][] CODON_SHAPE = {{-2,0},{-2,2},{-1,3},{0,3},{1,3},{2,2},{2,0},{0,0}};
+final double[][] TELOMERE_SHAPE = {{-2,2},{-1,3},{0,3},{1,3},{2,2},{2,-2},{1,-3},{0,-3},{-1,-3},{-2,-2}};
 
 void setup() {
   

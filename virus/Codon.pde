@@ -19,15 +19,17 @@ class Codon{
         return info[0] != 0 || info[1] != 0;
     }
   
-    public void hurt(){
+    public boolean hurt(){
         if( hasSubstance() ) {
             codonHealth -= Math.random() * settings.codon_degrade_speed;
             if(codonHealth <= 0) {
                 codonHealth = 1;
                 info[0] = 0;
                 info[1] = 0;
+                return true;
             }
         }
+        return false;
     }
   
   public void setInfo(int p, int val){
@@ -98,9 +100,9 @@ class Codon{
               if(info[1] == 4){
                   c.genome.performerOn = c.genome.getWeakestCodon();
               }else if(info[1] == 5){
-                  c.genome.directionOn = 1;
+                  c.genome.inwards = true;
               }else if(info[1] == 6){
-                  c.genome.directionOn = 0;
+                  c.genome.inwards = false;
               }else if(info[1] == 7){
                   c.genome.performerOn = loopItInt(c.genome.rotateOn+info[2],c.genome.codons.size());
               }

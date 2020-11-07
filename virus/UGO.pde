@@ -13,6 +13,19 @@ class UGO extends Particle {
         velo = new double[]{ dx / dist * sp, dy / dist * sp};
     }
     
+    public void tick() {
+        super.tick();
+        
+        if( frameCount % settings.gene_tick_time == 0 ) {
+            genome.hurtCodons();
+            if( genome.codons.size() == 0 ) {
+                removeParticle( world.getCellAt(coor[0], coor[1]) ); 
+                Particle p = new Particle( coor, velo, ParticleType.Waste, -99999 );
+                world.addParticle( p );
+            }
+        }
+    }
+    
     void drawSelf() {
       
         double posx = renderer.trueXtoAppX(coor[0]);

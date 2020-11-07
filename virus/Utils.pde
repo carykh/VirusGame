@@ -23,6 +23,10 @@ boolean checkCellBoundary(double a, double b) {
     return (ia != ib);
 }
 
+int randomInt(int min, int max) {
+  return (int) Math.floor(Math.random() * (max - min) ) + min;
+}
+
 
 // BEGIN JUNK //
 
