@@ -4,6 +4,9 @@ class Editor {
     public Cell ugo;
     public Cell selected;
     
+    public int selx = 0;
+    public int sely = 0;
+    
     public int[] codonToEdit = {-1,-1,0,0};
     public double[] arrow = null;
     
@@ -11,9 +14,11 @@ class Editor {
         ugo = new Cell(-1, -1, CellType.Normal, 0, 1, settings.editor_default);
     }
     
-    public void select( Cell c ) {
+    public void select( int x, int y ) {
         open = true;
-        selected = c;
+        selected = world.getCellAt( x, y );
+        selx = x;
+        sely = y;
     }
     
     public void openUGO() {
@@ -44,35 +49,51 @@ class Editor {
         fill(255);
         textFont(font, 96);
         textAlign(LEFT);
-        text(selected.getCellName(), 25, 255);
         
-        if(isNotUGO){
-            textFont(font,32);
-            text("Inside this cell,",555,200);
-            text("there are:",555,232);
-            text("total: " + selected.getParticleCount(null), 555, 296);
-            text("food: " + selected.getParticleCount(ParticleType.Food), 555, 328);
-            text("waste: " + selected.getParticleCount(ParticleType.Waste), 555, 360);
-            text("UGOs: " + selected.getParticleCount(ParticleType.UGO), 555, 392);
-            renderer.drawBar(ENERGY_COLOR, selected.energy, "Energy", 290);
-            renderer.drawBar(WALL_COLOR, selected.wall, "Wall health", 360);
+        if( selected != null ) {
+          
+            text(selected.getCellName(), 25, 255);
+        
+            if(isNotUGO && (selected.type != CellType.Locked)){
+          
+                int c = 200;
+                textFont(font, 22);
+                text("This cell is " + (selected.tampered ? "TAMPERED" : "NATURAL"), 555, c);
+                text("Contents:", 555, c += 22);
+                text("    total: " + selected.getParticleCount(null), 555, c += 44);
+                text("    food: " + selected.getParticleCount(ParticleType.Food), 555, c += 22);
+                text("    waste: " + selected.getParticleCount(ParticleType.Waste), 555, c += 22);
+                text("    UGOs: " + selected.getParticleCount(ParticleType.UGO), 555, c += 22);
+                
+                renderer.drawBar(ENERGY_COLOR, selected.energy, "Energy", 290);
+                renderer.drawBar(WALL_COLOR, selected.wall, "Wall health", 360);
+                
+            }
+            
+            if( selected.type == CellType.Normal ) {
+                renderer.drawGenomeAsList(selected.genome, GENOME_LIST_DIMS);
+                
+                if(isNotUGO){
+                    textFont(font, 32);
+                    textAlign(LEFT);
+                    text("Memory: " + selected.getMemory(), 25, 940);
+                }
+            }
+            
+            renderer.drawEditTable(EDIT_LIST_DIMS);
+            
+        }else{
+            text("Empty Cell", 25, 255);
+            renderer.drawEditTable(EDIT_LIST_DIMS);
         }
-        
-        renderer.drawGenomeAsList(selected.genome, GENOME_LIST_DIMS);
-        renderer.drawEditTable(EDIT_LIST_DIMS);
-        
-        if(isNotUGO){
-            textFont(font, 32);
-            textAlign(LEFT);
-            text("Memory: " + selected.getMemory(), 25, 940);
-        }
+
     }
     
     private void drawSelection() {
 
         if( open && selected != ugo ) {
             pushMatrix();
-            translate( (float) renderer.trueXtoAppX(selected.x), (float) renderer.trueYtoAppY(selected.y) );
+            translate( (float) renderer.trueXtoAppX(selx), (float) renderer.trueYtoAppY(sely) );
             scale( (float) (renderer.camS / BIG_FACTOR) );
             noFill();
             stroke(0,255,255,155 + (int) (100 * Math.sin(frameCount / 10.f)));
@@ -86,19 +107,12 @@ class Editor {
     public void checkInput() {
         if(open) {
           
-            if(codonToEdit[0] >= 0) {
-                checkEditListClick();
-            }
-            
+            checkEditListClick( codonToEdit[0] < 0 );
             checkGenomeListClick();
-        }
-        
-        if(editor.selected == editor.ugo) {
-            if((mouseX >= height + 530 && codonToEdit[0] == -1) || mouseY < 160) {
-                close();
-            }
-        }else if(mouseX > width - 160 && mouseY < 160) {
-            openUGO();
+            if(mouseX > width - 160 && mouseY < 160) close();
+            
+        }else{
+            if(mouseX > width - 160 && mouseY < 160) openUGO();
         }
     }
     
@@ -122,15 +136,20 @@ class Editor {
         
     }
 
-    void checkEditListClick() {
+    void checkEditListClick( boolean divineControls ) {
       
         double rmx = ((mouseX - height) - EDIT_LIST_DIMS[0]) / EDIT_LIST_DIMS[2];
         double rmy = (mouseY - EDIT_LIST_DIMS[1]) / EDIT_LIST_DIMS[3];
     
         if(rmx >= 0 && rmx < 1 && rmy >= 0 && rmy < 1) {
           
-            int optionCount = CodonInfo.getOptionSize(codonToEdit[0]);
+            int optionCount = divineControls ? DIVINE_CONTROLS.length : CodonInfo.getOptionSize(codonToEdit[0]);
             int choice = (int) (rmy * optionCount);
+            
+            if( divineControls ) { 
+                divineIntervention( choice );
+                return;
+            }
             
             if(codonToEdit[0] == 1 && (choice == 8 || choice == 9)){
               
@@ -172,6 +191,59 @@ class Editor {
             
         }
         
+    }
+    
+    public void divineIntervention( int id ) {
+        // For meaning of the specific id see 'DIVINE_CONTROLS' defined in 'Virus',
+        // where id is the offset into that array.
+        
+        if( !isDivineControlAvailable(id) ) return;
+        
+        switch( id ) {
+            case 0:  
+                world.setCellAt( selx, sely, null );
+                break;
+            
+            case 1:
+                world.aliveCount ++;
+                world.setCellAt( selx, sely, new Cell( selx, sely, CellType.Normal, 0, 1, settings.genome ) );
+                break;
+            
+            case 2: 
+                selected.healWall();
+                break;
+            
+            case 3: 
+                selected.giveEnergy();
+                break;
+            
+            case 4: 
+                world.setCellAt( selx, sely, new Cell( selx, sely, CellType.Locked, 0, 1, settings.genome ) );
+                break;
+            
+            case 5: 
+                world.shellCount ++;
+                world.setCellAt( selx, sely, new Cell( selx, sely, CellType.Shell, 0, 1, settings.genome ) );
+                break;
+        }
+        
+        editor.select( selx, sely );
+        world.lastEditFrame = frameCount;
+      
+    }
+    
+    public boolean isDivineControlAvailable( int id ) {
+        // For meaning of the specific id see 'DIVINE_CONTROLS' defined in 'Virus',
+        // where id is the offset into that array.
+        
+        if( selected == ugo || !open ) return false;
+        if( id == 0 ) return (selected != null);
+        if( id == 2 || id == 3 ) return (selected != null && selected.type != CellType.Locked);
+        if( id == 1 ) return (selected == null || selected.type != CellType.Normal);
+        if( id == 4 ) return (selected == null || selected.type != CellType.Locked);
+        if( id == 5 ) return (selected == null || selected.type != CellType.Shell);
+        return true;
+      
     }
     
     void produce(){

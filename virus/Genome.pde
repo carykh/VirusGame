@@ -112,16 +112,30 @@ class Genome{
         popMatrix();
     }
   
-    void hurtCodons(){
+    void hurtCodons( Cell cell ){
         for(int i = 0; i < codons.size(); i++){
             Codon c = codons.get(i);
             if(c.hasSubstance()){
                 if( c.hurt() ) {
+                    if( cell != null ) {
+                        Particle newWaste = new Particle( getCodonCoor(i, CODON_DIST, cell.x, cell.y), ParticleType.Waste, -99999 );
+                        world.addParticle( newWaste );
+                    }
+                  
                     codons.remove(i);
                     return;
                 }
             }
         }
+    }
+    
+    public double[] getCodonCoor(int i, double r, int x, int y){
+        double theta = (float)(i*2*PI)/(codons.size())-PI/2;
+        double r2 = r/BIG_FACTOR;
+        double cx = x+0.5+r2*Math.cos(theta);
+        double cy = y+0.5+r2*Math.sin(theta);
+        double[] result = {cx, cy};
+        return result;
     }
   
     int getWeakestCodon(){

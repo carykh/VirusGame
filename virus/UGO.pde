@@ -22,7 +22,7 @@ class UGO extends Particle {
         super.tick();
         
         if( frameCount % settings.gene_tick_time == 0 ) {
-            genome.hurtCodons();
+            genome.hurtCodons(null);
             if( genome.codons.size() == 0 ) {
                 removeParticle( world.getCellAt(coor[0], coor[1]) ); 
                 Particle p = new Particle( coor, velo, ParticleType.Waste, -99999 );

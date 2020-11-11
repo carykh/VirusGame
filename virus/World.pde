@@ -46,6 +46,14 @@ class World {
     }
     
     public void tick() {
+      
+        if( frameCount % 60 == 0 ) {
+            graph.append( new GraphFrame( 
+                pc.get(ParticleType.Waste).size(),
+                pc.get(ParticleType.UGO).size(),
+                aliveCount + shellCount) );
+        }
+      
         pc.tick( ParticleType.Food );
         pc.tick( ParticleType.Waste );
         pc.tick( ParticleType.UGO );
@@ -96,6 +104,11 @@ class World {
     public void addParticle( Particle p ) {
         p.addToCellList();
         queue.add( p );
+    }
+    
+    public void setCellAt( int x, int y, Cell c ) {
+        if( cells[y][x] != null ) cells[y][x].die(true);
+        cells[y][x] = c;
     }
     
     public Cell getCellAt( double x, double y ) {

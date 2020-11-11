@@ -3,6 +3,7 @@ Settings settings;
 World world;
 Renderer renderer;
 Editor editor;
+Graph graph;
 PFont font;
 
 final double EPS = 0.00000001;
@@ -14,6 +15,8 @@ final color TELOMERE_COLOR = color(0, 0, 0);
 final color ENERGY_COLOR = color(255, 255, 0);
 final color WALL_COLOR = color(210, 50, 210);
 final color COPYRIGHT_TEXT_COLOR = color(0, 0, 0, 200);
+final color DIVINE_CONTROL_COLOR = color(204, 102, 0);
+final color DIVINE_DISABLED_COLOR = color(128, 102, 77);
 final float HAND_DIST = 32;
 final float HAND_LEN = 7;
 final double SPEED_LOW = 0.01;
@@ -24,12 +27,16 @@ final double VISUAL_TRANSITION = 0.38;
 final double MARGIN = 4;
 final double DETAIL_THRESHOLD = 10;
 final double[] GENOME_LIST_DIMS = {70, 430, 360, 450};
-final double[] EDIT_LIST_DIMS = {550, 430, 180, 450};
+final double[] EDIT_LIST_DIMS = {550, 434, 180, 450};
 final double CODON_DIST = 17;
 final double CODON_DIST_UGO = 10.6;
 final double CODON_WIDTH = 1.4;
 final double[][] CODON_SHAPE = {{-2,0},{-2,2},{-1,3},{0,3},{1,3},{2,2},{2,0},{0,0}};
 final double[][] TELOMERE_SHAPE = {{-2,2},{-1,3},{0,3},{1,3},{2,2},{2,-2},{1,-3},{0,-3},{-1,-3},{-2,-2}};
+final String[] DIVINE_CONTROLS = {"Remove", "Revive", "Heal", "Energize", "Make Wall", "Make Shell"};
+final color GRAPH_WASTES = color(153, 99, 0, 255);
+final color GRAPH_UGOS = color(30, 200, 30, 255);
+final color GRAPH_CELLS = color(210, 50, 210, 255);
 
 void setup() {
   
@@ -44,6 +51,7 @@ void setup() {
     world = new World( settings );
     renderer = new Renderer( settings );
     editor = new Editor( settings );
+    graph = new Graph( settings.graph_length );
     
     println("Ready!");
     

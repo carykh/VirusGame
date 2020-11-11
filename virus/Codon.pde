@@ -74,7 +74,7 @@ class Codon{
                           c.pushOut(p);
                       }
                   }else if(info[1] == 3){
-                      c.die();
+                      c.die(false);
                   }else if(info[2] == 10) {
                       Particle p = c.selectParticleInCell( ParticleType.UGO );
                       if(p != null){
@@ -91,6 +91,7 @@ class Codon{
                       c.shootLaserAt(particle);
                   }else if(info[1] == 3){
                       c.healWall();
+                      c.laserWall();
                   }
               }
               break;

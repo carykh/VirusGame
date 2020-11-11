@@ -13,6 +13,11 @@ void keyPressed() {
         renderer.maxRight = settings.show_ui ? height : width;
     }
     
+    // disable/enble tampered cell highlighting
+    if( key == 'z' || key == 'Z' ) {
+        settings.show_tampered = !settings.show_tampered;
+    }
+    
     // make ESC key close the editor, and not the entire game
     if( key == ESC ) {
         editor.close();
@@ -72,13 +77,10 @@ void detectMouse(){
                 }
             }
             if(doubleClick && isPressed){
-                Cell clickedCell = world.getCellAtUnscaled(clickWorldX, clickWorldY);
                 if(editor.selected != editor.ugo){
                     editor.close();
                 }
-                if(clickedCell != null && clickedCell.type == CellType.Normal){
-                    editor.select( clickedCell );
-                }
+                editor.select( (int) clickWorldX, (int) clickWorldY );
             }
         }
         clickWorldX = -1;

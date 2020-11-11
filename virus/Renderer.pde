@@ -110,7 +110,7 @@ class Renderer {
                 drawWorldStats();
             }
             popMatrix();
-            drawUGObutton((editor.selected != editor.ugo));
+            drawUGObutton( !editor.isOpened() );
         }
         
     }
@@ -162,6 +162,8 @@ class Renderer {
         text("Foods: " + world.pc.foods.size(), 25, 200);
         text("Wastes: " + world.pc.wastes.size(), 25, 230);
         text("UGOs: " + world.pc.ugos.size(), 25, 260);
+        
+        graph.drawSelf( 10, height - 10, width - height - 20, height - 300 );
     }
     
     void drawEditTable(double[] dims){
@@ -170,16 +172,19 @@ class Renderer {
         double w = dims[2];
         double h = dims[3];
   
-        double appW = w-MARGIN*2;
+        double appW = w - MARGIN * 2;
+        int p = editor.codonToEdit[0];
+        
+        pushMatrix();
         textFont(font,30);
         textAlign(CENTER);
-  
-        int p = editor.codonToEdit[0];
-        int s = editor.codonToEdit[2];
-        int e = editor.codonToEdit[3];
+        translate( (float) x, (float) y );
+        
+        // Codon editor
         if(p >= 0){
-            pushMatrix();
-            dTranslate(x,y);
+          
+            int s = editor.codonToEdit[2];
+            int e = editor.codonToEdit[3];
             int choiceCount = CodonInfo.getOptionSize(editor.codonToEdit[0]);
             double appChoiceHeight = h/choiceCount;
             for(int i = 0; i < choiceCount; i++){
@@ -190,8 +195,22 @@ class Renderer {
                 fill(255);
                 dText(CodonInfo.getTextSimple(p, i, s, e),w*0.5,appY+appChoiceHeight/2+11);
             }
-            popMatrix();
+            
+        // Divine editor
+        }else{
+         
+            double appChoiceHeight = h / DIVINE_CONTROLS.length;
+            for(int i = 0; i < DIVINE_CONTROLS.length; i++){
+                double appY = appChoiceHeight*i;
+                fill( editor.isDivineControlAvailable(i) ? DIVINE_CONTROL_COLOR : DIVINE_DISABLED_COLOR );
+                dRect(MARGIN,appY+MARGIN,appW,appChoiceHeight-MARGIN*2);
+                fill(255);
+                dText(DIVINE_CONTROLS[i],w*0.5,appY+appChoiceHeight/2+11);
+            }
+          
         }
+        
+        popMatrix();
         
     }
     

@@ -60,12 +60,12 @@ class Cell{
           
         }else if(type == CellType.Normal){
         
-            if(tampered){
-                fill(205,225,70);
+            if( tampered && settings.show_tampered ) {
+                fill(205, 225, 70);
             }else{
-                fill(225,190,225);
+                fill(225, 190, 225);
             }
-            
+
             rect(0,0,BIG_FACTOR,BIG_FACTOR);
             fill(170,100,170);
             float w = (float)(BIG_FACTOR*0.08*wall);
@@ -182,7 +182,7 @@ class Cell{
                 if(geneTimer <= settings.gene_tick_time/2.0 && oldGT > settings.gene_tick_time/2.0){
                     Codon codon = genome.getSelected();
                     if( codon != null ) {
-                        genome.hurtCodons();
+                        genome.hurtCodons(this);
                         useEnergy( codon.tick(this) );
                     }
                 }
@@ -194,6 +194,7 @@ class Cell{
             }
             
             genome.update();
+            
         }
     }
   
@@ -215,7 +216,7 @@ class Cell{
             if(pos < end){
                 memory = memory+"-";
             }
-            laserCoor.add(getCodonCoor(index,CODON_DIST));
+            laserCoor.add(genome.getCodonCoor(index,CODON_DIST,x,y));
         }
     }
     
@@ -256,7 +257,7 @@ class Cell{
             if(pos-start < memoryParts.length){
                 String memoryPart = memoryParts[pos-start];
                 c.setFullInfo(stringToInfo(memoryPart));
-                laserCoor.add(getCodonCoor(index,CODON_DIST));
+                laserCoor.add(genome.getCodonCoor(index,CODON_DIST,x,y));
             }
             useEnergy( settings.gene_tick_energy );
         }
@@ -264,7 +265,10 @@ class Cell{
     
     public void healWall(){
         wall += (1-wall) * E_RECIPROCAL;
-        laserWall();
+    }
+    
+    public void giveEnergy() {
+        energy += (1-energy)*E_RECIPROCAL;
     }
     
     public void laserWall(){
@@ -283,7 +287,7 @@ class Cell{
             shootLaserAt(newWaste);
             world.addParticle( newWaste );
             food.removeParticle(this);
-            energy += (1-energy)*E_RECIPROCAL;
+            giveEnergy();
         }else{
             shootLaserAt(food);
         }
@@ -301,16 +305,7 @@ class Cell{
         }else{
             r += HAND_LEN;
         }
-        return getCodonCoor(genome.performerOn,r);
-    }
-  
-    public double[] getCodonCoor(int i, double r){
-        double theta = (float)(i*2*PI)/(genome.codons.size())-PI/2;
-        double r2 = r/BIG_FACTOR;
-        double handX = x+0.5+r2*Math.cos(theta);
-        double handY = y+0.5+r2*Math.sin(theta);
-        double[] result = {handX, handY};
-        return result;
+        return genome.getCodonCoor(genome.performerOn,r,x,y);
     }
     
     public void pushOut(Particle waste){
@@ -344,7 +339,7 @@ class Cell{
     public void hurtWall(double multi){
         if(type == CellType.Normal) {
             wall -= settings.wall_damage*multi;
-            if(wall <= 0) die();
+            if(wall <= 0) die(false);
         }
     }
   
@@ -354,10 +349,12 @@ class Cell{
         return old;
     }
   
-    public void die(){
-        for(int i = 0; i < genome.codons.size(); i++){
-            Particle newWaste = new Particle( getCodonCoor(i, CODON_DIST), ParticleType.Waste, -99999 );
-            world.addParticle( newWaste );
+    public void die( boolean silent ){
+        if( !silent ) {
+            for(int i = 0; i < genome.codons.size(); i++){
+                Particle newWaste = new Particle( genome.getCodonCoor(i, CODON_DIST, x, y), ParticleType.Waste, -99999 );
+                world.addParticle( newWaste );
+            }
         }
         
         if(this == editor.selected){
@@ -366,11 +363,11 @@ class Cell{
         
         if( type == CellType.Shell ){
             world.shellCount --;
-        }else{
+        }else if( type == CellType.Normal ) {
             world.aliveCount --;
         }
         
-        world.deadCount ++;
+        if( !silent ) world.deadCount ++;
         type = CellType.Empty;
     }
   
@@ -402,9 +399,13 @@ class Cell{
             return "Custom UGO";
         }else if(type == CellType.Normal){
             return "Cell at ("+x+", "+y+")";
+        }else if(type == CellType.Shell) {
+            return "Cell Shell";
+        }else if(type == CellType.Locked) {
+            return "Wall";
         }
         
-        return "";
+        return "Undefined";
     }
   
     public int getParticleCount(ParticleType t){
