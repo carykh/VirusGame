@@ -12,6 +12,12 @@ void keyPressed() {
         settings.show_ui = !settings.show_ui;
         renderer.maxRight = settings.show_ui ? height : width;
     }
+    
+    // make ESC key close the editor, and not the entire game
+    if( key == ESC ) {
+        editor.close();
+        key = 0;
+    }
   
 }
 
@@ -71,7 +77,7 @@ void detectMouse(){
                     editor.close();
                 }
                 if(clickedCell != null && clickedCell.type == CellType.Normal){
-                    editor.open( clickedCell );
+                    editor.select( clickedCell );
                 }
             }
         }

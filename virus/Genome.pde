@@ -23,19 +23,31 @@ class Genome{
     }
   
     public Codon getSelected() {
+        if( codons.size() == 0 ) {
+            return null;
+        }
         return codons.get(rotateOn);
     }
   
     public void next() {
-        rotateOn = (rotateOn + 1) % codons.size(); 
+        int s = codons.size();
+        rotateOn = ((s == 0) ? 0 : ((rotateOn + 1) % s)); 
     }
   
     public void update(){
-      appRO += loopIt(rotateOn-appRO, codons.size(),true)*VISUAL_TRANSITION*PLAY_SPEED;
-      appPO += loopIt(performerOn-appPO, codons.size(),true)*VISUAL_TRANSITION*PLAY_SPEED;
-      appDO += ((inwards?1:0)-appDO)*VISUAL_TRANSITION*PLAY_SPEED;
-      appRO = loopIt(appRO, codons.size(),false);
-      appPO = loopIt(appPO, codons.size(),false);
+      
+        int s = codons.size();
+        if( s != 0 ) {
+            appRO += loopIt( rotateOn-appRO, s, true) * VISUAL_TRANSITION * PLAY_SPEED;
+            appPO += loopIt( performerOn-appPO, s, true) * VISUAL_TRANSITION * PLAY_SPEED;
+            appDO += ((inwards?1:0) - appDO) * VISUAL_TRANSITION * PLAY_SPEED;
+            appRO = loopIt( appRO, s, false);
+            appPO = loopIt( appPO, s, false);
+        }else{
+            appRO = 0;
+            appPO = 0;
+        }
+       
     }
     
     public void drawHand(){

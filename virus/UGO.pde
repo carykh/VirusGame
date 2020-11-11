@@ -1,6 +1,7 @@
 class UGO extends Particle {
   
     Genome genome;
+    boolean divine = false;
  
     public UGO( double[] coor, String data ) {
         super( coor, ParticleType.UGO, frameCount );
@@ -11,6 +12,10 @@ class UGO extends Particle {
         double dist = Math.sqrt(dx * dx + dy * dy);
         double sp = dist * ( SPEED_HIGH - SPEED_LOW ) + SPEED_LOW;
         velo = new double[]{ dx / dist * sp, dy / dist * sp};
+    }
+    
+    public void markDivine() {
+         divine = true;
     }
     
     public void tick() {
@@ -53,7 +58,7 @@ class UGO extends Particle {
         Cell fc = world.getCellAt(future[0], future[1]);
         if( fc != null ) {
           
-            if( fc.wall * settings.cell_wall_protection < random(0,1) || fc.type == CellType.Shell ) {
+            if( divine || fc.wall * settings.cell_wall_protection < random(0,1) || fc.type == CellType.Shell ) {
                 
                 if(type == ParticleType.UGO && ct == CellType.Empty && ft == CellType.Normal && genome.codons.size()+fc.genome.codons.size() <= settings.max_codon_count){
                     return injectGeneticMaterial(fc);

@@ -82,6 +82,9 @@ class Renderer {
     }
     
     void drawUI(){
+        
+        editor.drawSelection();
+        
         if( settings.show_ui ) {
           
             pushMatrix();
@@ -109,6 +112,7 @@ class Renderer {
             popMatrix();
             drawUGObutton((editor.selected != editor.ugo));
         }
+        
     }
     
     void drawCredits() {

@@ -45,7 +45,6 @@ class Codon{
   public double tick( Cell c ) {
     
       boolean inwards = c.isHandInwards();
-      c.genome.hurtCodons();
     
       switch( info[0] ) {
         

@@ -60,13 +60,12 @@ class Cell{
           
         }else if(type == CellType.Normal){
         
-            if(this == editor.selected){
-                fill(0,255,255);
-            }else if(tampered){
+            if(tampered){
                 fill(205,225,70);
             }else{
                 fill(225,190,225);
             }
+            
             rect(0,0,BIG_FACTOR,BIG_FACTOR);
             fill(170,100,170);
             float w = (float)(BIG_FACTOR*0.08*wall);
@@ -181,7 +180,11 @@ class Cell{
                 geneTimer -= PLAY_SPEED;
                 
                 if(geneTimer <= settings.gene_tick_time/2.0 && oldGT > settings.gene_tick_time/2.0){
-                    useEnergy( genome.getSelected().tick(this) );
+                    Codon codon = genome.getSelected();
+                    if( codon != null ) {
+                        genome.hurtCodons();
+                        useEnergy( codon.tick(this) );
+                    }
                 }
                 
                 if(geneTimer <= 0){

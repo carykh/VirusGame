@@ -11,7 +11,7 @@ class Editor {
         ugo = new Cell(-1, -1, CellType.Normal, 0, 1, settings.editor_default);
     }
     
-    public void open( Cell c ) {
+    public void select( Cell c ) {
         open = true;
         selected = c;
     }
@@ -66,6 +66,21 @@ class Editor {
             textAlign(LEFT);
             text("Memory: " + selected.getMemory(), 25, 940);
         }
+    }
+    
+    private void drawSelection() {
+
+        if( open && selected != ugo ) {
+            pushMatrix();
+            translate( (float) renderer.trueXtoAppX(selected.x), (float) renderer.trueYtoAppY(selected.y) );
+            scale( (float) (renderer.camS / BIG_FACTOR) );
+            noFill();
+            stroke(0,255,255,155 + (int) (100 * Math.sin(frameCount / 10.f)));
+            strokeWeight(2);
+            rect(0, 0, BIG_FACTOR, BIG_FACTOR);
+            popMatrix();
+        }
+      
     }
   
     public void checkInput() {
@@ -163,8 +178,9 @@ class Editor {
       
         if(world.getCellAtUnscaled(arrow[0], arrow[1]) == null){
           
-            Particle p = new UGO(arrow, ugo.genome.getGenomeString());
-            world.addParticle(p);
+            UGO u = new UGO(arrow, ugo.genome.getGenomeString());
+            u.markDivine();
+            world.addParticle(u);
             world.lastEditFrame = frameCount;
             
         }
