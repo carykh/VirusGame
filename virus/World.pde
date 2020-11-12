@@ -20,23 +20,18 @@ class World {
         for( int y = 0; y < size; y++ ) {
             for( int x = 0; x < size; x++ ) {
 
-                if( x == 0 || y == 0 || x == size - 1 || y == size - 1 ) {
-                    cells[y][x] = null;
-                }else{
-                    int type = settings.map_data[x-1][y-1];
+                CellType type = types[settings.map_data[x][y]];
                     
-                    if( type == 0 ) {
-                        cells[y][x] = null; 
-                        continue;
-                    }
-                    
-                    Cell cell = new Cell( x, y, types[type], 0, 1, settings.genome );
-                    cells[y][x] = cell;
-                    
-                    if( cell.type == CellType.Normal ) initialCount ++;
-                    if( cell.type == CellType.Shell ) shellCount ++;
-                    
+                if( type == CellType.Empty ) {
+                    cells[y][x] = null; 
+                    continue;
                 }
+                    
+                Cell cell = new Cell( x, y, type, 0, 1, settings.genome );
+                cells[y][x] = cell;
+                    
+                if( cell.type == CellType.Normal ) initialCount ++;
+                if( cell.type == CellType.Shell ) shellCount ++;
                 
             }
         }
@@ -109,6 +104,10 @@ class World {
     public void setCellAt( int x, int y, Cell c ) {
         if( cells[y][x] != null ) cells[y][x].die(true);
         cells[y][x] = c;
+    }
+    
+    public boolean isCellValid( int x, int y ) {
+        return !(x < 0 || x >= settings.world_size || y < 0 || y >= settings.world_size);
     }
     
     public Cell getCellAt( double x, double y ) {

@@ -52,7 +52,7 @@ void setup() {
     renderer = new Renderer( settings );
     editor = new Editor( settings );
     graph = new Graph( settings.graph_length, width - height - 20, height - 300 );
-    graph.setRescan( settings.graph_rescan );
+    graph.setRescan( settings.graph_downscale );
     
     println("Ready!");
     

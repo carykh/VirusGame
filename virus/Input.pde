@@ -20,7 +20,7 @@ void keyPressed() {
         settings.show_tampered = !settings.show_tampered;
     }
     
-    // disable/enble tampered cell highlighting
+    // disable/enble debug screan
     if( key == '\t' ) {
         settings.show_debug = !settings.show_debug;
     }

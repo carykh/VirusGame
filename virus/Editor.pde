@@ -41,10 +41,7 @@ class Editor {
         fill(80);
         noStroke();
         rect(10, 160, 530, height - 10);
-        
-        if(isNotUGO){
-            rect(540, 160, 200, 270);
-        }
+        rect(540, 160, 200, 270);
         
         fill(255);
         textFont(font, 96);
@@ -108,7 +105,7 @@ class Editor {
         if(open) {
           
             checkEditListClick( codonToEdit[0] < 0 );
-            checkGenomeListClick();
+            if( selected != null && selected.hasGenome() ) checkGenomeListClick();
             if(mouseX > width - 160 && mouseY < 160) close();
             
         }else{

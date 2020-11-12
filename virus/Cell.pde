@@ -35,6 +35,10 @@ class Cell{
         }
     }
     
+    public boolean hasGenome() {
+        return type == CellType.Normal; 
+    }
+    
     public boolean isHandInwards() {
         return genome.inwards;
     }
@@ -152,11 +156,12 @@ class Cell{
             double[] handCoor = getHandCoor();
             if(laserTarget == null){
                 for(double[] singleLaserCoor : laserCoor){
-                    renderer.scaledLine(handCoor,singleLaserCoor);
+                    renderer.scaledLine(handCoor, singleLaserCoor);
                 }
             }else{
-                double[] targetCoor = laserTarget.coor;
-                renderer.scaledLine(handCoor,targetCoor);
+                if( dist((float)handCoor[0], (float)handCoor[1], (float)laserTarget.coor[0], (float)laserTarget.coor[1]) < 2 ) {
+                    renderer.scaledLine(handCoor, laserTarget.coor);
+                }
             }
         }
     }
@@ -313,11 +318,21 @@ class Cell{
         int[][] dire = {{0,1},{0,-1},{1,0},{-1,0}};
         int chosen = -1;
         int iter = 0;
-        while(chosen == -1 || (world.cells[y+dire[chosen][1]][x+dire[chosen][0]] != null && world.cells[y+dire[chosen][1]][x+dire[chosen][0]].type != CellType.Empty) ){
-            chosen = (int)random(0,4);
+        
+        while( iter < 64 && chosen == -1 ) {
+          
+            int c = (int) random(0, 4);
+            
+            if( world.isCellValid( x + dire[c][0], y + dire[c][1] ) && world.cells[ y + dire[c][1] ][ x + dire[c][0] ] == null ) {
+                chosen = c;
+            }
+            
             iter ++;
-            if( iter > 64 ) return;
+          
         }
+        
+        if( chosen == -1 ) return;
+         
         double[] oldCoor = waste.copyCoor();
         for(int dim = 0; dim < 2; dim++){
             if(dire[chosen][dim] == -1){
@@ -329,10 +344,13 @@ class Cell{
             }
             waste.loopCoor(dim);
         }
+        
         Cell p_cell = world.getCellAt(oldCoor[0], oldCoor[1]);
         if( p_cell != null ) p_cell.removeParticle(waste);
+        
         Cell n_cell = world.getCellAt(waste.coor[0], waste.coor[1]);
         if( n_cell != null ) n_cell.addParticle(waste);
+        
         laserT = frameCount;
         laserTarget = waste;
     }

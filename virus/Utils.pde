@@ -24,7 +24,11 @@ boolean checkCellBoundary(double a, double b) {
 }
 
 int randomInt(int min, int max) {
-  return (int) Math.floor(Math.random() * (max - min) ) + min;
+    return (int) Math.floor(Math.random() * (max - min) ) + min;
+}
+
+boolean randomBool() {
+    return random(0, 1) > 0.5;
 }
 
 

@@ -30,7 +30,7 @@ class Settings {
     public double min_length_to_produce;
     public double mutability;
     public int graph_length;
-    public boolean graph_rescan;
+    public boolean graph_downscale;
   
     public Settings() {
     
@@ -44,7 +44,7 @@ class Settings {
         max_waste = settings.getInt("max_waste");
         codon_degrade_speed = settings.getDouble("codon_degrade_speed");
         graph_length = settings.getInt("graph_length");
-        graph_rescan = settings.getBoolean("graph_rescan");
+        graph_downscale = settings.getBoolean("graph_downscale");
         wall_damage = settings.getDouble("wall_damage");
         gene_tick_energy = settings.getDouble("gene_tick_energy");
         mutability = settings.getDouble("mutability");
@@ -57,8 +57,8 @@ class Settings {
         laser_linger_time = settings.getInt("laser_linger_time");
         age_grow_speed = settings.getDouble("age_grow_speed");
         min_length_to_produce = settings.getDouble("min_length_to_produce");
-        world_size = world.getInt("world_size") + 2;
-        loadWorld( world.getJSONArray("map"), world_size - 2 );
+        world_size = world.getInt("world_size");
+        loadWorld( world.getJSONArray("map"), world_size );
     
     }
     
