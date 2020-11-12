@@ -72,46 +72,48 @@ class Genome{
     }
   
     public void drawCodons(){
-        for(int i = 0; i < codons.size(); i++){
-            drawCodon(i);
-        }
-    }
-  
-    public void drawCodon(int i){
-        int VIS_GENOME_LENGTH = max(3,codons.size());
-        double CODON_ANGLE = (double)(1.0)/VIS_GENOME_LENGTH * TWO_PI;
-        double PART_ANGLE = CODON_ANGLE/5.0;
-        double baseAngle = -HALF_PI + i * CODON_ANGLE;
-        pushMatrix();
-        rotate((float)(baseAngle));
-    
-        Codon c = codons.get(i);
-        if(c.codonHealth < 0.97){
-            beginShape();
-            fill(TELOMERE_COLOR);
-            for(int v = 0; v < TELOMERE_SHAPE.length; v++){
-                double[] cv = TELOMERE_SHAPE[v];
-                double ang = cv[0]*PART_ANGLE;
-                double dist = cv[1] * CODON_WIDTH + (isUGO ? CODON_DIST_UGO : CODON_DIST);
-                vertex((float)(Math.cos(ang)*dist),(float)(Math.sin(ang)*dist));
+      
+        final int size = codons.size();
+        final float codonAngle = 1.0f / max(3, size) * TWO_PI;
+        final float partAngle = codonAngle / 5.0f;
+        final float codonDist = (float) (isUGO ? CODON_DIST_UGO : CODON_DIST);
+        
+        for( int i = 0; i < size; i ++ ) {
+        
+            pushMatrix();
+            rotate( -HALF_PI + i * codonAngle );
+            
+            Codon c = codons.get(i);
+            if(c.codonHealth < 0.97){
+                beginShape();
+                fill(TELOMERE_COLOR);
+                for(int v = 0; v < TELOMERE_SHAPE.length; v++){
+                    final float[] cv = TELOMERE_SHAPE[v];
+                    final float ang = cv[0] * partAngle;
+                    final float dist = cv[1] * CODON_WIDTH + codonDist;
+                    vertex(cos(ang) * dist, sin(ang) * dist);
+                }
+                endShape(CLOSE);
             }
-            endShape(CLOSE);
+
+            for(int p = 0; p < 2; p++){
+                beginShape();
+                fill(c.getColor(p));
+                for(int v = 0; v < CODON_SHAPE.length; v++){
+                    final float[] cv = CODON_SHAPE[v];
+                    final float ang = cv[0] * partAngle * c.codonHealth;
+                    final float dist = cv[1] * (2 * p - 1) * CODON_WIDTH + codonDist;
+                    vertex(cos(ang) * dist, sin(ang) * dist);
+                }    
+                endShape(CLOSE);
+            }
+            
+            popMatrix();
+          
         }
 
-        for(int p = 0; p < 2; p++){
-            beginShape();
-            fill(c.getColor(p));
-            for(int v = 0; v < CODON_SHAPE.length; v++){
-                double[] cv = CODON_SHAPE[v];
-                double ang = cv[0]*PART_ANGLE*c.codonHealth;
-                double dist = cv[1]*(2*p-1) * CODON_WIDTH + (isUGO ? CODON_DIST_UGO : CODON_DIST);
-                vertex((float)(Math.cos(ang)*dist),(float)(Math.sin(ang)*dist));
-            }
-            endShape(CLOSE);
-        }
-        popMatrix();
     }
-  
+
     void hurtCodons( Cell cell ){
         for(int i = 0; i < codons.size(); i++){
             Codon c = codons.get(i);

@@ -28,6 +28,7 @@ class Settings {
     public double age_grow_speed;
     public double min_length_to_produce;
     public int graph_length;
+    public boolean graph_rescan;
   
     public Settings() {
     
@@ -41,6 +42,7 @@ class Settings {
         max_waste = settings.getInt("max_waste");
         codon_degrade_speed = settings.getDouble("codon_degrade_speed");
         graph_length = settings.getInt("graph_length");
+        graph_rescan = settings.getBoolean("graph_rescan");
         wall_damage = settings.getDouble("wall_damage");
         gene_tick_energy = settings.getDouble("gene_tick_energy");
         waste_disposal_chance_high = settings.getDouble("waste_disposal_chance_high");

@@ -194,34 +194,32 @@ class Editor {
     }
     
     public void divineIntervention( int id ) {
-        // For meaning of the specific id see 'DIVINE_CONTROLS' defined in 'Virus',
-        // where id is the offset into that array.
-        
+      
         if( !isDivineControlAvailable(id) ) return;
         
         switch( id ) {
-            case 0:  
+            case 0: // Remove
                 world.setCellAt( selx, sely, null );
                 break;
             
-            case 1:
+            case 1: // Revive
                 world.aliveCount ++;
                 world.setCellAt( selx, sely, new Cell( selx, sely, CellType.Normal, 0, 1, settings.genome ) );
                 break;
             
-            case 2: 
+            case 2: // Heal
                 selected.healWall();
                 break;
             
-            case 3: 
+            case 3: // Energize
                 selected.giveEnergy();
                 break;
             
-            case 4: 
+            case 4: // Make Wall
                 world.setCellAt( selx, sely, new Cell( selx, sely, CellType.Locked, 0, 1, settings.genome ) );
                 break;
             
-            case 5: 
+            case 5: // Make Shell
                 world.shellCount ++;
                 world.setCellAt( selx, sely, new Cell( selx, sely, CellType.Shell, 0, 1, settings.genome ) );
                 break;

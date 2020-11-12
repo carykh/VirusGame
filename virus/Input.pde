@@ -4,6 +4,8 @@ boolean doubleClick = false; // not realy double click - find better name
 boolean wasMouseDown = false;
 double clickWorldX = -1;
 double clickWorldY = -1;
+int windowSizeX = 0; // used for resize detection
+int windowSizeY = 0;
 
 void keyPressed() {
   
@@ -37,7 +39,17 @@ void mouseWheel(MouseEvent event) {
     
 }
 
-void detectMouse(){
+void windowResized() {
+    graph.resize( width - height - 20, height - 300 );
+}
+
+void inputCheck(){
+  
+    if( width != windowSizeX || height != windowSizeY ) {
+         windowSizeX = width;
+         windowSizeY = height;
+         windowResized();
+    }
   
     if (mousePressed) {
         editor.arrow = null;

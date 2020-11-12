@@ -3,11 +3,13 @@ class Graph {
     GraphFrame[] frames;
     int offset = 0;
     int highest = 0;
-    //int first;
+    boolean redraw = true;
+    PGraphics canvas = null;
+    boolean rescan = true;
 
-    public Graph( int len ) {
+    public Graph( int len, int w, int h ) {
         frames = new GraphFrame[len];
-        //first = len;
+        canvas = createGraphics( w, h );
         for(int i = 0; i < len; i++) frames[i] = new GraphFrame();
     }
     
@@ -16,59 +18,72 @@ class Graph {
         frames[offset] = frame;
         int h = frame.getHighest();
         
-        if( h > highest ) {
+        if( h >= highest ) {
             highest = h;
-        }else{
+        }else if( highest > 200 && rescan ) {
             highest = getHighest(true);
         }
         
-        //first --;
+        redraw = true;
     }
     
-    public void drawSelf( float x, float y, float w, float h ) {
+    public void setRescan( boolean rescan ) {
+        this.rescan = rescan; 
+    }
+    
+    public void resize( int w, int h ) {
+         canvas = createGraphics( w, h );
+    }
+    
+    public void drawSelf( float x, float y ) {
       
-        int hi = max( 200, highest );
-        float uy = h / hi;
-        float ux = w / (frames.length - 1);
-        float ls = hi / 16.0f;
-        float ly = (h - 20) / hi;
+        if( redraw ) {
+          
+            final int hi = max( 200, highest );
+            final float uy = (float) canvas.height / hi;
+            final float ux = (float) canvas.width / (frames.length - 1);
+            final float ls = hi / 16.0f;
+            final float ly = ((float) canvas.height - 20) / hi;
+          
+            canvas.beginDraw();
+            canvas.strokeWeight(4);
+            
+            canvas.fill(80);
+            canvas.noStroke();
+            canvas.rect( 0, 0, canvas.width, canvas.height );
+            
+            canvas.fill(255, 255, 255, 150);
+            canvas.textAlign(LEFT);
+            canvas.textFont(font, 20);
+            
+            for( int i = 16; i >= 0; i -- ) {
+                canvas.text( "" + floor( ls * i ), 4, (16 - i) * ls * ly + 20 );
+            }
+
+            GraphFrame last = frames[ (offset + 1) % frames.length ];
         
-        pushMatrix();
-        translate(x, y - h);
-        strokeWeight(4);
+            for( int i = 2; i <= frames.length; i ++ ) {
+                int pos = (offset + i) % frames.length;
+            
+                float x1 = ux * (i - 2);
+                float x2 = ux * (i - 1);
+            
+                last = frames[ pos ].drawSelf( canvas, x1, x2, uy, canvas.height, last );
+            }
         
-        // draw background
-        fill(80);
-        rect( 0, 0, w, h );
-        
-        // draw scale
-        fill(255, 255, 255, 150);
-        textAlign(LEFT);
-        textFont(font, 20);
-        for( int i = 16; i >= 0; i -- ) {
-            text( "" + floor( ls * i ), 4, (16 - i) * ls * ly + 20 );
+            canvas.endDraw();
+            redraw = false;
+            
         }
         
-        GraphFrame last = frames[ (offset + 1) % frames.length ];
-        
-        for( int i = 2; i <= frames.length; i ++ ) {
-            int pos = (offset + i) % frames.length;
-            //if( i < first ) continue;
-            
-            float x1 = ux * (i - 2);
-            float x2 = ux * (i - 1);
-            
-            last = frames[ pos ].drawSelf( x1, x2, uy, h, last );
-        }
-        
-        popMatrix();
+        image(canvas, x, y - canvas.height);
       
     }
     
     public int getHighest( boolean update ) {
         if( !update ) return highest;
         
-        int hi = highest;
+        int hi = frames[0].getHighest();
         
         for( int i = 1; i <= frames.length; i ++ ) {
             int pos = (offset + i) % frames.length;
@@ -102,16 +117,16 @@ class GraphFrame {
         return max( a, cells );
     }
     
-    public GraphFrame drawSelf( float x1, float x2, float u, float h, GraphFrame last ) {
+    public GraphFrame drawSelf( PGraphics canvas, float x1, float x2, float u, float h, GraphFrame last ) {
       
-        stroke(GRAPH_WASTES);
-        line( x1, h - last.wastes * u, x2, h - this.wastes * u );
+        canvas.stroke(GRAPH_WASTES);
+        canvas.line( x1, h - last.wastes * u, x2, h - this.wastes * u );
         
-        stroke(GRAPH_UGOS);
-        line( x1, h - last.ugos * u, x2, h - this.ugos * u );
+        canvas.stroke(GRAPH_UGOS);
+        canvas.line( x1, h - last.ugos * u, x2, h - this.ugos * u );
         
-        stroke(GRAPH_CELLS);
-        line( x1, h - last.cells * u, x2, h - this.cells * u );
+        canvas.stroke(GRAPH_CELLS);
+        canvas.line( x1, h - last.cells * u, x2, h - this.cells * u );
       
         return this;
     }

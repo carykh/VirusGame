@@ -30,13 +30,13 @@ final double[] GENOME_LIST_DIMS = {70, 430, 360, 450};
 final double[] EDIT_LIST_DIMS = {550, 434, 180, 450};
 final double CODON_DIST = 17;
 final double CODON_DIST_UGO = 10.6;
-final double CODON_WIDTH = 1.4;
-final double[][] CODON_SHAPE = {{-2,0},{-2,2},{-1,3},{0,3},{1,3},{2,2},{2,0},{0,0}};
-final double[][] TELOMERE_SHAPE = {{-2,2},{-1,3},{0,3},{1,3},{2,2},{2,-2},{1,-3},{0,-3},{-1,-3},{-2,-2}};
+final float CODON_WIDTH = 1.4;
+final float[][] CODON_SHAPE = {{-2,0},{-2,2},{-1,3},{0,3},{1,3},{2,2},{2,0},{0,0}};
+final float[][] TELOMERE_SHAPE = {{-2,2},{-1,3},{0,3},{1,3},{2,2},{2,-2},{1,-3},{0,-3},{-1,-3},{-2,-2}};
 final String[] DIVINE_CONTROLS = {"Remove", "Revive", "Heal", "Energize", "Make Wall", "Make Shell"};
-final color GRAPH_WASTES = color(153, 99, 0, 255);
-final color GRAPH_UGOS = color(30, 200, 30, 255);
-final color GRAPH_CELLS = color(210, 50, 210, 255);
+final color GRAPH_WASTES = color(153, 99, 0);
+final color GRAPH_UGOS = color(30, 200, 30);
+final color GRAPH_CELLS = color(210, 50, 210);
 
 void setup() {
   
@@ -51,7 +51,8 @@ void setup() {
     world = new World( settings );
     renderer = new Renderer( settings );
     editor = new Editor( settings );
-    graph = new Graph( settings.graph_length );
+    graph = new Graph( settings.graph_length, width - height - 20, height - 300 );
+    graph.setRescan( settings.graph_rescan );
     
     println("Ready!");
     
@@ -59,7 +60,7 @@ void setup() {
 
 void draw() {
   
-    detectMouse();
+    inputCheck();
     world.updateParticleCount();
     world.tick();
     

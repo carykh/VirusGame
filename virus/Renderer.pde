@@ -163,7 +163,7 @@ class Renderer {
         text("Wastes: " + world.pc.wastes.size(), 25, 230);
         text("UGOs: " + world.pc.ugos.size(), 25, 260);
         
-        graph.drawSelf( 10, height - 10, width - height - 20, height - 300 );
+        graph.drawSelf( 10, height - 10 );
     }
     
     void drawEditTable(double[] dims){
