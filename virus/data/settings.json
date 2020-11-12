@@ -6,7 +6,7 @@
     "max_waste": 180,
     "codon_degrade_speed": 0.008,
     "graph_length": 80,
-    "graph_rescan": true,
+    "graph_downscale": true,
     "wall_damage": 0.01,
     "mutability": 0.9,
     "gene_tick_energy": 0.014,
