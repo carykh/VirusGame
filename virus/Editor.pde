@@ -97,7 +97,7 @@ class Editor {
             scale( (float) (renderer.camS / BIG_FACTOR) );
             noFill();
             stroke(0,255,255,155 + (int) (100 * Math.sin(frameCount / 10.f)));
-            strokeWeight(2);
+            strokeWeight(4);
             rect(0, 0, BIG_FACTOR, BIG_FACTOR);
             popMatrix();
         }

@@ -18,6 +18,10 @@ class UGO extends Particle {
          divine = true;
     }
     
+    public void mutate( double mutability ) {
+         genome.mutate( mutability );
+    }
+    
     public void tick() {
         super.tick();
         

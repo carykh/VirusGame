@@ -1,11 +1,11 @@
 class Graph {
 
-    GraphFrame[] frames;
-    int offset = 0;
-    int highest = 0;
-    boolean redraw = true;
-    PGraphics canvas = null;
-    boolean rescan = true;
+    private GraphFrame[] frames;
+    private int offset = 0;
+    private int highest = 0;
+    private boolean redraw = true;
+    private PGraphics canvas = null;
+    private boolean rescan = true;
 
     public Graph( int len, int w, int h ) {
         frames = new GraphFrame[len];

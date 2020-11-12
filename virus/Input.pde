@@ -20,6 +20,11 @@ void keyPressed() {
         settings.show_tampered = !settings.show_tampered;
     }
     
+    // disable/enble tampered cell highlighting
+    if( key == '\t' ) {
+        settings.show_debug = !settings.show_debug;
+    }
+    
     // make ESC key close the editor, and not the entire game
     if( key == ESC ) {
         editor.close();

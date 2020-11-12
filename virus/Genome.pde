@@ -33,6 +33,47 @@ class Genome{
         int s = codons.size();
         rotateOn = ((s == 0) ? 0 : ((rotateOn + 1) % s)); 
     }
+    
+    public void mutate( double m ) {
+        
+        if( m > random(0, 1) ) {
+            
+            if( random(0, 1) < 0.3 && codons.size() > 1 ) { // delete
+                codons.remove( (int) random( 0, codons.size() ) );
+                return;
+            }
+            
+            if( random(0, 1) < 0.4 ) { // replace
+                codons.set( (int) random( 0, codons.size() ), new Codon() );
+                return;
+            }
+            
+            if( random(0, 1) < 0.5 ) { // add
+                codons.add( new Codon() );
+                return;
+            }
+          
+            if( random(0, 1) < 0.6 ) { // swap
+            
+                int a = (int) random( 0, codons.size() );
+                int b = (int) random( 0, codons.size() );
+            
+                if( a != b ) {
+            
+                    Codon ca = codons.get(a);
+                    Codon cb = codons.get(b);
+                
+                    codons.set(a, cb);
+                    codons.set(b, ca);
+                    return;
+              
+                }
+              
+            }
+          
+        }
+      
+    }
   
     public void update(){
       

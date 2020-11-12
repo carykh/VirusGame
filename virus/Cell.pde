@@ -238,9 +238,10 @@ class Cell{
         double ugo_vy = Math.sin(theta);
         double[] startCoor = getHandCoor();
         double[] newUGOcoor = new double[]{startCoor[0],startCoor[1],startCoor[0]+ugo_vx,startCoor[1]+ugo_vy};
-        Particle newUGO = new UGO(newUGOcoor, memory);
-        world.addParticle(newUGO);
-        laserTarget = newUGO;
+        UGO ugo = new UGO(newUGOcoor, memory);
+        ugo.mutate( settings.mutability );
+        world.addParticle(ugo);
+        laserTarget = ugo;
     
         String[] memoryParts = memory.split("-");
         for(int i = 0; i < memoryParts.length; i++){

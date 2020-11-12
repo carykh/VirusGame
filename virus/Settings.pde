@@ -6,6 +6,7 @@ class Settings {
     // Runtime settings:
     public boolean show_ui = true;
     public boolean show_tampered = false;
+    public boolean show_debug = false;
     
     // Settings:
     public String genome;
@@ -27,6 +28,7 @@ class Settings {
     public int laser_linger_time;
     public double age_grow_speed;
     public double min_length_to_produce;
+    public double mutability;
     public int graph_length;
     public boolean graph_rescan;
   
@@ -45,6 +47,7 @@ class Settings {
         graph_rescan = settings.getBoolean("graph_rescan");
         wall_damage = settings.getDouble("wall_damage");
         gene_tick_energy = settings.getDouble("gene_tick_energy");
+        mutability = settings.getDouble("mutability");
         waste_disposal_chance_high = settings.getDouble("waste_disposal_chance_high");
         waste_disposal_chance_low = settings.getDouble("waste_disposal_chance_low");
         waste_disposal_chance_random = settings.getDouble("waste_disposal_chance_random");

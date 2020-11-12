@@ -113,6 +113,19 @@ class Renderer {
             drawUGObutton( !editor.isOpened() );
         }
         
+        if( settings.show_debug ) {
+          
+            int c = 20;
+            fill(0);
+            textFont(font, 20);
+            textAlign(LEFT);
+            text( "FPS: " + (int) Math.floor(frameRate) + ", frame: " + frameCount, 20, c += 20);
+            text( "Graph high: " + graph.getHighest(false) + ", offset: " + graph.offset, 20, c += 20 );
+            text( "Selected: " + editor.isOpened() + ", at: " + editor.selx + ", " + editor.sely, 20, c += 20 );
+            text( "Mutability: " + settings.mutability, 20, c += 20 );
+          
+        }
+        
     }
     
     void drawCredits() {

@@ -6,6 +6,10 @@ class Codon{
     public Codon(int[] info){
         this.info = info;
     }
+    
+    public Codon() {
+         this.info = new int[] { (int) random(0, 7), (int) random(0, 7), (int) random(-7, 7), (int) random(-7, 7) };
+    }
   
     public color getColor(int p){
         return CodonInfo.getColor(p, info[p]);
