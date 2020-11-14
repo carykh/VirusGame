@@ -31,6 +31,7 @@ class Settings {
     public double mutability;
     public int graph_length;
     public boolean graph_downscale;
+    public int graph_update_period;
   
     public Settings() {
     
@@ -44,6 +45,7 @@ class Settings {
         max_waste = settings.getInt("max_waste");
         codon_degrade_speed = settings.getDouble("codon_degrade_speed");
         graph_length = settings.getInt("graph_length");
+        graph_update_period = settings.getInt("graph_update_period");
         graph_downscale = settings.getBoolean("graph_downscale");
         wall_damage = settings.getDouble("wall_damage");
         gene_tick_energy = settings.getDouble("gene_tick_energy");

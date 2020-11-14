@@ -20,9 +20,15 @@ void keyPressed() {
         settings.show_tampered = !settings.show_tampered;
     }
     
-    // disable/enble debug screan
+    // disable/enble debug screen
     if( key == '\t' ) {
         settings.show_debug = !settings.show_debug;
+    }
+    
+    if( key == ' ' ) {
+        renderer.camX = 0;
+        renderer.camY = 0;
+        renderer.camS = ((float) height) / settings.world_size; 
     }
     
     // make ESC key close the editor, and not the entire game
@@ -97,7 +103,9 @@ void inputCheck(){
                 if(editor.selected != editor.ugo){
                     editor.close();
                 }
-                editor.select( (int) clickWorldX, (int) clickWorldY );
+                if( world.isCellValid( clickWorldX, clickWorldY ) ) {
+                    editor.select( (int) clickWorldX, (int) clickWorldY );
+                }
             }
         }
         clickWorldX = -1;

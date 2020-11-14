@@ -6,7 +6,7 @@ class Renderer {
     private int maxRight;
     
     public Renderer( Settings settings ) {
-        camS = ((float) width) / settings.world_size;
+        camS = ((float) height) / settings.world_size;
         maxRight = settings.show_ui ? height : width;
     }
     
@@ -116,12 +116,19 @@ class Renderer {
         if( settings.show_debug ) {
           
             int c = 20;
+            int lines = 5;
+            
+            fill( 255, 255, 255, 180 );
+            rect( 20, 20, 285, 21 * lines );
+            
             fill(0);
             textFont(font, 20);
             textAlign(LEFT);
-            text( "FPS: " + (int) Math.floor(frameRate) + ", frame: " + frameCount, 20, c += 20);
-            text( "Graph high: " + graph.getHighest(false) + ", offset: " + graph.offset, 20, c += 20 );
+            
+            text( "FPS: " + (int) Math.floor(frameRate) + ", frame: " + frameCount, 20, c += 20 );
+            text( "Graph high: " + graph.getHighest(false) + ", offset: " + graph.offset + " p: " + settings.graph_update_period, 20, c += 20 );
             text( "Selected: " + editor.isOpened() + ", at: " + editor.selx + ", " + editor.sely, 20, c += 20 );
+            text( "CamS: " + String.format("%.2f", camS) + ", CamX: " + String.format("%.2f", camX ) + ", CamY: " + String.format("%.2f", camY ), 20, c += 20 );
             text( "Mutability: " + settings.mutability, 20, c += 20 );
           
         }
@@ -175,6 +182,10 @@ class Renderer {
         text("Foods: " + world.pc.foods.size(), 25, 200);
         text("Wastes: " + world.pc.wastes.size(), 25, 230);
         text("UGOs: " + world.pc.ugos.size(), 25, 260);
+        
+        text("total: " + world.totalFoodCount, 200, 200);
+        text("total: " + world.totalWasteCount, 200, 230);
+        text("total: " + world.totalUGOCount, 200, 260);
         
         graph.drawSelf( 10, height - 10 );
     }

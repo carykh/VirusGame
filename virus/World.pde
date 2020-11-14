@@ -10,6 +10,9 @@ class World {
     private int shellCount = 0;
     private int infectedCount = 0;
     private int lastEditFrame = 0;
+    public int totalFoodCount = 0;
+    public int totalWasteCount = 0;
+    public int totalUGOCount = 0;
     
     public World( Settings settings ) {
      
@@ -42,7 +45,7 @@ class World {
     
     public void tick() {
       
-        if( frameCount % 60 == 0 ) {
+        if( frameCount % settings.graph_update_period == 0 ) {
             graph.append( new GraphFrame( 
                 pc.get(ParticleType.Waste).size(),
                 pc.get(ParticleType.UGO).size(),
@@ -107,6 +110,10 @@ class World {
     }
     
     public boolean isCellValid( int x, int y ) {
+        return !(x < 0 || x >= settings.world_size || y < 0 || y >= settings.world_size);
+    }
+    
+    public boolean isCellValid( double x, double y ) {
         return !(x < 0 || x >= settings.world_size || y < 0 || y >= settings.world_size);
     }
     

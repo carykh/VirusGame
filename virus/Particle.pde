@@ -15,6 +15,9 @@ class Particle{
         velo = tvelo;
         type = ttype;
         birthFrame = b;
+         
+        if( type == ParticleType.Food ) world.totalFoodCount ++; else
+        if( type == ParticleType.Waste ) world.totalWasteCount ++;
     }
   
     void drawSelf() {

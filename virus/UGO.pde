@@ -12,6 +12,7 @@ class UGO extends Particle {
         double dist = Math.sqrt(dx * dx + dy * dy);
         double sp = dist * ( SPEED_HIGH - SPEED_LOW ) + SPEED_LOW;
         velo = new double[]{ dx / dist * sp, dy / dist * sp};
+        world.totalUGOCount ++;
     }
     
     public void markDivine() {
