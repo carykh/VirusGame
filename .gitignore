@@ -1,0 +1,37 @@
+
+# Eclipse stuff
+/.classpath
+/.project
+/.settings
+
+# netbeans
+/nbproject
+nb*.xml
+
+# maven
+/target
+dependency-reduced-pom.xml
+/build.xml
+
+# vim
+.*.sw[a-p]
+
+# various other potential build files
+/build
+/bin
+/dist
+/manifest.mf
+
+/world
+
+# Mac filesystem dust
+.DS_Store
+
+# intellij
+*.iml
+*.ipr
+*.iws
+.idea/
+
+#JRebel
+rebel.xml
