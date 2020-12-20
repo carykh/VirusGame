@@ -61,6 +61,7 @@ boolean scrollLocked = true;
 int dragAndDropCodonId = -1;
 double dragAndDropRX;
 double dragAndDropRY;
+int displayFormattingError = -1;
 
 static class Dim{
   private final double x;
@@ -266,6 +267,9 @@ void draw() {
   drawSpeedControl();
   if (wasWindowMax) {
     drawOverEmpty();
+  }
+  if (displayFormattingError-- > 0) {
+    drawFormattingError();
   }
 }
 void drawSpeedControl(){
@@ -805,6 +809,11 @@ void drawOverEmpty() {
   fill(0);
   popMatrix();
 }
+void drawFormattingError() {
+  setTextFont(font, 150);
+  fill(color(138,0,0));
+  dText("Genome Formatting Error!", ORIG_W_W*0.5,ORIG_W_H*0.5);
+}
 void drawUGObutton(boolean drawUGO) {
   fill(80);
   noStroke();
@@ -1308,7 +1317,9 @@ public void keyPressed() {
       String memory = getStringFromClipboard();
       try {
         selectedCell.genome = new Genome(memory,false);
-      } catch (Exception e){}
+      } catch (Exception e){
+        displayFormattingError = 30;
+      }
     }
   }
   
