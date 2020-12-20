@@ -202,6 +202,7 @@ class Cell {
     if (!didTickGene) return;
     didTickGene = false;
     if (!DEBUG_WORLD) useEnergy();
+    genome.rotateOn = genome.loopAroundGenome(genome.rotateOn); //in case it got deleted
     Codon thisCodon = genome.codons.get(genome.rotateOn);
     wasSuccess = thisCodon.exec(this);
 
@@ -281,11 +282,6 @@ class Cell {
     particles.get(2).add(newUGO);
     newUGO.addToCellList();
     laserTarget = newUGO;
-
-    String[] memoryParts = memory.split("-");
-    for (int i = 0; i < memoryParts.length; i++) {
-      useEnergy();
-    }
   }
 
   public void writeInwards(int start, int end, boolean isRelative) {

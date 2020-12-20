@@ -2,8 +2,10 @@ boolean DEBUG_WORLD = false;
 boolean AdvGenome = false;
 
 int WORLD_SIZE = 12;
-final int ORIG_W_W = 1728;
-final int ORIG_W_H = 972;
+final static int ORIG_W_W = 1728;
+final static int ORIG_W_H = 972;
+final static int UI_THICKNESS = ORIG_W_W-ORIG_W_H;
+final static int MAX_WINDOW = javax.swing.JFrame.MAXIMIZED_BOTH;
 int W_W = ORIG_W_W;
 int W_H = ORIG_W_H;
 final double screenRatio = ORIG_W_W/(double)ORIG_W_H;
@@ -50,7 +52,7 @@ double MIN_ARROW_LENGTH_TO_PRODUCE = 0.4f;
 
 double ZOOM_THRESHOLD = 0;//80;
 PFont font;
-float scalefactor;
+float scalefactor = 1;
 int flashCursorRed = 0;
 int activeCursorRed = 0;
 boolean activeCursorHighLow = false;
@@ -60,7 +62,6 @@ int dragAndDropCodonId = -1;
 double dragAndDropRX;
 double dragAndDropRY;
 
-static double globalUIScale = 1;
 static class Dim{
   private final double x;
   private final double y;
@@ -129,18 +130,20 @@ void setup() {
       }
     }
   }
-  fullScreen();
+  size(1728, 972); //size(ORIG_W_W, ORIG_W_H); //apprrently used a static const is not allowed lol
+  
   noSmooth();
-  scalefactor = (float)width/1728;
   UGOcell = new Cell(-1, -1, 2, 0, 1, "00-00-00-00-00");
   
   surface.setResizable(true);
-  surface.setSize((int)(W_W * globalUIScale), (int)(W_H * globalUIScale));
-  surface.setResizable(false);
-  //W_W = (int)(ORIG_W_W*globalUIScale);
-  //W_H = (int)(ORIG_W_H*globalUIScale);
-  //camS *=globalUIScale;
+  surface.setSize(ORIG_W_W, ORIG_W_H);
+  //surface.setResizable(false);
+  //W_W = (int)(ORIG_W_W*scalefactor);
+  //W_H = (int)(ORIG_W_H*scalefactor);
+  //camS *=scalefactor;
 }
+
+
 int getTypeFromXY(int preX, int preY) {
   int[] weirdo = {0, 1, 1, 2};
   int x = (preX/4)*3;
@@ -165,23 +168,105 @@ int getTypeFromXY(int preX, int preY) {
   return result;
 }
 
+
+boolean isMaximised() {
+  javax.swing.JFrame jframe = (javax.swing.JFrame)((processing.awt.PSurfaceAWT.SmoothCanvas)getSurface().getNative()).getFrame();
+  return (jframe.getExtendedState()&MAX_WINDOW)==MAX_WINDOW;
+}
+int getRealWidth() {
+  javax.swing.JFrame jframe = (javax.swing.JFrame)((processing.awt.PSurfaceAWT.SmoothCanvas)getSurface().getNative()).getFrame();
+  return jframe.getWidth()+widthSizeDiff;
+}
+int getRealHeight() {
+  javax.swing.JFrame jframe = (javax.swing.JFrame)((processing.awt.PSurfaceAWT.SmoothCanvas)getSurface().getNative()).getFrame();
+  return jframe.getHeight()+heightSizeDiff;
+}
+void forceSize(int width, int height) {
+  javax.swing.JFrame jframe = (javax.swing.JFrame)((processing.awt.PSurfaceAWT.SmoothCanvas)getSurface().getNative()).getFrame();
+  jframe.setPreferredSize(new java.awt.Dimension(width-widthSizeDiff, height-heightSizeDiff));
+}
+
+
+
+void maximise() {
+  javax.swing.JFrame jframe = (javax.swing.JFrame)((processing.awt.PSurfaceAWT.SmoothCanvas)getSurface().getNative()).getFrame();
+  jframe.setExtendedState(jframe.getExtendedState() | MAX_WINDOW);
+}
+
 boolean wasMouseDown = false;
 double camX = 0;
 double camY = 0;
 double MIN_CAM_S = ((float)W_H)/WORLD_SIZE;
 double camS = MIN_CAM_S;
+int lastResized;
+boolean wasWindowMax = false;
+int widthSizeDiff = 0;
+int heightSizeDiff = 0;
+int lastWidth = W_W;
+int lastHeight = W_H;
+int lastDiffWidth = 0;
+int lastDiffHeight = 0;
+
 void draw() {
-  scale((float)globalUIScale);
+  //####Fixing Aspect ratio
+  if (frameCount == 10) {//wait 10 frames for everything to properly init
+    widthSizeDiff = width - getRealWidth(); //calibrate getRealWidth
+    heightSizeDiff = height - getRealHeight(); //calibrate getRealHeight
+    lastWidth = width;
+    lastHeight= height;
+  } else if (frameCount > 10) {
+    boolean isWindowMax = isMaximised();
+    int newWidth = getRealWidth();
+    int newHeight = getRealHeight();
+    if ((isWindowMax != wasWindowMax) || (lastWidth != newWidth || lastHeight != newHeight) && (lastDiffWidth != lastWidth - newWidth || lastDiffHeight != lastHeight - newHeight)) {
+      lastDiffWidth = lastWidth - newWidth; //diff diff conparisons are for detecting bugged window state: bugged window state means async between JFrame and OS windows size
+      lastDiffHeight = lastHeight - newHeight;
+      //println(String.format("%b != %b && %d != %d &&  %d != %d, info: diff=%d, %d", isWindowMax, wasWindowMax, lastWidth, newWidth, lastHeight, newHeight, widthSizeDiff, heightSizeDiff)); //jyou might want to add diff diff debug here
+      wasWindowMax = isWindowMax;
+      if (isWindowMax) { //in a maximized window there is little point is resizing it, we just have to accept
+        scalefactor = Math.min(width/(float)ORIG_W_W,height/(float)ORIG_W_H); //dont use newWidth border might be different
+        W_W = (int)(ORIG_W_W*scalefactor);
+        W_H = (int)(ORIG_W_H*scalefactor);
+      } else if (lastWidth != newWidth) { //user changed width
+        scalefactor = newWidth/(float)ORIG_W_W;
+        W_W = newWidth;
+        W_H = (int)(ORIG_W_H*scalefactor);
+      } else { //user changed height
+        scalefactor = newHeight/(float)ORIG_W_H;
+        W_W = (int)(ORIG_W_W*scalefactor);
+        W_H = newHeight;
+      }
+      if (!isWindowMax)  {
+        lastResized = 30; //in 30 frames force it!
+      }
+      lastWidth = newWidth;
+      lastHeight = newHeight;
+    }
+    lastResized--;
+    if (!isWindowMax && lastResized == 0) {
+      forceSize(W_W+1, W_H+1); //invalidate cache that probably is invalid
+      forceSize(W_W, W_H); //set actual size
+      surface.setSize(W_W, W_H); //update processing
+      lastWidth = W_W; //this was an intended change, lets not recognise this as user trying to change window size
+      lastHeight = W_H;
+    }
+  }
+
+
+  //####Actually reander code
+  scale((float)scalefactor);
   doParticleCountControl();
   iterate();
   detectMouse();
   drawBackground();
-  scale(scalefactor);
   drawCells();
   drawParticles();
   drawExtras();
   drawUI();
   drawSpeedControl();
+  if (wasWindowMax) {
+    drawOverEmpty();
+  }
 }
 void drawSpeedControl(){
   fill(80);
@@ -293,7 +378,7 @@ void checkGLdrag() {
   double gy = genomeListDims.getY();
   double gw = genomeListDims.getW();
   double gh = genomeListDims.getH();
-  double rMouseX = (((mouseX/scalefactor)-W_H)-gx)/gw;
+  double rMouseX = (((mouseX/scalefactor)-ORIG_W_H)-gx)/gw;
   double rMouseY = ((mouseY/scalefactor)-gy)/gh;
   
   Genome g = selectedCell.genome;
@@ -332,7 +417,7 @@ void releaseGLdrag() {
   }
   double appCodonHeight = gh/GENOME_LENGTH;
   
-  double arrowUIX =  (mouseX/scalefactor) - gx - W_H;
+  double arrowUIX =  (mouseX/scalefactor) - gx - ORIG_W_H;
   double arrowUIY = (mouseY/scalefactor) - gy + appCodonHeight/2;
   int arrowRowY = (int)(arrowUIY/appCodonHeight);
   if (arrowRowY >= 0 && arrowRowY <= GENOME_LENGTH && arrowUIX > minX && arrowUIX <= maxX) {
@@ -354,7 +439,7 @@ void checkGLclick(){
   double gy = genomeListDims.getY();
   double gw = genomeListDims.getW();
   double gh = genomeListDims.getH();
-  double rMouseX = (((mouseX/scalefactor)-W_H)-gx)/gw;
+  double rMouseX = (((mouseX/scalefactor)-ORIG_W_H)-gx)/gw;
   double rMouseY = ((mouseY/scalefactor)-gy)/gh;
   
    //add arrow
@@ -369,12 +454,12 @@ void checkGLclick(){
  
   double appCodonHeight = gh/GENOME_LENGTH;
     
-  double arrowUIX =  (mouseX/scalefactor) - gx - W_H;
+  double arrowUIX =  (mouseX/scalefactor) - gx - ORIG_W_H;
   double arrowUIY = (mouseY/scalefactor) - gy + appCodonHeight/2;
   int arrowRowY = (int)(arrowUIY/appCodonHeight);
   double arrowH = min(80, (float)appCodonHeight);
   
-  double crossUIX =  (mouseX/scalefactor) - gx - W_H - gw;
+  double crossUIX =  (mouseX/scalefactor) - gx - ORIG_W_H - gw;
   double crossUIY = (mouseY/scalefactor) - gy;
   int rowCY = (int)(crossUIY/appCodonHeight);
 
@@ -409,7 +494,7 @@ void checkETclick() {
   double eh = editListDims.getH();
   
   //codon rows
-  double rMouseX = (((mouseX/scalefactor)-W_H)-ex)/ew;
+  double rMouseX = (((mouseX/scalefactor)-ORIG_W_H)-ex)/ew;
   double rMouseY = ((mouseY/scalefactor)-ey)/eh;
   
  
@@ -424,10 +509,10 @@ void checkETclick() {
     int choice = (int)(rMouseY*optionCount);
     boolean changeMade = currentButtons[choice].onClick(rMouseX, rMouseY);
     if(changeMade && selectedCell != UGOcell){
-            changeMade = true;
-            lastEditTimeStamp = frameCount;
-            selectedCell.tamper();
-     }
+      changeMade = true;
+      lastEditTimeStamp = frameCount;
+      selectedCell.tamper();
+    }
      
     
 
@@ -448,6 +533,7 @@ void checkETclick() {
     scrollLocked = true;
   }
 }
+
 int loopCodonInfo(int val) {
   while (val < -30) {
     val += 61;
@@ -469,7 +555,7 @@ void detectMouse() {
       dragStartX = (mouseX/scalefactor);
       dragStartY = (mouseY/scalefactor);
       
-      if ((mouseX/scalefactor) < W_H) {
+      if ((mouseX/scalefactor) < ORIG_W_H) {
         boolean buttonPressed = true;
         if((mouseX/scalefactor)>=10 && (mouseX/scalefactor) <=75 && (mouseY/scalefactor)>=10 && (mouseY/scalefactor) <=50)//speed down
         {
@@ -506,11 +592,11 @@ void detectMouse() {
           checkGLclick();
         }
         if (selectedCell == UGOcell) {
-          if (((mouseX/scalefactor) >= W_H+530 && codonToEdit[0] == -1) || (mouseY/scalefactor) < 160) {
+          if (((mouseX/scalefactor) >= ORIG_W_H+530 && codonToEdit[0] == -1) || (mouseY/scalefactor) < 160) {
             selectedCell = null;
             selectedUGO=null;
           }
-        } else if ((mouseX/scalefactor) > W_W-160 && (mouseY/scalefactor) < 160) {
+        } else if ((mouseX/scalefactor) > ORIG_W_W-160 && (mouseY/scalefactor) < 160) {
           selectedCell = UGOcell;
           selectedUGO=null;
         }
@@ -575,8 +661,8 @@ void detectMouse() {
 }
 public void mouseWheel(processing.event.MouseEvent event) {
   float e = event.getCount();
-   if ((mouseX/scalefactor) > W_H) {
-    double UIX =  (mouseX/scalefactor) - W_H;
+   if ((mouseX/scalefactor) > ORIG_W_H) {
+    double UIX =  (mouseX/scalefactor) - ORIG_W_H;
     double UIY = (mouseY/scalefactor);
     if (selectedCell != null & dimWithinBox(genomeListDims, UIX, UIY)) {
       Genome g = selectedCell.genome;
@@ -680,10 +766,10 @@ String count(int count, String s) {
 }
 void drawUI() {
   pushMatrix();
-  translate(W_H, 0);
+  translate(ORIG_W_H, 0);
   fill(0);
   noStroke();
-  rect(0, 0, W_W-W_H, W_H);
+  rect(0, 0, UI_THICKNESS, ORIG_W_H);
   fill(255);
   setTextFont(font, 48);
   textAlign(LEFT);
@@ -700,7 +786,7 @@ void drawUI() {
   {
     fill(80);
     noStroke();
-    rect(10,160,530,W_H-170);
+    rect(10,160,530,ORIG_W_H-170);
     fill(255);
     setTextFont(font,96);
     textAlign(LEFT);
@@ -710,26 +796,35 @@ void drawUI() {
   popMatrix();
   drawUGObutton((selectedCell != UGOcell));
 }
+void drawOverEmpty() {
+  pushMatrix();
+  translate(ORIG_W_W, 0);
+  fill(0);
+  noStroke();
+  rect(0, 0, ORIG_W_W*10, ORIG_W_H); //arbitrary size, just want to cover everything outside render range
+  fill(0);
+  popMatrix();
+}
 void drawUGObutton(boolean drawUGO) {
   fill(80);
   noStroke();
-  rect(W_W-130, 10, 120, 140);
+  rect(ORIG_W_W-130, 10, 120, 140);
   fill(255);
   textAlign(CENTER);
   if (drawUGO) {
     setTextFont(font, 48);
-    text("MAKE", W_W-70, 70);
-    text("UGO", W_W-70, 120);
+    text("MAKE", ORIG_W_W-70, 70);
+    text("UGO", ORIG_W_W-70, 120);
   } else {
     setTextFont(font, 36);
-    text("CANCEL", W_W-70, 95);
+    text("CANCEL", ORIG_W_W-70, 95);
   }
 }
 void drawCellStats() {
   boolean isUGO = (selectedCell.x == -1);
   fill(80);
   noStroke();
-  rect(10, 160, 530, W_H-170);
+  rect(10, 160, 530, ORIG_W_H-170);
   if (!isUGO) {
     rect(540, 160, 200, 270);
   }
@@ -881,13 +976,13 @@ public void drawGenomeAsList(Genome g, Dim dims) {
   if(selectedCell == UGOcell){
     fill(255);
     setTextFont(font,60);
-    double avgY = (h+height-y)/2;
+    double avgY = (h+ORIG_W_H-y)/2;
     dText("( - )",w*0.25,avgY+11);
     dText("( + )",w*0.75-margin,avgY+11);
   }
   
    
-  double arrowUIX =  (mouseX/scalefactor) - x - W_H;
+  double arrowUIX =  (mouseX/scalefactor) - x - ORIG_W_H;
   double arrrowUIY = (mouseY/scalefactor) - y + appCodonHeight/2;
   int rowAY = (int)(arrrowUIY/appCodonHeight);
   
@@ -908,7 +1003,7 @@ public void drawGenomeAsList(Genome g, Dim dims) {
     
     setTextFont(font,30);
     textAlign(CENTER);
-    drawCodon(g.codons.get(dragAndDropCodonId), (mouseX/scalefactor)-x-W_H-dragAndDropRX, (mouseY/scalefactor)-y-dragAndDropRY, w, appW, appCodonHeight);
+    drawCodon(g.codons.get(dragAndDropCodonId), (mouseX/scalefactor)-x-ORIG_W_H-dragAndDropRX, (mouseY/scalefactor)-y-dragAndDropRY, w, appW, appCodonHeight);
     
   } else {
     //add button
@@ -920,7 +1015,7 @@ public void drawGenomeAsList(Genome g, Dim dims) {
     }
     
     //remove button
-    double crossUIX =  (mouseX/scalefactor) - x - W_H - w;
+    double crossUIX =  (mouseX/scalefactor) - x - ORIG_W_H - w;
     double crossUIY = (mouseY/scalefactor) - y;
     int rowCY = (int)(crossUIY/appCodonHeight);
     if (rowCY >= 0 && rowCY < GENOME_LENGTH && crossUIX >= -25 && crossUIX <= 70) {

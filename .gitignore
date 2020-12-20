@@ -35,3 +35,6 @@ dependency-reduced-pom.xml
 
 #JRebel
 rebel.xml
+
+#processing autosave
+*.autosave
