@@ -19,6 +19,7 @@
   final color TELOMERE_COLOR = color(0, 0, 0);
   final color ENERGY_COLOR = color(255, 255, 0);
   final color WALL_COLOR = color(210, 50, 210);
+  final color COPYRIGHT_TEXT_COLOR = color(0, 0, 0, 200);
 
   //###CONST
   final static double EPS = 0.00000001;

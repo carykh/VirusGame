@@ -119,11 +119,12 @@ class Renderer {
 
     void drawCredits() {
         pushMatrix();
-        translate(ORIG_W_H - 32, 0);
-        fill(0);
-        textFont(font, 32);
+        translate(4, height - 6);
+        fill( COPYRIGHT_TEXT_COLOR );
+        noStroke();
+        textFont(font, 10);
         textAlign(LEFT);
-        text( "TETSTSTST", 0, 0);
+        text("Copyright (C) 2020 Cary Huang, sirati & magistermaks", 0, 0);
         popMatrix();
     }
 
