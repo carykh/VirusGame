@@ -25,12 +25,12 @@ class Codon extends CodonPair { //this includes health
 
 
   public color getColor(int p) {
-    return intToColor(p == 0 ? type.getColor() : attribute.getColor()); //for leg support
-    //return intToColor(CodonInfo.getColor(p, codonInfo[p]));
+    return util.intToColor(p == 0 ? type.getColor() : attribute.getColor()); //for leg support
+    //return util.intToColor(CodonInfo.getColor(p, codonInfo[p]));
   }
 
   public color getTextColor(int p) {
-    return intToColor(p == 0 ? type.getTextColor() : attribute.getTextColor()); //for leg support
+    return util.intToColor(p == 0 ? type.getTextColor() : attribute.getTextColor()); //for leg support
   }
 
   public String getText(int p) {
@@ -43,7 +43,7 @@ class Codon extends CodonPair { //this includes health
 
   public void hurt() {
     if (hasSubstance()) {
-      codonHealth -= Math.random() * CODON_DEGRADE_SPEED;
+      codonHealth -= Math.random() * settings.codon_degrade_speed;
       if (codonHealth <= 0) {
         codonHealth = 1;
         type = CodonTypes.None.v;
@@ -447,7 +447,7 @@ static class AttributeRGL extends AttributeGenomeRange {
   }
 
   public String saveExtra() {
-    return "" + codonValToChar(loc) + codonValToChar(end);
+    return "" + util.codonValToChar(loc) + util.codonValToChar(end);
   }
 
   public int processExtra(int[] data, int offset) {
@@ -560,7 +560,7 @@ static class AttributeMemoryLocation extends AttributeGenomeRange {
   }
 
   public String saveExtra() {
-    return "" + codonValToChar(memoryId);
+    return "" + util.codonValToChar(memoryId);
   }
 
   public int processExtra(int[] data, int offset) {
@@ -600,7 +600,7 @@ static class AttributeMark extends CodonAttribute {
   }
 
   public String saveExtra() {
-    return "" + codonValToChar(markId);
+    return "" + util.codonValToChar(markId);
   }
 
   public int processExtra(int[] data, int offset) {
@@ -653,7 +653,7 @@ static class AttributeDegree extends AttributeGenomeLoc {
   }
 
   public String saveExtra() {
-    return "" + codonValToChar(degMajor) + codonValToChar(degMinor);
+    return "" + util.codonValToChar(degMajor) + util.codonValToChar(degMinor);
   }
 
   public int processExtra(int[] data, int offset) {
@@ -694,9 +694,9 @@ static class CodonDigest extends CodonType {
   }
 
   public boolean exec(Cell cell, CodonAttribute attribute) {
-    if (cell.genome.directionOn == 0) {
+    if (!cell.isHandInwards()) {
       if (attribute instanceof AttributeParticle) {
-        Particle foodToEat = cell.selectParticleInCell(((AttributeParticle) attribute).getParticle().ordinal()); // digest either "food" or "waste". (now even UGO is possible!! no attribute for that yet tho)
+        Particle foodToEat = cell.selectParticleInCell(((AttributeParticle) attribute).getParticle()); // digest either "food" or "waste". (now even UGO is possible!! no attribute for that yet tho)
         if (foodToEat != null) {
           cell.eat(foodToEat);
           return true;
@@ -721,7 +721,7 @@ static class CodonRemove extends CodonType {
     Genome genome = cell.genome;
     if (genome.directionOn == 0) {
       if (attribute instanceof AttributeParticle) {
-        Particle wasteToPushOut = cell.selectParticleInCell(((AttributeParticle) attribute).getParticle().ordinal()); // pushes out either "food" or "waste". (now even UGO is possible!! no attribute for that yet tho)
+        Particle wasteToPushOut = cell.selectParticleInCell(((AttributeParticle) attribute).getParticle()); // pushes out either "food" or "waste". (now even UGO is possible!! no attribute for that yet tho)
         if (wasteToPushOut != null) {
           cell.pushOut(wasteToPushOut);
           return true;
@@ -759,9 +759,9 @@ static class CodonRepair extends CodonType {
   }
 
   public boolean exec(Cell cell, CodonAttribute attribute) {
-    if (cell.genome.directionOn == 0) {
+    if (!cell.isHandInwards()) {
       if (attribute instanceof AttributeParticle) {
-        Particle particle = cell.selectParticleInCell(((AttributeParticle) attribute).getParticle().ordinal());
+        Particle particle = cell.selectParticleInCell(((AttributeParticle) attribute).getParticle());
         if (particle != null) {
           cell.shootLaserAt(particle);
           return true;
@@ -995,7 +995,7 @@ static class CodonExists extends CodonType {
   public boolean exec(Cell cell, CodonAttribute attribute) {
     Genome genome = cell.genome;
     if (attribute instanceof AttributeParticle) {
-      Particle particle = cell.selectParticleInCell(((AttributeParticle) attribute).getParticle().ordinal());
+      Particle particle = cell.selectParticleInCell(((AttributeParticle) attribute).getParticle());
       return particle != null;
     } else if (attribute instanceof AttributeMemoryLocation) {
       return ((AttributeMemoryLocation) attribute).exists(cell);
