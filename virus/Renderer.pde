@@ -88,6 +88,9 @@ class Renderer {
     }
 
     void drawUI(){
+
+        editor.drawSelection();
+
         if( settings.show_ui ) {
 
             pushMatrix();
@@ -113,8 +116,29 @@ class Renderer {
                 drawWorldStats();
             }
             popMatrix();
-            drawUGObutton((editor.selected != editor.ugoCell));
+            drawUGObutton( !editor.isOpened() );
         }
+
+        if( settings.show_debug ) {
+
+            int c = 20;
+            int lines = 5;
+
+            fill( 255, 255, 255, 180 );
+            rect( 20, 20, 285, 21 * lines );
+
+            fill(0);
+            textFont(font, 20);
+            textAlign(LEFT);
+
+            text( "FPS: " + (int) Math.floor(frameRate) + ", frame: " + frameCount, 20, c += 20 );
+            text( "Graph high: " + graph.getHighest(false) + ", offset: " + graph.offset + " p: " + settings.graph_update_period, 20, c += 20 );
+            text( "Selected: " + editor.isOpened() + ", at: " + editor.selx + ", " + editor.sely, 20, c += 20 );
+            text( "CamS: " + String.format("%.2f", camS) + ", CamX: " + String.format("%.2f", camX ) + ", CamY: " + String.format("%.2f", camY ), 20, c += 20 );
+            text( "Mutability: " + settings.mutability, 20, c += 20 );
+
+        }
+
     }
 
     void drawCredits() {
@@ -122,7 +146,7 @@ class Renderer {
         translate(4, height - 6);
         fill( COPYRIGHT_TEXT_COLOR );
         noStroke();
-        textFont(font, 10);
+        textFont(font, 12);
         textAlign(LEFT);
         text("Copyright (C) 2020 Cary Huang, sirati & magistermaks", 0, 0);
         popMatrix();
@@ -143,7 +167,7 @@ class Renderer {
         vertex(w+45,40);
         endShape(CLOSE);
         noStroke();
-        rect(0,-h/2,w,h);
+        rect(0, -h/2, w, h);
     }
 
     void drawSpeedControl(){
@@ -179,8 +203,41 @@ class Renderer {
         text("Foods: " + world.pc.foods.size(), 25, 200);
         text("Wastes: " + world.pc.wastes.size(), 25, 230);
         text("UGOs: " + world.pc.ugos.size(), 25, 260);
-    }
 
+        text("total: " + world.totalFoodCount, 200, 200);
+        text("total: " + world.totalWasteCount, 200, 230);
+        text("total: " + world.totalUGOCount, 200, 260);
+
+        graph.drawSelf( 10, height - 10 );
+    }
+    
+    void drawDevineTable(Dim dims){ //todo add the devine table if(p < 0){
+        double x = dims.getX();
+        double y = dims.getY();
+        double w = dims.getW();
+        double h = dims.getH();
+  
+        double appW = w - MARGIN * 2;
+        int p = editor.codonToEdit[0];
+
+        pushMatrix();
+        textFont(font,30);
+        textAlign(CENTER);
+        translate( (float) x, (float) y );
+
+        double appChoiceHeight = h / DIVINE_CONTROLS.length;
+        for(int i = 0; i < DIVINE_CONTROLS.length; i++){
+            double appY = appChoiceHeight*i;
+            fill( editor.isDivineControlAvailable(i) ? DIVINE_CONTROL_COLOR : DIVINE_DISABLED_COLOR );
+            dRect(MARGIN,appY+MARGIN,appW,appChoiceHeight-MARGIN*2);
+            fill(255);
+            dText(DIVINE_CONTROLS[i],w*0.5,appY+appChoiceHeight/2+11);
+        }
+
+        popMatrix();
+        
+    }
+    
     void drawArrow(double dx1, double dx2, double dy1, double dy2){
         float x1 = (float)trueXtoAppX(dx1);
         float y1 = (float)trueYtoAppY(dx2);

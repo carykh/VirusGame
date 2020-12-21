@@ -768,6 +768,7 @@ static class CodonRepair extends CodonType {
         }
       } else if (attribute instanceof AttributeWall) {
         cell.healWall();
+        cell.laserWall();
         return true;
       }
     }

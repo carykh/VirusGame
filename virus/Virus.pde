@@ -1,9 +1,4 @@
-
 class VirusGame {
-
-
-
-
 
 
   //###VAR
@@ -23,6 +18,8 @@ class VirusGame {
     world = new World( settings );
     renderer = new Renderer( settings );
     editor = new Editor( settings );
+graph = new Graph( settings.graph_length, width - height - 20, height - 300 );
+    graph.setRescan( settings.graph_downscale );
 
     println("Ready!");
   }
@@ -34,7 +31,7 @@ class VirusGame {
 
     //####Actually tick code
     scale((float)scalefactor);
-    input.detectMouse();
+    input.inputCheck();
     world.updateParticleCount();
     world.tick();
 
@@ -125,5 +122,4 @@ class VirusGame {
       }
     }
   }
-
 }

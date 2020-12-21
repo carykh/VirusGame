@@ -10,7 +10,10 @@ class World {
     private int shellCount = 0;
     private int infectedCount = 0;
     private int lastEditFrame = 0;
-    
+    public int totalFoodCount = 0;
+    public int totalWasteCount = 0;
+    public int totalUGOCount = 0;
+
     public World( Settings settings ) {
      
         int size = settings.world_size;
@@ -20,23 +23,18 @@ class World {
         for( int y = 0; y < size; y++ ) {
             for( int x = 0; x < size; x++ ) {
 
-                if( x == 0 || y == 0 || x == size - 1 || y == size - 1 ) {
+                CellType type = types[settings.map_data[x][y]];
+
+                if( type == CellType.Empty ) {
                     cells[y][x] = null;
-                }else{
-                    int type = settings.map_data[x-1][y-1];
-                    
-                    if( type == 0 ) {
-                        cells[y][x] = null; 
-                        continue;
-                    }
-                    
-                    Cell cell = new Cell( x, y, types[type], 0, 1, settings.genome );
-                    cells[y][x] = cell;
-                    
-                    if( cell.type == CellType.Normal ) initialCount ++;
-                    if( cell.type == CellType.Shell ) shellCount ++;
-                    
+                    continue;
                 }
+                    
+                Cell cell = new Cell( x, y, type, 0, 1, settings.genome );
+                cells[y][x] = cell;
+                    
+                if( cell.type == CellType.Normal ) initialCount ++;
+                if( cell.type == CellType.Shell ) shellCount ++;
                 
             }
         }
@@ -46,6 +44,14 @@ class World {
     }
     
     public void tick() {
+
+        if( frameCount % settings.graph_update_period == 0 ) {
+            graph.append( new GraphFrame(
+                pc.get(ParticleType.Waste).size(),
+                pc.get(ParticleType.UGO).size(),
+                aliveCount + shellCount) );
+        }
+
         pc.tick( ParticleType.Food );
         pc.tick( ParticleType.Waste );
         pc.tick( ParticleType.UGO );
@@ -60,6 +66,7 @@ class World {
             }
         }
         
+        pc.randomTick();
         pc.add( queue );
     }
 
@@ -107,12 +114,25 @@ class World {
       }
     }
   }
-    
+
     public void addParticle( Particle p ) {
         p.addToCellList();
         queue.add( p );
     }
     
+    public void setCellAt( int x, int y, Cell c ) {
+        if( cells[y][x] != null ) cells[y][x].die(true);
+        cells[y][x] = c;
+    }
+
+    public boolean isCellValid( int x, int y ) {
+        return !(x < 0 || x >= settings.world_size || y < 0 || y >= settings.world_size);
+    }
+
+    public boolean isCellValid( double x, double y ) {
+        return !(x < 0 || x >= settings.world_size || y < 0 || y >= settings.world_size);
+    }
+
     public Cell getCellAt( double x, double y) {
         int ix = ((int) x + settings.world_size) % settings.world_size;
         int iy = ((int) y + settings.world_size) % settings.world_size;

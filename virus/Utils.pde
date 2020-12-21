@@ -25,6 +25,14 @@ class Util {
       return (ia != ib);
   }
 
+int randomInt(int min, int max) {
+    return (int) Math.floor(Math.random() * (max - min) ) + min;
+}
+
+boolean randomBool() {
+    return random(0, 1) > 0.5;
+}
+
 
   // BEGIN JUNK //
 
@@ -86,7 +94,7 @@ class Util {
     String result = codonValToChar(codon.getType().id)+""+codonValToChar(codon.getAttribute().id) + codon.getType().saveExtra() + codon.getAttribute().saveExtra();
     return result;
   }
-  
+
   public int[] stringToInfo(String str) {
     int[] info = new int[str.length()];
     for (int i = 0; i < str.length(); i++) {

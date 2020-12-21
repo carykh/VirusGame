@@ -15,6 +15,9 @@ class Particle{
         velo = tvelo;
         type = ttype;
         birthFrame = b;
+
+        if( type == ParticleType.Food ) world.totalFoodCount ++; else
+        if( type == ParticleType.Waste ) world.totalWasteCount ++;
     }
 
     void drawSelf() {
@@ -46,8 +49,11 @@ class Particle{
 
     public void tick() {
         double[] future = {0, 0};
-        float visc = world.getCellTypeAt(coor[0], coor[1]) == CellType.Empty ? 1 : 0.5;
+        CellType ct = world.getCellTypeAt(coor[0], coor[1]);
 
+        if( ct == CellType.Locked ) removeParticle( world.getCellAt(coor[0], coor[1]) );
+
+        float visc = ct == CellType.Empty ? 1 : 0.5;
         future[0] = coor[0] + velo[0] * visc * PLAY_SPEED;
         future[1] = coor[1] + velo[1] * visc * PLAY_SPEED;
 
@@ -56,7 +62,7 @@ class Particle{
 
         if( cta || ctb ) {
 
-            CellType ct = world.getCellTypeAt(coor[0], coor[1]);
+
             CellType ft = world.getCellTypeAt(future[0], future[1]);
 
             if( interact( future, ct, ft ) ) return;
@@ -70,22 +76,22 @@ class Particle{
 
                 if( cta ) {
                     if(velo[0] >= 0){
-                        velo[0] = -velo[0] + (Math.random() * 0.05 - 0.025) * SPEED_LOW; //why rnd? to avoid particle highways trapped between cells
                         future[0] = Math.ceil(coor[0]) - EPS;
                     }else{
-                        velo[0] = Math.abs(velo[0]) + (Math.random() * 0.05 - 0.025) * SPEED_LOW;
                         future[0] = Math.floor(coor[0]) + EPS;
                     }
+
+                    velo[0] = -velo[0] + (Math.random() * 0.05 - 0.025) * SPEED_LOW; //why rnd? to avoid particle highways trapped between cells
                 }
 
                 if( ctb ) {
                     if(velo[1] >= 0){
-                        velo[1] = -velo[1] + (Math.random() * 0.05 - 0.025) * SPEED_LOW;
                         future[1] = Math.ceil(coor[1]) - EPS;
                     }else{
-                        velo[1] = Math.abs(velo[1]) + (Math.random() * 0.05 - 0.025) * SPEED_LOW;
                         future[1] = Math.floor(coor[1]) + EPS;
                     }
+
+                    velo[1] = -velo[1] + (Math.random() * 0.05 - 0.025) * SPEED_LOW;
                 }
 
                 Cell t_cell = world.getCellAt(coor[0], coor[1]);
@@ -107,6 +113,11 @@ class Particle{
 
         coor = future;
 
+    }
+public void randomTick() {
+        if( type == ParticleType.Waste ) {
+            if( random(0, 1) < settings.waste_disposal_chance_random && world.getCellAt(coor[0], coor[1]) == null ) removeParticle(null);
+        }
     }
 
     private void border( int wid ) {

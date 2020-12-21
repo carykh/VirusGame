@@ -1,7 +1,8 @@
 class UGO extends Particle {
   
     Genome genome;
- 
+    boolean divine = false;
+
     public UGO( double[] coor, String data ) {
         super( coor, ParticleType.UGO, frameCount );
         genome = new Genome( data, true );
@@ -11,6 +12,28 @@ class UGO extends Particle {
         double dist = Math.sqrt(dx * dx + dy * dy);
         double sp = dist * ( SPEED_HIGH - SPEED_LOW ) + SPEED_LOW;
         velo = new double[]{ dx / dist * sp, dy / dist * sp};
+        world.totalUGOCount ++;
+    }
+
+    public void markDivine() {
+         divine = true;
+    }
+
+    public void mutate( double mutability ) {
+         genome.mutate( mutability );
+    }
+
+    public void tick() {
+        super.tick();
+
+        if( frameCount % settings.gene_tick_time == 0 ) {
+            genome.hurtCodons(null);
+            if( genome.codons.size() == 0 ) {
+                removeParticle( world.getCellAt(coor[0], coor[1]) );
+                Particle p = new Particle( coor, velo, ParticleType.Waste, -99999 );
+                world.addParticle( p );
+            }
+        }
     }
     
     void drawSelf() {
@@ -39,12 +62,17 @@ class UGO extends Particle {
        
         Cell fc = world.getCellAt(future[0], future[1]);
         if( fc != null ) {
-         
-            if(type == ParticleType.UGO && ct == CellType.Empty && ft == CellType.Normal && genome.codons.size()+fc.genome.codons.size() <= settings.max_codon_count){// there are few enough codons that we can fit in the new material!
-                return injectGeneticMaterial(fc); // UGO is going to inject material into a cell!
-            }else if(type == ParticleType.UGO && ft == CellType.Shell && ct == CellType.Empty ){
-                return injectGeneticMaterial(fc);
-            }//todo check do we bounce correctly?
+
+            if( divine || fc.wall * settings.cell_wall_protection < random(0,1) || fc.type == CellType.Shell ) {
+
+                if(type == ParticleType.UGO && ct == CellType.Empty && ft == CellType.Normal && genome.codons.size()+fc.genome.codons.size() <= settings.max_codon_count){
+                    // there are few enough codons that we can fit in the new material!
+                    return injectGeneticMaterial(fc);
+                }else if(type == ParticleType.UGO && ft == CellType.Shell && ct == CellType.Empty ){
+                    return injectGeneticMaterial(fc);
+                }//todo check do we bounce correctly?
+
+            }
           
         }
         
@@ -56,7 +84,7 @@ class UGO extends Particle {
         if (this == editor.ugoSelected) {
             editor.close();
         }
-      
+
         if( c.type == CellType.Shell ) {
               
             c.type = CellType.Normal;

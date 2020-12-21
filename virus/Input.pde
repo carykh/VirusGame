@@ -6,6 +6,8 @@ class Input {
   double clickWorldX = -1;
   double clickWorldY = -1;
   boolean scrollLocked = true;
+  int windowSizeX = 0; // used for resize detection //todo: do we need that because we are already doign that?
+  int windowSizeY = 0;
 
   public void keyPressed() {
     char keyL = Character.toLowerCase(key);
@@ -22,6 +24,15 @@ class Input {
       PLAY_SPEED += 0.1;
     } else if (keyL == 'r') {
       PLAY_SPEED += 1;
+    } else if( key == '\t' ) {   // disable/enble debug screen
+      settings.show_debug = !settings.show_debug;
+    } else if( key == ' ' ) {
+      renderer.camX = 0;
+      renderer.camY = 0;
+      renderer.camS = ((float) height) / settings.world_size;
+    } else if( key == ESC ) { // make ESC key close the editor, and not the entire game
+      editor.close();
+      key = 0;
     }
 
     if(editor.selected != null) { //todo move to editor, check edior open
@@ -46,7 +57,7 @@ class Input {
     }
   }
 
-  
+
   public void mouseWheel(processing.event.MouseEvent event) {
     float e = event.getCount();
     if ((mouseX/scalefactor) > ORIG_W_H) {
@@ -98,14 +109,23 @@ class Input {
   double dragStartX;
   double dragStartY;
 
-  void detectMouse() {
+  void windowResized() {
+    graph.resize( width - height - 20, height - 300 );
+}
 
+void inputCheck(){
+
+    if( width != windowSizeX || height != windowSizeY ) {
+         windowSizeX = width;
+         windowSizeY = height;
+         windowResized();
+    }
     if (mousePressed) {
       editor.arrow = null;
       if (!wasMouseDown) {
         dragStartX = (mouseX/scalefactor);
         dragStartY = (mouseY/scalefactor);
-        
+
         if ((mouseX/scalefactor) < renderer.maxRight) { //renderer.maxRight == ORIG_W_H
           boolean buttonPressed = true;
           if((mouseX/scalefactor)>=10 && (mouseX/scalefactor) <=75 && (mouseY/scalefactor)>=10 && (mouseY/scalefactor) <=50) {//speed down
@@ -182,12 +202,12 @@ class Input {
           }
         }
         if (doubleClick && canDragWorld) {
-          Cell clickedCell = world.getCellAtUnscaled(clickWorldX, clickWorldY);
+
           if (editor.selected != editor.ugoCell) {
             editor.close();
           }
-          if (clickedCell != null && clickedCell.type == CellType.Normal) {
-            editor.open(clickedCell);
+          if (world.isCellValid( clickWorldX, clickWorldY) ){
+            editor.select( (int) clickWorldX, (int) clickWorldY);
           }
           if (clickedCell != null && clickedCell.type == CellType.Empty) {
             world.cells[(int)clickWorldY][(int)clickWorldX] = new Cell((int)clickWorldX, (int)clickWorldY, CellType.Normal, 0, 1, settings.editor_default);

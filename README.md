@@ -26,6 +26,19 @@ Code: [GitHub](https://github.com/carykh/VirusGame)
 
  - Resizeable window size (fixed, orig. forked from [Games-Crack](https://github.com/Games-Crack))
 
+ - Mutations (WIP)
+  
+ - Better GUI (graphics, graph, divine controls, etc)
+  
+ - Rendering optimisations
+  
+ - Settings (+ map editing - world.json)
+  
+ - Keyboard controls
+  
+ - New cell types
+
+
 ## Breaking changes
 
 - if you want to move the hand to the cursor you must useMove `Hand Cursor` instead ofMove `Hand RGL(0,0)`. RGL is always relative to the hand for hand specific commands

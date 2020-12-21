@@ -67,8 +67,12 @@ class Cell{
     }
   }
 
+  public boolean hasGenome() {
+    return type == CellType.Normal;
+  }
+
   public boolean isHandInwards() {
-    return genome.directionOn == 1;
+    return genome.inwards;
   }
 
   void drawSelf() {
@@ -79,21 +83,25 @@ class Cell{
     if( posx < -renderer.camS || posy < -renderer.camS || posx > renderer.maxRight || posy > ORIG_W_H ) {
       return;
     }
+    
     pushMatrix();
     translate((float)posx,(float)posy);
     scale((float)(renderer.camS/BIG_FACTOR));
     noStroke();
+    
     if(type == CellType.Locked){
+
       fill(60,60,60);
       rect(0,0,BIG_FACTOR,BIG_FACTOR);
+
     }else if(type == CellType.Normal){
-      if(this == editor.selected){
-        fill(0,255,255);
-      }else if(tampered){
-        fill(205,225,70);
+
+      if( tampered && settings.show_tampered ) {
+        fill(205, 225, 70);
       }else{
-        fill(225,190,225);
+        fill(225, 190, 225);
       }
+      
       rect(0,0,BIG_FACTOR,BIG_FACTOR);
       fill(170,100,170);
       float w = (float)(BIG_FACTOR*0.08*wall);
@@ -176,8 +184,9 @@ class Cell{
           renderer.scaledLine(handCoor,singleLaserCoor);
         }
       }else{
-        double[] targetCoor = laserTarget.coor;
-        renderer.scaledLine(handCoor,targetCoor);
+        if( dist((float)handCoor[0], (float)handCoor[1], (float)laserTarget.coor[0], (float)laserTarget.coor[1]) < 2 ) {
+          renderer.scaledLine(handCoor, laserTarget.coor);
+        }
       }
     } else {
       laserTarget = null;
@@ -325,10 +334,10 @@ class Cell{
     }
     String UGOmemory = join(UGOmemoryParts, "-");
 
-    Particle newUGO = new UGO(newUGOcoor, memory);
-    world.addParticle(newUGO);
-    newUGO.addToCellList();
-    laserTarget = newUGO;
+    UGO ugo = new UGO(newUGOcoor, memory);
+    ugo.mutate( settings.mutability );
+    world.addParticle(ugo);
+    laserTarget = ugo;
   }
   public void writeInwards(int start, int end, boolean isRelative) {
     laserTarget = null;
@@ -339,7 +348,7 @@ class Cell{
       if(pos-start < memoryParts.length){
         String memoryPart = memoryParts[pos-start];
         c.setFullInfo(util.stringToInfo(memoryPart));
-        laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
+        laserCoor.add(genome.getCodonCoor(index,genome.CODON_DIST, x, y));
       }
       useEnergy(settings.gene_tick_energy * settings.gene_tick_time / 40);
     }
@@ -348,6 +357,10 @@ class Cell{
   public void healWall(){
     wall += (1-wall) * E_RECIPROCAL;
     laserWall();
+  }
+
+  public void giveEnergy() {
+    energy += (1-energy)*E_RECIPROCAL;
   }
 
   public void laserWall(){
@@ -379,31 +392,33 @@ class Cell{
 
   public double[] getHandCoor(){
     double r = HAND_DIST;
-    if(genome.directionOn == 0){
-      r += HAND_LEN;
-    }else{
+    if( genome.inwards ){
       r -= HAND_LEN;
+    }else{
+      r += HAND_LEN;
     }
-    return getCodonCoor(genome.performerOn,r);
+    return genome.getCodonCoor(genome.performerOn,r);
   }
-
-  public double[] getCodonCoor(int i, double r) {
-    double theta = (float) (i * 2 * PI) / (genome.codons.size()) - PI / 2;
-    double r2 = r / BIG_FACTOR;
-    double handX = x + 0.5 + r2 * Math.cos(theta);
-    double handY = y + 0.5 + r2 * Math.sin(theta);
-    double[] result = {handX, handY};
-    return result;
-  }
-  public void pushOut(Particle waste){
+  
+  public boolean pushOut(Particle waste){
     int[][] dire = {{0,1},{0,-1},{1,0},{-1,0}};
     int chosen = -1;
     int iter = 0;
-    while(chosen == -1 || (world.cells[y+dire[chosen][1]][x+dire[chosen][0]] != null && world.cells[y+dire[chosen][1]][x+dire[chosen][0]].type != CellType.Empty) ){
-      chosen = (int)random(0,4);
+    
+    while( iter < 64 && chosen == -1 ) {
+
+      int c = (int) random(0, 4);
+
+      if( world.isCellValid( x + dire[c][0], y + dire[c][1] ) && world.cells[ y + dire[c][1] ][ x + dire[c][0] ] == null ) {
+        chosen = c;
+      }
+
       iter ++;
-      if( iter > 64 ) return;
+
     }
+
+    if( chosen == -1 ) return false;
+    
     double[] oldCoor = waste.copyCoor();
     for(int dim = 0; dim < 2; dim++){
       if(dire[chosen][dim] == -1){
@@ -421,6 +436,8 @@ class Cell{
     if( n_cell != null ) n_cell.addParticle(waste);
     laserT = frameCount;
     laserTarget = waste;
+    
+    return true;
   }
 
 
@@ -481,13 +498,18 @@ class Cell{
     }
   }
 
-  public String getCellName() {
-    if (x == -1) {
+  public String getCellName(){
+    if(x == -1){
       return "Custom UGO";
-    } else if (type == CellType.Normal) {
-      return "Cell at (" + x + ", " + y + ")";
+    }else if(type == CellType.Normal){
+      return "Cell at ("+x+", "+y+")";
+    }else if(type == CellType.Shell) {
+      return "Cell Shell";
+    }else if(type == CellType.Locked) {
+      return "Wall";
     }
-    return "";
+
+    return "Undefined";
   }
 
 
