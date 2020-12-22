@@ -42,6 +42,11 @@ public class JavaLoader extends PApplet {
   }
 
   @Override
+  public void keyReleased() {
+    input.keyReleased();
+  }
+
+  @Override
   public void mouseWheel(processing.event.MouseEvent event) {
     input.mouseWheel(event);
   }

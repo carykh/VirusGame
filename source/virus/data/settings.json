@@ -22,5 +22,6 @@
   "max_codon_count": 50,
   "laser_linger_time": 30,
   "age_grow_speed": 0.08,
-  "min_length_to_produce": 0.4
+  "min_length_to_produce": 0.4,
+  "key_stride_speed": 5
 }

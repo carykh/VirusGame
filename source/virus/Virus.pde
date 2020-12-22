@@ -23,7 +23,12 @@ void draw() {
 
 
 void keyPressed() {
-  input.keyPressed();
+  key = input.keyPressed();
+}
+
+
+void keyReleased() {
+  input.keyReleased();
 }
 
 void mouseWheel(processing.event.MouseEvent event) {

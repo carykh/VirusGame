@@ -40,6 +40,7 @@ public class Settings {
   public int graph_length;
   public boolean graph_downscale;
   public int graph_update_period;
+  public float key_stride_speed;
 
   public Settings() {
 
@@ -67,6 +68,7 @@ public class Settings {
     laser_linger_time = settings.getInt("laser_linger_time");
     age_grow_speed = settings.getDouble("age_grow_speed");
     min_length_to_produce = settings.getDouble("min_length_to_produce");
+    key_stride_speed = settings.getFloat("key_stride_speed");
     world_size = world.getInt("world_size");
     loadWorld(world.getJSONArray("map"), world_size);
 

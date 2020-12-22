@@ -18,21 +18,27 @@ public class Input {
   public boolean scrollLocked = true;
   public int windowSizeX = 0; // used for resize detection //todo: do we need that because we are already doign that?
   public int windowSizeY = 0;
+  boolean leftDown = false;
+  boolean rightDown = false;
+  boolean upDown = false;
+  boolean downDown = false;
 
   public char keyPressed() {
-    char keyL = Character.toLowerCase(getKey());
+    char key = getKey();
+    char keyL = Character.toLowerCase(key);
+    int keyCode = getKeyCode();
 
     // disable/enable GUI
     if (keyL == 'x') {
       settings.show_ui = !settings.show_ui;
       renderer.maxRight = settings.show_ui ? ORIG_W_H : ORIG_W_W;
-    } else if (keyL == 'q') {
+    } else if (keyL == 'h') {
       PLAY_SPEED = Math.max(0.1f, PLAY_SPEED - 1);
-    } else if (keyL == 'w') {
+    } else if (keyL == 'j') {
       PLAY_SPEED = Math.max(0.1f, PLAY_SPEED - 0.1f);
-    } else if (keyL == 'e') {
+    } else if (keyL == 'k') {
       PLAY_SPEED += 0.1;
-    } else if (keyL == 'r') {
+    } else if (keyL == 'l') {
       PLAY_SPEED += 1;
     } else if (getKey() == '\t') {   // disable/enble debug screen
       settings.show_debug = !settings.show_debug;
@@ -43,10 +49,18 @@ public class Input {
     } else if (getKey() == ESC) { // make ESC getKey() close the editor, and not the entire game
       editor.close();
       return 0;
+    } else if(keyL == 'a' || (key == CODED && keyCode == LEFT)) {
+      leftDown = true;
+    } else if(keyL == 'd' || (key == CODED && keyCode == RIGHT)) {
+      rightDown = true;
+    } else if(keyL == 'w' || (key == CODED && keyCode == UP)) {
+      upDown = true;
+    } else if(keyL == 's' || (key == CODED && keyCode == DOWN)) {
+      downDown = true;
     }
 
     if (editor.selected != null) { //todo move to editor, check edior open
-      if (getKeyCode() == 67 && (int) getKey() == 3) { //ctrl c
+      if (keyCode == 67 && (int) getKey() == 3) { //ctrl c
         String memory = "";
         for (int pos = 0; pos < editor.selected.genome.codons.size(); pos++) {
           if (pos > 0) {
@@ -56,7 +70,7 @@ public class Input {
           memory = memory + infoToString(c);
         }
         copyStringToClipboard(memory);
-      } else if (getKeyCode() == 86 && (int) getKey() == 22) { //ctrl v
+      } else if (keyCode == 86 && (int) getKey() == 22) { //ctrl v
         String memory = getStringFromClipboard();
         try {
           editor.selected.genome = new Genome(memory, false);
@@ -67,6 +81,25 @@ public class Input {
     }
 
     return keyL;
+  }
+
+  public void keyReleased() {
+    char key = getKey();
+    char keyL = Character.toLowerCase(key);
+    int keyCode = getKeyCode();
+
+    if(keyL == 'a' || (key == CODED && keyCode == LEFT)) {
+      leftDown = false;
+    }
+    if(keyL == 'd' || (key == CODED && keyCode == RIGHT)) {
+      rightDown = false;
+    }
+    if(keyL == 'w' || (key == CODED && keyCode == UP)) {
+      upDown = false;
+    }
+    if(keyL == 's' || (key == CODED && keyCode == DOWN)) {
+      downDown = false;
+    }
   }
 
 
@@ -126,6 +159,18 @@ public class Input {
   }
 
   void inputCheck() {
+    if(leftDown) {
+      renderer.camX -= settings.key_stride_speed/renderer.camS + 0.01;
+    }
+    if(rightDown) {
+      renderer.camX += settings.key_stride_speed/renderer.camS + 0.01;
+    }
+    if(upDown) {
+      renderer.camY -= settings.key_stride_speed/renderer.camS + 0.01;
+    }
+    if(downDown) {
+      renderer.camY += settings.key_stride_speed/renderer.camS + 0.01;
+    }
 
     if (getAppletWidth() != windowSizeX || getAppletHeight() != windowSizeY) {
          /*windowSizeX = getAppletWidth();
