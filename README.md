@@ -64,3 +64,7 @@ Tell me what other codons you want to see!
 ## How to run
 1. Download [Processing](https://processing.org/) (every version after 3.3.3 should work)
 2. Open the "virus.pde" file in the "virus" directory.
+
+
+## License
+Code written by me falls under the GPLv3. However, this repo contains code by other who did not provide any license for their code! bad bad
