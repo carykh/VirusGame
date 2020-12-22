@@ -1,23 +1,36 @@
-class Genome {
+package virus;
 
-  int ZERO_CH = (int)('0');
+import java.util.ArrayList;
 
-  boolean isUGO;
+import static virus.Codon.fromIntList;
+import static processing.core.PApplet.*;
+import static virus.Codon.memoryIdColor;
+import static virus.Const.*;
+import static virus.Var.*;
+import static virus.Method.*;
+import static virus.Util.*;
+import static java.lang.Math.PI;
+
+public class Genome {
+
+  int ZERO_CH = '0';
+
+  public boolean isUGO;
   ArrayList<Codon> codons;
-  int rotateOn = 0;
-  int rotateOnNext = 1;
-  int performerOn = 0;
-  boolean inwards = false;
-  double appRO = 0;
-  double appPO = 0;
-  double appDO = 0;
-  int scrollOffset = 0;
+  public int rotateOn = 0;
+  public int rotateOnNext = 1;
+  public int performerOn = 0;
+  public boolean inwards = false;
+  public double appRO = 0;
+  public double appPO = 0;
+  public double appDO = 0;
+  public int scrollOffset = 0;
 
-  public Genome(String s, boolean isUGOp){
+  public Genome(String s, boolean isUGOp) {
     codons = new ArrayList<Codon>();
     String[] parts = s.split("-");
     for (int i = 0; i < parts.length; i++) {
-      int[] info = util.stringToInfo(parts[i]);
+      int[] info = stringToInfo(parts[i]);
       codons.add(new Codon(fromIntList(info)));
     }
     appRO = 0;
@@ -27,7 +40,7 @@ class Genome {
   }
 
   public Codon getSelected() {
-    if( codons.size() == 0 ) {
+    if (codons.size() == 0) {
       return Codon.EMPTY;
     }
     rotateOn = loopAroundGenome(rotateOn); //in case it got deleted
@@ -38,31 +51,31 @@ class Genome {
       rotateOn = rotateOnNext % codons.size();
   }*/
 
-  public void mutate( double m ) {
+  public void mutate(double m) {
 
-    while( m > random(0, 1) ) {
+    while (m > random(0, 1)) {
 
-      if( random(0, 1) < 0.3 && codons.size() > 1 ) { // delete
-        codons.remove( (int) random( 0, codons.size() ) );
+      if (random(0, 1) < 0.3 && codons.size() > 1) { // delete
+        codons.remove((int) random(0, codons.size()));
         return;
       }
 
-      if( random(0, 1) < 0.4 ) { // replace
-        codons.set( (int) random( 0, codons.size() ), Codon.createRandom() );
+      if (random(0, 1) < 0.4) { // replace
+        codons.set((int) random(0, codons.size()), Codon.createRandom());
         return;
       }
 
-      if( random(0, 1) < 0.5 ) { // add
-        codons.add( Codon.createRandom());
+      if (random(0, 1) < 0.5) { // add
+        codons.add(Codon.createRandom());
         return;
       }
 
-      if( random(0, 1) < 0.6 ) { // swap
+      if (random(0, 1) < 0.6) { // swap
 
-        int a = (int) random( 0, codons.size() );
-        int b = (int) random( 0, codons.size() );
+        int a = (int) random(0, codons.size());
+        int b = (int) random(0, codons.size());
 
-        if( a != b ) {
+        if (a != b) {
 
           Codon ca = codons.get(a);
           Codon cb = codons.get(b);
@@ -82,12 +95,12 @@ class Genome {
   public void update() {
 
     int s = codons.size();
-    if( s != 0 ) {
-      appRO += util.loopIt(rotateOn - appRO, s, true) * VISUAL_TRANSITION * PLAY_SPEED;
-      appPO += util.loopIt(performerOn - appPO, s, true) * VISUAL_TRANSITION * PLAY_SPEED;
-      appDO += ((inwards?1:0) - appDO) * VISUAL_TRANSITION * PLAY_SPEED;
-      appRO = util.loopIt(appRO, s, false);
-      appPO = util.loopIt(appPO, s, false);
+    if (s != 0) {
+      appRO += loopIt(rotateOn - appRO, s, true) * VISUAL_TRANSITION * PLAY_SPEED;
+      appPO += loopIt(performerOn - appPO, s, true) * VISUAL_TRANSITION * PLAY_SPEED;
+      appDO += ((inwards ? 1 : 0) - appDO) * VISUAL_TRANSITION * PLAY_SPEED;
+      appRO = loopIt(appRO, s, false);
+      appPO = loopIt(appPO, s, false);
     } else {
       appRO = 0;
       appPO = 0;
@@ -99,7 +112,7 @@ class Genome {
     double appDOAngle = (float) (appDO * PI);
     strokeWeight(1);
     noFill();
-    stroke(util.transperize(HAND_COLOR, 0.5));
+    stroke(transperize(HAND_COLOR, 0.5));
     ellipse(0, 0, HAND_DIST * 2, HAND_DIST * 2);
     pushMatrix();
     rotate((float) appPOAngle);
@@ -116,7 +129,7 @@ class Genome {
   }
 
   public int loopAroundGenome(int i) {
-    return util.loopItInt(i, codons.size());
+    return loopItInt(i, codons.size());
   }
 
   public void drawCodons() {
@@ -159,7 +172,7 @@ class Genome {
             beginShape();
             for (int v = 0; v < epigeneticsMiddleShape.length; v++) {
               float[] cv = epigeneticsMiddleShape[v];
-              float ang = cv[0] * partAngle * (float)c.codonHealth;
+              float ang = cv[0] * partAngle * (float) c.codonHealth;
               float dist = cv[1] * CODON_WIDTH + codonDist;
 
               float x = (float) (Math.cos(ang) * dist);
@@ -184,7 +197,7 @@ class Genome {
             flagStartEpiSet = true;
             for (int v = 0; v < epigeneticsShape.length; v++) {
               float[] cv = epigeneticsShape[v];
-              float ang = cv[0] * partAngle * (float)c.codonHealth;
+              float ang = cv[0] * partAngle * (float) c.codonHealth;
               float dist = cv[1] * CODON_WIDTH + codonDist;
               vertex((float) (Math.cos(ang) * dist), (float) (Math.sin(ang) * dist));
             }
@@ -202,7 +215,7 @@ class Genome {
         beginShape();
         for (int v = 0; v < epigeneticsShape.length; v++) {
           float[] cv = epigeneticsShape[v];
-          float ang = -cv[0] * partAngle * (float)c.codonHealth;
+          float ang = -cv[0] * partAngle * (float) c.codonHealth;
           float dist = cv[1] * CODON_WIDTH + codonDist;
           vertex((float) (Math.cos(ang) * dist), (float) (Math.sin(ang) * dist));
         }
@@ -217,7 +230,7 @@ class Genome {
         fill(c.getColor(p));
         for (int v = 0; v < CODON_SHAPE.length; v++) {
           final float[] cv = CODON_SHAPE[v];
-          final float ang = cv[0] * partAngle * (float)c.codonHealth;
+          final float ang = cv[0] * partAngle * (float) c.codonHealth;
           final float dist = cv[1] * (2 * p - 1) * CODON_WIDTH + codonDist;
           vertex(cos(ang) * dist, sin(ang) * dist);
         }
@@ -233,10 +246,10 @@ class Genome {
     for (int i = 0; i < codons.size(); i++) {
       Codon c = codons.get(i);
       if (c.hasSubstance()) {
-        if(c.hurt()) {
-          if( cell != null ) {
-            Particle newWaste = new Particle( getCodonCoor(i, CODON_DIST, cell.x, cell.y), ParticleType.Waste, -99999 );
-            world.addParticle( newWaste );
+        if (c.hurt()) {
+          if (cell != null) {
+            Particle newWaste = new Particle(getCodonCoor(i, CODON_DIST, cell.x, cell.y), ParticleType.Waste, -99999);
+            world.addParticle(newWaste);
           }
 
           codons.remove(i);
@@ -246,11 +259,11 @@ class Genome {
     }
   }
 
-  public double[] getCodonCoor(int i, double r, int x, int y){
-    double theta = (float)(i*2*PI)/(codons.size())-PI/2;
-    double r2 = r/BIG_FACTOR;
-    double cx = x+0.5+r2*Math.cos(theta);
-    double cy = y+0.5+r2*Math.sin(theta);
+  public double[] getCodonCoor(int i, double r, int x, int y) {
+    double theta = (float) (i * 2 * PI) / (codons.size()) - PI / 2;
+    double r2 = r / BIG_FACTOR;
+    double cx = x + 0.5 + r2 * Math.cos(theta);
+    double cy = y + 0.5 + r2 * Math.sin(theta);
     double[] result = {cx, cy};
     return result;
   }
@@ -272,7 +285,7 @@ class Genome {
     String str = "";
     for (int i = 0; i < codons.size(); i++) {
       Codon c = codons.get(i);
-      str = str + util.infoToString(c);
+      str = str + infoToString(c);
       if (i < codons.size() - 1) {
         str = str + "-";
       }
@@ -285,7 +298,7 @@ class Genome {
     String str = "";
     for (int i = 0; i < limit; i++) {
       Codon c = codons.get(i);
-      str = str + util.infoToString(c);
+      str = str + infoToString(c);
       if (i < limit - 1) {
         str = str + "-";
       }

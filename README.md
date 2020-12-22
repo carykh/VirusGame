@@ -54,16 +54,24 @@ Code: [GitHub](https://github.com/carykh/VirusGame)
 
 - Check - see if Energy, Wall health, Codon health is over 50%
 
-- Fix rendering bugs occuring at high simulations speeds
+- Fix rendering bugs occurring at high simulations speeds
 
 
 Tell me what other codons you want to see!
 
 
 
-## How to run
-1. Download [Processing](https://processing.org/) (every version after 3.3.3 should work)
-2. Open the "virus.pde" file in the "virus" directory.
+## How to run in Processing
+1. Download [Processing](https://processing.org/) (3.5.4 tested, versions after 3.3.3 might work)
+2. Open the "virus.pde" file in the "/source/virus" directory.
+
+
+## How to run in IntelliJ
+1. Clone the project with [IntelliJ](https://www.jetbrains.com/idea/)'s Github support
+2. Import the gradle project
+3. Go source/virus/JavaLoader and click the green arrow
+
+Btw, the Ultimate edition is free if you visit a school, collage or university. 
 
 
 ## License
