@@ -20,7 +20,7 @@ sourceSets.main.resources.srcDirs = ['/source/virus/data']
 
 
 group = 'me.sirati97'
-version = '0.1-SNAPSHOT'
+version = '0.2-SNAPSHOT' //https://semver.org/
 description = 'virusgame'
 //java.sourceCompatibility = JavaVersion.VERSION_1_8
 

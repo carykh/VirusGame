@@ -37,6 +37,8 @@ Code: [GitHub](https://github.com/carykh/VirusGame)
    - Keyboard controls
 
    - New cell types
+  
+ - WASD & Arrow Pad panning (by [ben9583](https://github.com/ben9583))
 
 
 ## Breaking changes
