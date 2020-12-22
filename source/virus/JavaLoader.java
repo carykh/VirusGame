@@ -20,7 +20,7 @@ public class JavaLoader extends PApplet {
 
   @Override
   public void settings() {
-    size(ORIG_W_W, ORIG_W_H);  //size(ORIG_W_W, ORIG_W_H); //apparently used a static const is not allowed lol
+    size(ORIG_W_W, ORIG_W_H);
     noSmooth();
     //size & noSmooth are a bit special, cannot call is from anywhere but eva
   }
