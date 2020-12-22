@@ -1,191 +1,254 @@
-
 import java.util.Random;
 
-public final static double E_RECIPROCAL=0.3678794411;
+public Cell createCell(int ex, int ey, CellType et, int ed, double ewh, String eg){
+  Cell c = new Cell(ex, ey, et, ed, ewh, eg);
+  c.init();
+  return c;
+}
 
-class Cell {
+class Cell{
   int x;
   int y;
-  int type;
-  double wallHealth;
+  CellType type;
+  double wall;
+  double energy = 0;
   Genome genome;
   double geneTimer = 0;
-  double energy = 0;
   boolean tampered = false;
-  ArrayList<ArrayList<Particle>> particlesInCell = new ArrayList<ArrayList<Particle>>(0);
+  ParticleContainer pc = new ParticleContainer();
 
   ArrayList<double[]> laserCoor = new ArrayList<double[]>();
   Particle laserTarget = null;
   int laserT = -9999;
-  int LASER_LINGER_TIME = 30;
   String memory = "";
   AbsoluteRange lastRange = new AbsoluteRange(0, -1);
   boolean wasSuccess;
   /*
-   0: empty
-   1: empty, inaccessible
-   2: normal cell
-   3: waste management cell
-   4: gene-removing cell
+  0: empty
+  1: empty, inaccessible
+  2: normal cell
+  3: waste management cell
+  4: gene-removing cell
   */
   int dire;
 
   boolean debugFlag = false;
 
-  public Cell(int ex, int ey, int et, int ed, double ewh, String eg) {
-    for (int j = 0; j < 3; j++) {
-      ArrayList<Particle> newList = new ArrayList<Particle>(0);
-      particlesInCell.add(newList);
-    }
+  public Cell(int ex, int ey, CellType et, int ed, double ewh, String eg){
     x = ex;
     y = ey;
     type = et;
     dire = ed;
-    wallHealth = ewh;
-    genome = new Genome(eg, false);
+    wall = ewh;
+    genome = new Genome(eg,false);
 
     debugFlag = x == 6 && y == 4; //if we only want to inspect one cell
 
-    Random rnd = new Random(x << 16 + y + 1337); //seed based on coords
-
-    int startpos = rnd.nextInt(genome.codons.size());
-
-    genome.rotateOn = 0;
-    genome.rotateOnNext = genome.loopAroundGenome(1);
-
-    //we start at a random position but make sure that we are not in an invalid state!
-    for (int i = 0; i < startpos; i++) {
-      doAction();
-      tickGene();
-    }
-    laserCoor.clear(); //dont display all the preexecuted actions at once
-    laserTarget = null;
-
-    genome.iterate(); //update drawing postions
-
-    geneTimer = rnd.nextDouble() * GENE_TICK_TIME;
-    energy = 0.5;
+    energy = -1;
   }
 
-  void drawCell(double x, double y, double s) {
+  public void init() {
+    if (type == CellType.Normal) {
+      Random rnd = new Random(x << 16 + y + 1337); //seed based on coords
+      int startpos = rnd.nextInt(genome.codons.size());
+
+      genome.rotateOn = 0;
+      genome.rotateOnNext = genome.loopAroundGenome(1);
+
+      energy = 1;
+      //we start at a random position but make sure that we are not in an invalid state!
+      for (int i = 0; i < startpos; i++) {
+        doAction();
+        tickGene();
+      }
+      laserCoor.clear(); //dont display all the preexecuted actions at once
+      laserTarget = null;
+
+      genome.update(); //update drawing postions
+
+      geneTimer = rnd.nextDouble() * settings.gene_tick_time;
+      energy = 0.5;
+    } else {
+      energy = 0;
+    }
+
+  }
+
+  public String getMemory() {
+    if(memory.length() == 0){
+      return "[NOTHING]";
+    }else{
+      return "\"" + memory + "\"";
+    }
+  }
+
+  public boolean hasGenome() {
+    return type == CellType.Normal || type == CellType.UGO_Editor;
+  }
+
+  public boolean isHandInwards() {
+    return genome.inwards;
+  }
+
+  void drawSelf() {
+
+    double posx = renderer.trueXtoAppX(x);
+    double posy = renderer.trueYtoAppY(y);
+
+    if( posx < -renderer.camS || posy < -renderer.camS || posx > renderer.maxRight || posy > ORIG_W_H ) {
+      return;
+    }
+    
     pushMatrix();
-    translate((float) x, (float) y);
-    scale((float) (s / BIG_FACTOR));
+    translate((float)posx,(float)posy);
+    scale((float)(renderer.camS/BIG_FACTOR));
     noStroke();
-    if (type == 1) {
-      fill(60, 60, 60);
-      rect(0, 0, BIG_FACTOR, BIG_FACTOR);
-    } else if (type == 2) {
-      if (this == selectedCell) {
-        fill(0, 255, 255);
-      } else if (tampered) {
+    
+    if(type == CellType.Locked){
+
+      fill(60,60,60);
+      rect(0,0,BIG_FACTOR,BIG_FACTOR);
+
+    }else if(type == CellType.Normal){
+
+      if( tampered && settings.show_tampered ) {
         fill(205, 225, 70);
-      } else {
+      }else{
         fill(225, 190, 225);
       }
-      rect(0, 0, BIG_FACTOR, BIG_FACTOR);
-      fill(170, 100, 170);
-      float w = (float) (BIG_FACTOR * 0.08 * wallHealth);
-      rect(0, 0, BIG_FACTOR, w);
-      rect(0, BIG_FACTOR - w, BIG_FACTOR, w);
-      rect(0, 0, w, BIG_FACTOR);
-      rect(BIG_FACTOR - w, 0, w, BIG_FACTOR);
+      
+      rect(0,0,BIG_FACTOR,BIG_FACTOR);
+      fill(170,100,170);
+      float w = (float)(BIG_FACTOR*0.08*wall);
+      rect(0,0,BIG_FACTOR,w);
+      rect(0,BIG_FACTOR-w,BIG_FACTOR,w);
+      rect(0,0,w,BIG_FACTOR);
+      rect(BIG_FACTOR-w,0,w,BIG_FACTOR);
 
       pushMatrix();
-      translate(BIG_FACTOR * 0.5, BIG_FACTOR * 0.5);
+      translate(BIG_FACTOR*0.5,BIG_FACTOR*0.5);
       stroke(0);
       strokeWeight(1);
-      drawInterpreter();
+
+      if(renderer.camS > DETAIL_THRESHOLD) {
+        drawInterpreter();
+        noStroke();
+        genome.drawCodons();
+      }
+
       drawEnergy();
-      genome.drawCodons();
       genome.drawHand();
+      popMatrix();
+    } else if( type == CellType.Shell ) {
+
+      pushMatrix();
+      fill(225,190,225);
+      rect(0,0,BIG_FACTOR,BIG_FACTOR);
+      fill(170,100,170);
+      float w = (float)(BIG_FACTOR*0.08*wall);
+      rect(0,0,BIG_FACTOR,w);
+      rect(0,BIG_FACTOR-w,BIG_FACTOR,w);
+      rect(0,0,w,BIG_FACTOR);
+      rect(BIG_FACTOR-w,0,w,BIG_FACTOR);
+
+      pushMatrix();
+      translate(BIG_FACTOR*0.5,BIG_FACTOR*0.5);
+      stroke(0);
+      strokeWeight(1);
+      drawEnergy();
+      popMatrix();
+
       popMatrix();
     }
     popMatrix();
-    if (type == 2) {
+    if(type == CellType.Normal){
       drawLaser();
     }
   }
-
-  public void drawInterpreter() {
+  public void drawInterpreter(){
     int GENOME_LENGTH = genome.codons.size();
-    double CODON_ANGLE = (double) (1.0) / GENOME_LENGTH * 2 * PI;
+    double CODON_ANGLE = (double)(1.0)/GENOME_LENGTH*2*PI;
     double INTERPRETER_SIZE = 23;
     double col = 1;
-    double gtf = geneTimer / GENE_TICK_TIME;
-    if (gtf < 0.5) {
-      col = Math.min(1, (0.5 - gtf) * 4);
+    double gtf = geneTimer/settings.gene_tick_time;
+
+    if(gtf < 0.5){
+      col = Math.min(1,(0.5-gtf)*4);
     }
+
     pushMatrix();
-    rotate((float) (-PI / 2 + CODON_ANGLE * genome.appRO));
-    fill((float) (col * 255));
+    rotate((float)(-PI/2+CODON_ANGLE*genome.appRO));
+    fill((float)(col*255));
     beginShape();
-    strokeWeight(BIG_FACTOR * 0.01);
+    strokeWeight(BIG_FACTOR*0.01);
     stroke(80);
-    vertex(0, 0);
-    vertex((float) (INTERPRETER_SIZE * Math.cos(CODON_ANGLE * 0.5)), (float) (INTERPRETER_SIZE * Math.sin(CODON_ANGLE * 0.5)));
-    vertex((float) (INTERPRETER_SIZE * Math.cos(-CODON_ANGLE * 0.5)), (float) (INTERPRETER_SIZE * Math.sin(-CODON_ANGLE * 0.5)));
+    vertex(0,0);
+    vertex((float)(INTERPRETER_SIZE*Math.cos(CODON_ANGLE*0.5)),(float)(INTERPRETER_SIZE*Math.sin(CODON_ANGLE*0.5)));
+    vertex((float)(INTERPRETER_SIZE*Math.cos(-CODON_ANGLE*0.5)),(float)(INTERPRETER_SIZE*Math.sin(-CODON_ANGLE*0.5)));
     endShape(CLOSE);
     popMatrix();
   }
-
-  public void drawLaser() {
-    if (frameCount < laserT + (LASER_LINGER_TIME / PLAY_SPEED)) {
-      double alpha = (double) ((laserT + LASER_LINGER_TIME) - frameCount) / LASER_LINGER_TIME / PLAY_SPEED;
-      stroke(transperize(handColor, alpha));
-      strokeWeight((float) (0.033333 * BIG_FACTOR));
+  public void drawLaser(){
+    if(frameCount < laserT+settings.laser_linger_time){
+      double alpha = (double)((laserT+settings.laser_linger_time)-frameCount)/settings.laser_linger_time;
+      stroke(util.transperize(HAND_COLOR,alpha));
+      strokeWeight((float)(0.033333*BIG_FACTOR));
       double[] handCoor = getHandCoor();
-      if (laserTarget == null) {
-        for (double[] singleLaserCoor : laserCoor) {
-          daLine(handCoor, singleLaserCoor);
+      if(laserTarget == null){
+        for(double[] singleLaserCoor : laserCoor){
+          renderer.scaledLine(handCoor,singleLaserCoor);
         }
-      } else {
-        double[] targetCoor = laserTarget.coor;
-        daLine(handCoor, targetCoor);
+      }else{
+        if( dist((float)handCoor[0], (float)handCoor[1], (float)laserTarget.coor[0], (float)laserTarget.coor[1]) < 2 ) {
+          renderer.scaledLine(handCoor, laserTarget.coor);
+        }
       }
     } else {
       laserTarget = null;
       laserCoor.clear();
     }
   }
-
-  public void drawEnergy() {
+  public void drawEnergy(){
     noStroke();
-    fill(0, 0, 0);
-    ellipse(0, 0, 17, 17);
-    fill(255, 255, 0);
+    fill(0,0,0);
+    ellipse(0,0,17,17);
+
+    if( energy > 0 ) {
+      fill(255,255,0);
+      if (type == CellType.Normal) {
+        drawLightning();
+      } else {
+        ellipseMode(CENTER);
+        ellipse(0, 0, 12 * (float) energy + 2, 12 * (float) energy + 2);
+      }
+    }
+  }
+  public void drawLightning(){
     pushMatrix();
     scale((float) Math.sqrt(energy));
-    drawLightning();
-    popMatrix();
-  }
-
-  public void drawLightning() {
-    pushMatrix();
     scale(1.2);
     noStroke();
     beginShape();
-    vertex(-1, -7);
-    vertex(2, -7);
-    vertex(0, -3);
-    vertex(2.5, -3);
-    vertex(0.5, 1);
-    vertex(3, 1);
-    vertex(-1.5, 7);
-    vertex(-0.5, 3);
-    vertex(-3, 3);
-    vertex(-1, -1);
-    vertex(-4, -1);
+    vertex(-1,-7);
+    vertex(2,-7);
+    vertex(0,-3);
+    vertex(2.5,-3);
+    vertex(0.5,1);
+    vertex(3,1);
+    vertex(-1.5,7);
+    vertex(-0.5,3);
+    vertex(-3,3);
+    vertex(-1,-1);
+    vertex(-4,-1);
     endShape(CLOSE);
     popMatrix();
   }
-
-  public void iterate() {
-    if (type == 2) {
+  public void tick(){
+    if(type == CellType.Normal){
       if (energy > 0) {
         geneTimer -= PLAY_SPEED;
         do {
-          if (geneTimer <= GENE_TICK_TIME / 2.0 && didTickGene) {
+          if (geneTimer <= settings.gene_tick_time / 2.0 && didTickGene) {
             doAction();
           }
           if (geneTimer <= 0 && didAction) {
@@ -193,26 +256,40 @@ class Cell {
           }
         } while (geneTimer <= 0);//on high speeds we might needs to do multiple interations per frame
       }
-      genome.iterate();
+      genome.update();
     }
   }
-
-  public void doAction() {
+  boolean didAction = false;
+  boolean didTickGene = true;
+  public void doAction(){
     didAction = true; //this is added to make sure that the genes really operate in the right order
     if (!didTickGene) return;
     didTickGene = false;
-    if (!DEBUG_WORLD) useEnergy();
-    genome.rotateOn = genome.loopAroundGenome(genome.rotateOn); //in case it got deleted
-    Codon thisCodon = genome.codons.get(genome.rotateOn);
+    if (!DEBUG_WORLD) useEnergy(settings.gene_tick_energy * settings.gene_tick_time / 40);
+    Codon thisCodon = genome.getSelected();
     wasSuccess = thisCodon.exec(this);
 
-    if (!DEBUG_WORLD) genome.hurtCodons();
+    if (!DEBUG_WORLD) genome.hurtCodons(this);
+  }
+  public void tickGene(){
+    didTickGene = true; //this is added to make sure that the genes really operate in the right order
+    if (!didAction) {
+      geneTimer += settings.gene_tick_time / 2;
+      doAction();
+      return;
+    }
+    didAction = false;
+
+    geneTimer += settings.gene_tick_time;
+
+    genome.rotateOn = genome.rotateOnNext;
+    genome.rotateOnNext = genome.loopAroundGenome(genome.rotateOnNext + 1);
   }
 
-  void useEnergy() {
-    energy = Math.max(0, energy - (GENE_TICK_ENERGY * GENE_TICK_TIME / 40));
+  //todo amount == (GENE_TICK_ENERGY * settings.gene_tick_time / 40));
+  void useEnergy( double amount ){
+    energy = Math.max(0, energy - amount);
   }
-
   void readToMemory(int start, int end, boolean isRelative) {
     memory = "";
     laserTarget = null;
@@ -221,11 +298,11 @@ class Cell {
     for (int pos = start; pos <= end; pos++) {
       int index = genome.loopAroundGenome((isRelative ? genome.performerOn : 0) + pos);
       Codon c = genome.codons.get(index);
-      memory = memory + infoToString(c);
+      memory = memory + util.infoToString(c);
       if (pos < end) {
         memory = memory + "-";
       }
-      laserCoor.add(getCodonCoor(index, genome.CODON_DIST));
+      laserCoor.add(genome.getCodonCoor(index, CODON_DIST, x, y));
     }
   }
 
@@ -237,15 +314,15 @@ class Cell {
     laserCoor.clear();
     laserT = frameCount;
     for (int pos = start; pos <= end; pos++) {
+      if (genome.codons.size() == 0)return;
       int index = genome.loopAroundGenome((isRelative ? genome.performerOn : 0) + start); //usual constant, but we might wrap around after deleting enough items
       if (genome.rotateOnNext > index) {
         genome.rotateOnNext--;
       }
       genome.codons.remove(index);
-      laserCoor.add(getCodonCoor(index, genome.CODON_DIST));
+      laserCoor.add(genome.getCodonCoor(index, CODON_DIST, x, y));
     }
   }
-
 
   void writeFromMemory(int start, int end, boolean isRelative) {
     if (memory.length() == 0) {
@@ -254,13 +331,12 @@ class Cell {
     laserTarget = null;
     laserCoor.clear();
     laserT = frameCount;
-    if (genome.directionOn == 0) {
+    if (!genome.inwards) {
       writeOutwards(start, end);
     } else {
       writeInwards(start, end, isRelative);
     }
   }
-
   public void writeOutwards(int start, int end) {
     double theta = Math.random() * 2 * Math.PI;
     double ugo_vx = Math.cos(theta);
@@ -271,214 +347,200 @@ class Cell {
     String[] memoryParts = memory.split("-");
     String[] UGOmemoryParts = memoryParts;
     for (int i = 0; i < memoryParts.length * (end - start); i++) {
-      useEnergy();
+      useEnergy(settings.gene_tick_energy * settings.gene_tick_time / 40);
     }
     for (int i = 0; i < (end - start); i++) {
       UGOmemoryParts = concat(UGOmemoryParts, memoryParts);
     }
     String UGOmemory = join(UGOmemoryParts, "-");
 
-    Particle newUGO = new Particle(newUGOcoor, 2, UGOmemory, frameCount);
-    particles.get(2).add(newUGO);
-    newUGO.addToCellList();
-    laserTarget = newUGO;
+    UGO ugo = new UGO(newUGOcoor, memory);
+    ugo.mutate( settings.mutability );
+    world.addParticle(ugo);
+    laserTarget = ugo;
   }
-
   public void writeInwards(int start, int end, boolean isRelative) {
     laserTarget = null;
     String[] memoryParts = memory.split("-");
-    for (int pos = start; pos <= end; pos++) {
+    for(int pos = start; pos <= end; pos++){
       int index = genome.loopAroundGenome((isRelative ? genome.performerOn : 0) + pos);
       Codon c = genome.codons.get(index);
-      if (pos - start < memoryParts.length) {
-        String memoryPart = memoryParts[pos - start];
-        c.setFullInfo(stringToInfo(memoryPart));
-        laserCoor.add(getCodonCoor(index, genome.CODON_DIST));
+      if(pos-start < memoryParts.length){
+        String memoryPart = memoryParts[pos-start];
+        c.setFullInfo(util.stringToInfo(memoryPart));
+        laserCoor.add(genome.getCodonCoor(index, CODON_DIST, x, y));
       }
-      useEnergy();
+      useEnergy(settings.gene_tick_energy * settings.gene_tick_time / 40);
     }
   }
 
-  public void healWall() {
-    wallHealth += (1 - wallHealth) * E_RECIPROCAL;
+  public void healWall(){
+    wall += (1-wall) * E_RECIPROCAL;
     laserWall();
   }
 
-  public void laserWall() {
+  public void giveEnergy() {
+    energy += (1-energy)*E_RECIPROCAL;
+  }
+
+  public void laserWall(){
     laserT = frameCount;
     laserCoor.clear();
-    for (int i = 0; i < 4; i++) {
-      double[] result = {x + (i / 2), y + (i % 2)};
+    for(int i = 0; i < 4; i++){
+      double[] result = {x+(i/2),y+(i%2)};
       laserCoor.add(result);
     }
     laserTarget = null;
   }
 
-  public void eat(Particle food) {
-    if (food.type == 0) {
-      Particle newWaste = new Particle(food.coor, 1, -99999);
+  public void eat(Particle food){
+    if(food.type == ParticleType.Food){
+      Particle newWaste = new Particle(food.coor, util.combineVelocity( food.velo, util.getRandomVelocity() ), ParticleType.Waste,-99999);
       shootLaserAt(newWaste);
-      newWaste.addToCellList();
-      particles.get(1).add(newWaste);
-      food.removeParticle();
-      energy += (1 - energy) * E_RECIPROCAL;
-    } else {
+      world.addParticle( newWaste );
+      food.removeParticle(this);
+      energy += (1-energy)*E_RECIPROCAL;
+    }else{
       shootLaserAt(food);
     }
   }
 
-  void shootLaserAt(Particle food) {
+  void shootLaserAt(Particle food){
     laserT = frameCount;
     laserTarget = food;
   }
 
-  public double[] getHandCoor() {
-    double r = genome.HAND_DIST;
-    if (genome.directionOn == 0) {
-      r += genome.HAND_LEN;
-    } else {
-      r -= genome.HAND_LEN;
+  public double[] getHandCoor(){
+    double r = HAND_DIST;
+    if( genome.inwards ){
+      r -= HAND_LEN;
+    }else{
+      r += HAND_LEN;
     }
-    return getCodonCoor(genome.performerOn, r);
+    return genome.getCodonCoor(genome.performerOn,r, x , y);
   }
+  
+  public boolean pushOut(Particle waste){
+    int[][] dire = {{0,1},{0,-1},{1,0},{-1,0}};
+    int chosen = -1;
+    int iter = 0;
+    
+    while( iter < 64 && chosen == -1 ) {
 
-  public double[] getCodonCoor(int i, double r) {
-    double theta = (float) (i * 2 * PI) / (genome.codons.size()) - PI / 2;
-    double r2 = r / BIG_FACTOR;
-    double handX = x + 0.5 + r2 * Math.cos(theta);
-    double handY = y + 0.5 + r2 * Math.sin(theta);
-    double[] result = {handX, handY};
-    return result;
-  }
+      int c = (int) random(0, 4);
 
-  public void pushOut(Particle waste) {
-    int[][] dire = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
-    boolean canPushOut = false;
-    for (int i = 0; i < 4; i++) {
-      if (!(y + dire[i][1] > WORLD_SIZE - 1 || y + dire[i][1] < 0 || x + dire[i][0] > WORLD_SIZE - 1 || x + dire[i][0] < 0 || cells[y + dire[i][1]][x + dire[i][0]].type != 0)) {
-        canPushOut = true;
+      if( world.isCellValid( x + dire[c][0], y + dire[c][1] ) && world.cells[ y + dire[c][1] ][ x + dire[c][0] ] == null ) {
+        chosen = c;
       }
+
+      iter ++;
+
     }
-    if (canPushOut) {
-      int chosen = -1;
-      while (chosen == -1 || y + dire[chosen][1] > WORLD_SIZE - 1 || y + dire[chosen][1] < 0 || x + dire[chosen][0] > WORLD_SIZE - 1 || x + dire[chosen][0] < 0 || cells[y + dire[chosen][1]][x + dire[chosen][0]].type != 0) {
-        chosen = (int) random(0, 4);
+
+    if( chosen == -1 ) return false;
+    
+    double[] oldCoor = waste.copyCoor();
+    for(int dim = 0; dim < 2; dim++){
+      if(dire[chosen][dim] == -1){
+        waste.coor[dim] = Math.floor(waste.coor[dim])-EPS;
+        waste.velo[dim] = -Math.abs(waste.velo[dim]);
+      }else if(dire[chosen][dim] == 1){
+        waste.coor[dim] = Math.ceil(waste.coor[dim])+EPS;
+        waste.velo[dim] = Math.abs(waste.velo[dim]);
       }
-      double[] oldCoor = waste.copyCoor();
-      for (int dim = 0; dim < 2; dim++) {
-        if (dire[chosen][dim] == -1) {
-          waste.coor[dim] = Math.floor(waste.coor[dim]) - EPS;
-          waste.velo[dim] = -Math.abs(waste.velo[dim]);
-        } else if (dire[chosen][dim] == 1) {
-          waste.coor[dim] = Math.ceil(waste.coor[dim]) + EPS;
-          waste.velo[dim] = Math.abs(waste.velo[dim]);
-        }
-        waste.loopCoor(dim);
-      }
-      Cell p_cell = getCellAt(oldCoor, true);
-      p_cell.removeParticleFromCell(waste);
-      Cell n_cell = getCellAt(waste.coor, true);
-      n_cell.addParticleToCell(waste);
-      laserT = frameCount;
-      laserTarget = waste;
+      waste.loopCoor(dim);
+    }
+    Cell p_cell = world.getCellAt(oldCoor[0], oldCoor[1]);
+    if( p_cell != null ) p_cell.removeParticle(waste);
+    Cell n_cell = world.getCellAt(waste.coor[0], waste.coor[1]);
+    if( n_cell != null ) n_cell.addParticle(waste);
+    laserT = frameCount;
+    laserTarget = waste;
+    
+    return true;
+  }
+
+
+  public void hurtWall(double multi){
+    if(type == CellType.Normal) {
+      wall -= settings.wall_damage*multi;
+      if(wall <= 0) die();
     }
   }
 
-  boolean didAction = false;
-  boolean didTickGene = true;
 
-  public void tickGene() {
-    didTickGene = true; //this is added to make sure that the genes really operate in the right order
-    if (!didAction) {
-      geneTimer += GENE_TICK_TIME / 2;
-      doAction();
-      return;
-    }
-    didAction = false;
-
-    geneTimer += GENE_TICK_TIME;
-
-    genome.rotateOn = genome.rotateOnNext;
-    genome.rotateOnNext = genome.loopAroundGenome(genome.rotateOnNext + 1);
+  public boolean tamper() {
+    boolean old = tampered;
+    tampered = true;
+    return old;
   }
 
-  public void hurtWall(double multi) {
-    if (type >= 2) {
-      wallHealth -= WALL_DAMAGE * multi * (DEBUG_WORLD ? 0.4 : 1);
-      if (wallHealth <= 0) {
-        die();
-      }
-    }
-  }
-
-  public void tamper() {
-    if (!tampered) {
-      tampered = true;
-      cellCounts[0]--;
-      cellCounts[1]++;
-    }
-  }
 
   public void die() {
-    for (int i = 0; i < genome.codons.size(); i++) {
-      Particle newWaste = new Particle(getCodonCoor(i, genome.CODON_DIST), 1, -99999);
-      newWaste.addToCellList();
-      particles.get(1).add(newWaste);
-    }
-    type = 0;
-    if (this == selectedCell) {
-      selectedCell = null;
-    }
-    if (tampered) {
-      cellCounts[1]--;
-    } else {
-      cellCounts[0]--;
-    }
-    cellCounts[2]++;
-  }
-
-  public void addParticleToCell(Particle food) {
-    particlesInCell.get(food.type).add(food);
-  }
-
-  public void removeParticleFromCell(Particle food) {
-    ArrayList<Particle> myList = particlesInCell.get(food.type);
-    for (int i = 0; i < myList.size(); i++) {
-      if (myList.get(i) == food) {
-        myList.remove(i);
+    if (hasGenome()) {
+      for (int i = 0; i < genome.codons.size(); i++) {
+        Particle newWaste = new Particle(genome.getCodonCoor(i, CODON_DIST, x, y), ParticleType.Waste, -99999);
+        world.addParticle( newWaste );
       }
     }
+
+
+    if (this == editor.selected) {
+      editor.close();
+    }
+
+    if (type == CellType.Shell) {
+      world.shellCount--;
+    } else {
+      world.aliveCount --;
+    }
+
+    world.deadCount ++;
+    type = CellType.Empty;
   }
 
-  public Particle selectParticleInCell(int type) { //type 0=food 1=waste 2=ngo?
-    ArrayList<Particle> myList = particlesInCell.get(type);
+
+  public void addParticle(Particle food) {
+    pc.get(food.type).add(food);
+  }
+
+  public void removeParticle(Particle p) {
+    pc.get( p.type ).remove( p );
+  }
+
+
+  public Particle selectParticleInCell(ParticleType type) { //type 0=food 1=waste 2=ngo?
+    ArrayList<Particle> myList = pc.get(type);
     if (myList.size() == 0) {
-      return null;
+      if( type == ParticleType.Waste ) {
+        return selectParticleInCell( ParticleType.UGO );
+      }return null;
     } else {
       int choiceIndex = (int) (Math.random() * myList.size());
       return myList.get(choiceIndex);
     }
   }
 
-  public String getCellName() {
-    if (x == -1) {
+  public String getCellName(){
+    if(type == CellType.UGO_Editor){
       return "Custom UGO";
-    } else if (type == 2) {
-      return "Cell at (" + x + ", " + y + ")";
-    } else {
-      return "";
+    }else if(type == CellType.Normal){
+      return "Cell at ("+x+", "+y+")";
+    }else if(type == CellType.Shell) {
+      return "Cell Shell";
+    }else if(type == CellType.Locked) {
+      return "Wall";
     }
+
+    return "Undefined";
   }
 
-  public int getParticleCount(int t) {
-    if (t == -1) {
-      int sum = 0;
-      for (int i = 0; i < 3; i++) {
-        sum += particlesInCell.get(i).size();
-      }
-      return sum;
+
+  public int getParticleCount(ParticleType t) {
+    if (t == null){
+      return pc.count();
     } else {
-      return particlesInCell.get(t).size();
+      return pc.get(t).size();
     }
   }
 
@@ -489,4 +551,27 @@ class Cell {
   public void DEBUG_SET_PLAY_SPEED(float d) {
     PLAY_SPEED = d;
   }
+
+}
+
+enum CellType {
+  Empty,
+  Locked,
+  Normal,
+  Shell,
+  UGO_Editor;
+
+  public boolean isAlive() {
+    return this == Normal || this == Shell;
+  }
+
+  public boolean isHurtable() {
+    return this == Normal;
+  }
+
+  public boolean isType(Cell cell) {
+    if (cell == null)return false;
+    return this == cell.type;
+  }
+
 }
