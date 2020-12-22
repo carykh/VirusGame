@@ -1,10 +1,22 @@
-class UGO extends Particle {
+package virusgame;
+
+import java.util.ArrayList;
+
+
+import static processing.core.PConstants.*;
+import static virusgame.Const.*;
+import static virusgame.Var.*;
+import static virusgame.Method.*;
+import static virusgame.Util.*;
+import static java.lang.Math.*;
+
+public class UGO extends Particle {
   
-    Genome genome;
-    boolean divine = false;
+   public Genome genome;
+   public boolean divine = false;
 
     public UGO( double[] coor, String data ) {
-        super( coor, ParticleType.UGO, frameCount );
+        super( coor, ParticleType.UGO, getFrameCount() );
         genome = new Genome( data, true );
         
         double dx = coor[2] - coor[0];
@@ -26,11 +38,11 @@ class UGO extends Particle {
     public void tick() {
         super.tick();
 
-        if( frameCount % settings.gene_tick_time == 0 ) {
+        if( getFrameCount() % settings.gene_tick_time == 0 ) {
             genome.hurtCodons(null);
             if( genome.codons.size() == 0 ) {
                 removeParticle( world.getCellAt(coor[0], coor[1]) );
-                Particle p = new Particle( coor, velo, ParticleType.Waste, -99999 );
+               Particle p = new Particle( coor, velo, ParticleType.Waste, -99999 );
                 world.addParticle( p );
             }
         }
@@ -38,19 +50,19 @@ class UGO extends Particle {
     
     void drawSelf() {
       
-        double posx = renderer.trueXtoAppX(coor[0]);
-        double posy = renderer.trueYtoAppY(coor[1]);
+       double posx = renderer.trueXtoAppX(coor[0]);
+       double posy = renderer.trueYtoAppY(coor[1]);
                 
         if( posx > 0 && posy > 0 && posx < ORIG_W_W && posy < ORIG_W_W ) {
           
             pushMatrix();
             renderer.dTranslate( posx, posy );
-            double ageScale = Math.min(1.0, (frameCount - birthFrame) * settings.age_grow_speed);
+            double ageScale = Math.min(1.0, (getFrameCount() - birthFrame) * settings.age_grow_speed);
             scale( (float) (renderer.camS / BIG_FACTOR * ageScale) );
             noStroke();
             fill(0);
             ellipseMode(CENTER);
-            ellipse(0, 0, 0.1 * BIG_FACTOR, 0.1 * BIG_FACTOR);
+            ellipse(0, 0, 0.1f * BIG_FACTOR, 0.1f * BIG_FACTOR);
             if( renderer.camS > DETAIL_THRESHOLD && genome != null ) genome.drawCodons();
             popMatrix();
         
@@ -60,7 +72,7 @@ class UGO extends Particle {
     
     protected boolean interact( double[] future, CellType ct, CellType ft ) {
        
-        Cell fc = world.getCellAt(future[0], future[1]);
+       Cell fc = world.getCellAt(future[0], future[1]);
         if( fc != null ) {
 
             if( divine || fc.wall * settings.cell_wall_protection < random(0,1) || CellType.Shell.isType(fc) ) {
@@ -76,7 +88,7 @@ class UGO extends Particle {
           
         }
         
-        return false;
+       return false;
       
     }
     
@@ -98,9 +110,9 @@ class UGO extends Particle {
                 
         }else{
               
-            int injectionLocation = c.genome.rotateOn;
+           int injectionLocation = c.genome.rotateOn;
             ArrayList<Codon> toInject = genome.codons;
-            int size = genome.codons.size();
+           int size = genome.codons.size();
     
             for(int i = 0; i < toInject.size(); i++){
                 c.genome.codons.add(injectionLocation+i, new Codon(toInject.get(i)));
@@ -116,10 +128,10 @@ class UGO extends Particle {
             
         if( !c.tamper() ) world.infectedCount ++;
         removeParticle( world.getCellAt(coor[0], coor[1]) );
-        Particle p = new Particle(coor, util.combineVelocity( this.velo, util.getRandomVelocity() ), ParticleType.Waste, -99999);
+       Particle p = new Particle(coor,combineVelocity( this.velo,getRandomVelocity() ), ParticleType.Waste, -99999);
         world.addParticle( p );
             
-        return true;
+       return true;
         
     }
 

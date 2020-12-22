@@ -1,4 +1,15 @@
-class Settings {
+package virusgame;
+
+import processing.data.JSONArray;
+import processing.data.JSONObject;
+
+
+import static virusgame.Var.*;
+import static virusgame.Const.*;
+import static virusgame.Method.*;
+import static virusgame.Util.*;
+
+public class Settings {
   
     private JSONObject settings;
     private JSONObject world;
@@ -64,7 +75,7 @@ class Settings {
     
     }
     
-    public void loadWorld( JSONArray json, int size ) {
+    public void loadWorld(JSONArray json, int size ) {
         map_data = new int[ size ][ size ];
         
         for( int y = 0; y < size; y ++ ) {

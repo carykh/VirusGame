@@ -1,7 +1,21 @@
-class Graph {
+package virusgame;
+
+import processing.core.PGraphics;
+
+
+
+import static processing.core.PConstants.*;
+import static virusgame.Const.*;
+import static virusgame.Var.*;
+import static virusgame.Method.*;
+import static virusgame.Util.*;
+import static java.lang.Math.*;
+import static java.lang.Math.PI;
+
+public class Graph {
 
     private GraphFrame[] frames;
-    private int offset = 0;
+    protected int offset = 0;
     private int highest = 0;
     private boolean redraw = true;
     private PGraphics canvas = null;
@@ -101,41 +115,42 @@ class Graph {
         return hi;
     }
 
+    public static class GraphFrame {
+
+        public int wastes = 0;
+        public int ugos = 0;
+        public int cells = 0;
+
+        public GraphFrame( int wastes, int ugos, int cells ) {
+            this.wastes = wastes;
+            this.ugos = ugos;
+            this.cells = cells;
+        }
+
+        public GraphFrame() {
+            super();
+        }
+
+        public int getHighest() {
+            int a = max( wastes, ugos );
+            return max( a, cells );
+        }
+
+        public GraphFrame drawSelf( PGraphics canvas, float x1, float x2, float u, float h, GraphFrame last ) {
+
+            canvas.stroke(GRAPH_WASTES);
+            canvas.line( x1, h - last.wastes * u, x2, h - this.wastes * u );
+
+            canvas.stroke(GRAPH_UGOS);
+            canvas.line( x1, h - last.ugos * u, x2, h - this.ugos * u );
+
+            canvas.stroke(GRAPH_CELLS);
+            canvas.line( x1, h - last.cells * u, x2, h - this.cells * u );
+
+            return this;
+        }
+
+    }
 }
 
-class GraphFrame {
-  
-    public int wastes = 0;
-    public int ugos = 0;
-    public int cells = 0;
-    
-    public GraphFrame( int wastes, int ugos, int cells ) {
-        this.wastes = wastes;
-        this.ugos = ugos;
-        this.cells = cells;
-    }
-    
-    public GraphFrame() {
-        super();
-    }
-    
-    public int getHighest() {
-        int a = max( wastes, ugos );
-        return max( a, cells );
-    }
-    
-    public GraphFrame drawSelf( PGraphics canvas, float x1, float x2, float u, float h, GraphFrame last ) {
-      
-        canvas.stroke(GRAPH_WASTES);
-        canvas.line( x1, h - last.wastes * u, x2, h - this.wastes * u );
-        
-        canvas.stroke(GRAPH_UGOS);
-        canvas.line( x1, h - last.ugos * u, x2, h - this.ugos * u );
-        
-        canvas.stroke(GRAPH_CELLS);
-        canvas.line( x1, h - last.cells * u, x2, h - this.cells * u );
-      
-        return this;
-    }
-  
-}
+

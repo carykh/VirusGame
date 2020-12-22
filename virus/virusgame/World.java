@@ -1,15 +1,24 @@
-class World {
+package virusgame;
+
+import java.util.ArrayList;
+
+
+import static virusgame.Var.*;
+import static virusgame.Util.*;
+import static virusgame.Method.*;
+
+public class World {
   
-    private Cell[][] cells;
+    private Cell[][] cells; //this should be private because world wrapping!
     public ParticleContainer pc = new ParticleContainer();
     
     private ArrayList<Particle> queue = new ArrayList<Particle>();
-    private int initialCount = 0;
-    private int aliveCount = 0;
-    private int deadCount = 0;
-    private int shellCount = 0;
-    private int infectedCount = 0;
-    private int lastEditFrame = 0;
+    public int initialCount = 0;
+    public int aliveCount = 0;
+    public int deadCount = 0;
+    public int shellCount = 0;
+    public int infectedCount = 0;
+    public int lastEditFrame = 0;
     public int totalFoodCount = 0;
     public int totalWasteCount = 0;
     public int totalUGOCount = 0;
@@ -58,8 +67,8 @@ class World {
     int lastGraphFrame = 0;
     public void tick() {
 
-        if( frameCount-lastGraphFrame > (settings.graph_update_period/PLAY_SPEED)) {
-          lastGraphFrame = frameCount;
+        if( getFrameCount()-lastGraphFrame > (settings.graph_update_period/PLAY_SPEED)) {
+          lastGraphFrame = getFrameCount();
             graph.append( new GraphFrame(
                 pc.get(ParticleType.Waste).size(),
                 pc.get(ParticleType.UGO).size(),
@@ -98,8 +107,8 @@ class World {
             int iter = 0;
             
             while( iter < 16 && (choiceX == -1 || cells[choiceY][choiceX] != null)){
-                choiceX = (int) random(0,settings.world_size);
-                choiceY = (int) random(0,settings.world_size);
+                choiceX = (int) randomInt(0,settings.world_size);
+                choiceY = (int) randomInt(0,settings.world_size);
                 iter ++;
             }
 
@@ -108,7 +117,7 @@ class World {
                 choiceY + random(0.3, 0.7)
             };
 
-            Particle food = new Particle(coor, ParticleType.Food, frameCount);
+            Particle food = new Particle(coor, ParticleType.Food, getFrameCount());
             world.addParticle( food );
             count ++;
     }

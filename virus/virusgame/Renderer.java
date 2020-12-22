@@ -1,15 +1,29 @@
-class Renderer {
+package virusgame;
 
-    boolean wasMouseDown = false; //todo is this needed here?
-    double MIN_CAM_S = ((float)W_H)/settings.world_size;
-    double camX = 0;
-    double camY = 0;
-    double camS = MIN_CAM_S;
-    private int maxRight;
+import virusgame.Editor.*;
 
-    int flashCursorRed = 0;
-    int activeCursorRed = 0;
-    boolean activeCursorHighLow = false;
+import static processing.core.PApplet.nf;
+import static processing.core.PConstants.*;
+import static virusgame.Const.*;
+import static virusgame.Var.*;
+import static virusgame.Method.*;
+import static virusgame.Util.*;
+import static java.lang.Math.*;
+import static java.lang.Math.PI;
+
+
+public class Renderer {
+
+   public boolean wasMouseDown = false; //todo is this needed here?
+   public double MIN_CAM_S = ((float)W_H)/settings.world_size;
+   public double camX = 0;
+   public double camY = 0;
+   public double camS = MIN_CAM_S;
+   public int maxRight;
+
+   public int flashCursorRed = 0;
+   public int activeCursorRed = 0;
+   public boolean activeCursorHighLow = false;
 
     public Renderer( Settings settings ) {
         camS = ((float) ORIG_W_W) / settings.world_size;
@@ -64,7 +78,7 @@ class Renderer {
     void drawCells() {
         for( int y = 0; y < settings.world_size; y++ ) {
             for( int x = 0; x < settings.world_size; x++ ) {
-                Cell cell = world.cells[y][x];
+                Cell cell = world.getCellAt(y,x);
                 if( cell != null ) cell.drawSelf();
             }
         }
@@ -78,7 +92,7 @@ class Renderer {
 
     void drawExtras(){
         if(editor.arrow != null){
-            if(util.euclidLength(editor.arrow) > settings.min_length_to_produce){
+            if(euclidLength(editor.arrow) > settings.min_length_to_produce){
                 stroke(0);
             }else{
                 stroke(150);
@@ -101,9 +115,9 @@ class Renderer {
             fill(255);
             textFont(font,40);
             textAlign(LEFT);
-            text( "FPS: " + (int) Math.floor(frameRate), 25, 60);
-            text( "Start: " + util.framesToTime(frameCount), 25, 100);
-            text( "Edit: " + util.framesToTime(frameCount-world.lastEditFrame), 25, 140);
+            text( "FPS: " + (int) Math.floor(getFrameRate()), 25, 60);
+            text( "Start: " +framesToTime(getFrameCount()), 25, 100);
+            text( "Edit: " +framesToTime(getFrameCount()-world.lastEditFrame), 25, 140);
             textFont(font, 28);
             text("Initial: " + world.initialCount, 340, 50);
             text("Alive: " + world.aliveCount, 340, 75);
@@ -131,7 +145,7 @@ class Renderer {
             textFont(font, 20);
             textAlign(LEFT);
 
-            text( "FPS: " + (int) Math.floor(frameRate) + ", frame: " + frameCount, 20, c += 20 );
+            text( "FPS: " + (int) Math.floor(getFrameRate()) + ", frame: " + getFrameCount(), 20, c += 20 );
             text( "Graph high: " + graph.getHighest(false) + ", offset: " + graph.offset + " p: " + settings.graph_update_period, 20, c += 20 );
             text( "Selected: " + editor.isOpened() + ", at: " + editor.selx + ", " + editor.sely, 20, c += 20 );
             text( "CamS: " + String.format("%.2f", camS) + ", CamX: " + String.format("%.2f", camX ) + ", CamY: " + String.format("%.2f", camY ), 20, c += 20 );
@@ -185,7 +199,7 @@ class Renderer {
         textFont(font,38);
         text("x"+String.format("%.1f", PLAY_SPEED), (10+75+33), 30);
     }
-    void drawBar(color col, double stat, String s, double y){
+    void drawBar(int col, double stat, String s, double y){
         fill(150);
         rect(25,(float)y,500,60);
         fill(col);
@@ -245,13 +259,13 @@ class Renderer {
         float y2 = (float)trueYtoAppY(dy2);
         strokeWeight((float)(0.03*camS));
         line(x1,y1,x2,y2);
-        float angle = atan2(y2-y1,x2-x1);
+        float angle = (float) atan2(y2-y1,x2-x1);
         float head_size = (float)(0.3*camS); //changed from 0.3 to 0.2
-        float x3 = x2+head_size*cos(angle+PI*0.8);
-        float y3 = y2+head_size*sin(angle+PI*0.8);
+        float x3 = x2+head_size*(float)cos(angle+PI*0.8f);
+        float y3 = y2+head_size*(float)sin(angle+PI*0.8f);
         line(x2,y2,x3,y3);
-        float x4 = x2+head_size*cos(angle-PI*0.8);
-        float y4 = y2+head_size*sin(angle-PI*0.8);
+        float x4 = x2+head_size*(float)cos(angle-PI*0.8f);
+        float y4 = y2+head_size*(float)sin(angle-PI*0.8f);
         line(x2,y2,x4,y4);
     }
 
@@ -313,12 +327,12 @@ class Renderer {
             for(int p = 0; p < 2; p++){
                 double extraX = (w*0.5-MARGIN)*p;
                 if(p == editor.codonToEdit[0] && i + offset == editor.codonToEdit[1]){
-                    double highlightFac = 0.5f+0.5f*sin(frameCount*0.25f);
-                    fill(255,255,255,(float)(highlightFac*140));
+                    double highlightFac = 0.5f+0.5f*sin(getFrameCount()*0.25f);
+                    fill(255f,255f,255f,(float)(highlightFac*140));
                     dRect(extraX+MARGIN,appY+MARGIN,appW,appCodonHeight-MARGIN*2);
                     if (flashCursorRed > 0) {
 
-                        redflashFac = sin(frameCount*0.25*4/3); //quick = attention
+                        redflashFac = sin(getFrameCount()*0.25*4/3); //quick = attention
                         redflashFac *= redflashFac;
 
 
@@ -359,8 +373,8 @@ class Renderer {
             dText("( + )",w*0.75-MARGIN,avgY+11);
         }
 
-        double arrowUIX =  (mouseX/scalefactor) - x - ORIG_W_H;
-        double arrrowUIY = (mouseY/scalefactor) - y + appCodonHeight/2;
+        double arrowUIX =  (getMouseX()/scalefactor) - x - ORIG_W_H;
+        double arrrowUIY = (getMouseY()/scalefactor) - y + appCodonHeight/2;
         int rowAY = (int)(arrrowUIY/appCodonHeight);
 
         //drag and drop
@@ -380,7 +394,7 @@ class Renderer {
 
             textFont(font,30);
             textAlign(CENTER);
-            drawCodon(g.codons.get(editor.dragAndDropCodonId), (mouseX/scalefactor)-x-ORIG_W_H-editor.dragAndDropRX, (mouseY/scalefactor)-y-editor.dragAndDropRY, w, appW, appCodonHeight);
+            drawCodon(g.codons.get(editor.dragAndDropCodonId), (getMouseX()/scalefactor)-x-ORIG_W_H-editor.dragAndDropRX, (getMouseY()/scalefactor)-y-editor.dragAndDropRY, w, appW, appCodonHeight);
 
         } else {
             //add button
@@ -392,8 +406,8 @@ class Renderer {
             }
 
             //remove button
-            double crossUIX =  (mouseX/scalefactor) - x - ORIG_W_H - w;
-            double crossUIY = (mouseY/scalefactor) - y;
+            double crossUIX =  (getMouseX()/scalefactor) - x - ORIG_W_H - w;
+            double crossUIY = (getMouseY()/scalefactor) - y;
             int rowCY = (int)(crossUIY/appCodonHeight);
             if (rowCY >= 0 && rowCY < GENOME_LENGTH && crossUIX >= -25 && crossUIX <= 70) {
                 drawRemoveCross(w+30, (rowCY+0.5)*appCodonHeight, min(60, (float)(appCodonHeight-2*MARGIN)), 60, 15);
@@ -407,8 +421,8 @@ class Renderer {
     void drawCodon(Codon codon, double x, double y, double w, double appW, double appCodonHeight) {
         for (int p = 0; p < 2; p++) {
             double extraX = (w*0.5-MARGIN)*p;
-            color fillColor = codon.getColor(p);
-            color textColor = codon.getTextColor(p);
+            int fillColor = codon.getColor(p);
+            int textColor = codon.getTextColor(p);
             fill(0);
             dRect(x+extraX+MARGIN, y+MARGIN, appW, appCodonHeight-MARGIN*2);
             if (codon.hasSubstance()) {
@@ -467,7 +481,7 @@ class Renderer {
         beginShape();
         float min = -cSize/2;
         float max = cSize/2;
-        float pythagorasC = sqrt(1/(float)2)*cWidth;
+        float pythagorasC = (float) (sqrt(1/(float)2)*cWidth);
 
 
         vertex(min+pythagorasC, min);
@@ -512,33 +526,3 @@ class Renderer {
 
 }
 
-static class Dim{
-    private final double x;
-    private final double y;
-    private final double w;
-    private final double h;
-
-    public Dim(double x, double y, double w, double h) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-    }
-
-    public double getX() {
-        return x;
-    }
-
-    public double getY() {
-        return y;
-    }
-
-    public double getW() {
-        return w;
-    }
-
-    public double getH() {
-        return h;
-    }
-
-}

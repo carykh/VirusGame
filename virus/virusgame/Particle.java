@@ -1,13 +1,24 @@
-class Particle{
+package virusgame;
+
+import static processing.core.PApplet.*;
+import static processing.core.PConstants.*;
+import static virusgame.Const.*;
+import static virusgame.Var.*;
+import static virusgame.Method.*;
+import static virusgame.Util.*;
+import static java.lang.Math.*;
+import static java.lang.Math.PI;
+
+public class Particle{
 
     protected double[] coor;
     protected double[] velo;
-    protected boolean removed = false;
-    protected int birthFrame;
-    protected ParticleType type;
+    public boolean removed = false;
+    public int birthFrame;
+    public ParticleType type;
 
     public Particle(double[] tcoor, ParticleType ttype, int b){
-        this(tcoor, util.getRandomVelocity(), ttype, b);
+        this(tcoor,getRandomVelocity(), ttype, b);
     }
 
     public Particle(double[] tcoor, double tvelo[], ParticleType ttype, int b){
@@ -29,7 +40,7 @@ class Particle{
 
             pushMatrix();
             renderer.dTranslate( posx, posy );
-            double ageScale = Math.min(1.0, (frameCount - birthFrame) * settings.age_grow_speed);
+            double ageScale = Math.min(1.0, (getFrameCount() - birthFrame) * settings.age_grow_speed);
             scale( (float) (renderer.camS / BIG_FACTOR * ageScale) );
             noStroke();
 
@@ -40,7 +51,7 @@ class Particle{
             }
 
             ellipseMode(CENTER);
-            ellipse(0, 0, 0.1 * BIG_FACTOR, 0.1 * BIG_FACTOR);
+            ellipse(0, 0, 0.1f * BIG_FACTOR, 0.1f * BIG_FACTOR);
             popMatrix();
 
         }
@@ -53,12 +64,12 @@ class Particle{
 
         if( ct == CellType.Locked ) removeParticle( world.getCellAt(coor[0], coor[1]) );
 
-        float visc = ct == CellType.Empty ? 1 : 0.5;
+        float visc = ct == CellType.Empty ? 1 : 0.5f;
         future[0] = coor[0] + velo[0] * visc * PLAY_SPEED;
         future[1] = coor[1] + velo[1] * visc * PLAY_SPEED;
 
-        boolean cta = util.checkCellBoundary( coor[0], future[0] );
-        boolean ctb = util.checkCellBoundary( coor[1], future[1] );
+        boolean cta =checkCellBoundary( coor[0], future[0] );
+        boolean ctb =checkCellBoundary( coor[1], future[1] );
 
         if( cta || ctb ) {
 

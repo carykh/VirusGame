@@ -1,52 +1,63 @@
-class Input {
+package virusgame;
 
-  boolean canDragWorld = false;
-  boolean doubleClick = false; // not realy double click - find better name
-  boolean wasMouseDown = false;
-  double clickWorldX = -1;
-  double clickWorldY = -1;
-  boolean scrollLocked = true;
-  int windowSizeX = 0; // used for resize detection //todo: do we need that because we are already doign that?
-  int windowSizeY = 0;
+import static processing.core.PConstants.*;
+import static virusgame.Const.*;
+import static virusgame.Var.*;
+import static virusgame.Method.*;
+import static virusgame.Util.*;
+import static java.lang.Math.*;
+import static java.lang.Math.PI;
+import static virusgame.ClipboardHelper.*;
 
-  public void keyPressed() {
-    char keyL = Character.toLowerCase(key);
+public class Input {
+
+ public boolean canDragWorld = false;
+ public boolean doubleClick = false; // not realy double click - find better name
+ public boolean wasMouseDown = false;
+ public double clickWorldX = -1;
+ public double clickWorldY = -1;
+ public boolean scrollLocked = true;
+ public int windowSizeX = 0; // used for resize detection //todo: do we need that because we are already doign that?
+ public int windowSizeY = 0;
+
+  public char keyPressed() {
+    char keyL= Character.toLowerCase(getKey());
 
     // disable/enable GUI
-    if (keyL == 'x') {
+    if (keyL== 'x') {
       settings.show_ui = !settings.show_ui;
       renderer.maxRight = settings.show_ui ? ORIG_W_H : ORIG_W_W;
-    } else if (keyL == 'q') {
-      PLAY_SPEED = Math.max(0.1, PLAY_SPEED-1);
-    } else if (keyL == 'w') {
-      PLAY_SPEED = Math.max(0.1, PLAY_SPEED-0.1);
-    } else if (keyL == 'e') {
+    } else if (keyL== 'q') {
+      PLAY_SPEED = Math.max(0.1f, PLAY_SPEED-1);
+    } else if (keyL== 'w') {
+      PLAY_SPEED = Math.max(0.1f, PLAY_SPEED-0.1f);
+    } else if (keyL== 'e') {
       PLAY_SPEED += 0.1;
-    } else if (keyL == 'r') {
+    } else if (keyL== 'r') {
       PLAY_SPEED += 1;
-    } else if( key == '\t' ) {   // disable/enble debug screen
+    } else if( getKey() == '\t' ) {   // disable/enble debug screen
       settings.show_debug = !settings.show_debug;
-    } else if( key == ' ' ) {
+    } else if( getKey() == ' ' ) {
       renderer.camX = 0;
       renderer.camY = 0;
-      renderer.camS = ((float) height) / settings.world_size;
-    } else if( key == ESC ) { // make ESC key close the editor, and not the entire game
+      renderer.camS = ((float) getAppletHeight()) / settings.world_size;
+    } else if( getKey() == ESC ) { // make ESC getKey() close the editor, and not the entire game
       editor.close();
-      key = 0;
+      return 0;
     }
 
     if(editor.selected != null) { //todo move to editor, check edior open
-      if (keyCode == 67 && (int) key == 3) { //ctrl c
+      if (getKeyCode() == 67 && (int) getKey() == 3) { //ctrl c
         String memory = "";
         for (int pos = 0; pos < editor.selected.genome.codons.size(); pos++) {
           if (pos > 0) {
             memory = memory + "-";
           }
           Codon c = editor.selected.genome.codons.get(pos);
-          memory = memory + util.infoToString(c);
+          memory = memory +infoToString(c);
         }
         copyStringToClipboard(memory);
-      } else if (keyCode == 86 && (int) key == 22) { //ctrl v
+      } else if (getKeyCode() == 86 && (int) getKey() == 22) { //ctrl v
         String memory = getStringFromClipboard();
         try {
           editor.selected.genome = new Genome(memory, false);
@@ -55,15 +66,17 @@ class Input {
         }
       }
     }
+
+    return keyL;
   }
 
 
   public void mouseWheel(processing.event.MouseEvent event) {
     float e = event.getCount();
-    if ((mouseX/scalefactor) > ORIG_W_H) {
-      double UIX =  (mouseX/scalefactor) - ORIG_W_H;
-      double UIY = (mouseY/scalefactor);
-      if (editor.selected != null & util.dimWithinBox(GENOME_LIST_DIMS, UIX, UIY)) {
+    if ((getMouseX()/scalefactor) > ORIG_W_H) {
+      double UIX =  (getMouseX()/scalefactor) - ORIG_W_H;
+      double UIY = (getMouseY()/scalefactor);
+      if (editor.selected != null &dimWithinBox(GENOME_LIST_DIMS, UIX, UIY)) {
         Genome g = editor.selected.genome;
         int GENOME_LENGTH = g.codons.size();
         int scrollValue = max(1,(int)abs(e)/3)*(int)Math.signum(e);
@@ -97,8 +110,8 @@ class Input {
 
     double ZOOM_F = 1.05f;
     double thisZoomF = event.getCount() == 1 ? 1 / ZOOM_F : ZOOM_F;
-    double worldX = (mouseX/scalefactor) / renderer.camS + renderer.camX;
-    double worldY = (mouseY/scalefactor) / renderer.camS + renderer.camY;
+    double worldX = (getMouseX()/scalefactor) / renderer.camS + renderer.camX;
+    double worldY = (getMouseY()/scalefactor) / renderer.camS + renderer.camY;
     renderer.camX = (renderer.camX - worldX) / thisZoomF + worldX;
     renderer.camY = (renderer.camY - worldY) / thisZoomF + worldY;
     renderer.camS *= thisZoomF;
@@ -115,33 +128,33 @@ class Input {
 
 void inputCheck(){
 
-    if( width != windowSizeX || height != windowSizeY ) {
-         /*windowSizeX = width;
-         windowSizeY = height;
+    if( getAppletWidth() != windowSizeX || getAppletHeight() != windowSizeY ) {
+         /*windowSizeX = getAppletWidth();
+         windowSizeY = getAppletHeight();
          windowResized();*/
     }
-    if (mousePressed) {
+    if (getMousePressed()) {
       editor.arrow = null;
       if (!wasMouseDown) {
-        dragStartX = (mouseX/scalefactor);
-        dragStartY = (mouseY/scalefactor);
+        dragStartX = (getMouseX()/scalefactor);
+        dragStartY = (getMouseY()/scalefactor);
 
-        if ((mouseX/scalefactor) < renderer.maxRight) { //renderer.maxRight == ORIG_W_H
+        if ((getMouseX()/scalefactor) < renderer.maxRight) { //renderer.maxRight == ORIG_W_H
           boolean buttonPressed = true;
-          if((mouseX/scalefactor)>=10 && (mouseX/scalefactor) <=75 && (mouseY/scalefactor)>=10 && (mouseY/scalefactor) <=50) {//speed down
+          if((getMouseX()/scalefactor)>=10 && (getMouseX()/scalefactor) <=75 && (getMouseY()/scalefactor)>=10 && (getMouseY()/scalefactor) <=50) {//speed down
             if(PLAY_SPEED>0.1) {
               PLAY_SPEED-=0.1;
             }
           }
-          else if((mouseX/scalefactor)>=10+2*75 && (mouseX/scalefactor) <=75+2*75 && (mouseY/scalefactor)>=10 && (mouseY/scalefactor) <=50) {//speed up
+          else if((getMouseX()/scalefactor)>=10+2*75 && (getMouseX()/scalefactor) <=75+2*75 && (getMouseY()/scalefactor)>=10 && (getMouseY()/scalefactor) <=50) {//speed up
             if(PLAY_SPEED<99.9) {
               PLAY_SPEED+=0.1;
             }
           } else {
             buttonPressed = false;
             editor.codonToEdit[0] = editor.codonToEdit[1] = -1;
-            clickWorldX = renderer.appXtoTrueX(mouseX/scalefactor);
-            clickWorldY = renderer.appYtoTrueY(mouseY/scalefactor);
+            clickWorldX = renderer.appXtoTrueX(getMouseX()/scalefactor);
+            clickWorldY = renderer.appYtoTrueY(getMouseY()/scalefactor);
             canDragWorld = true;
           }
           if (buttonPressed) {
@@ -155,12 +168,12 @@ void inputCheck(){
         }
         doubleClick = true;
       } else {
-        double dragDistSQ = (dragStartX-(mouseX/scalefactor))*(dragStartX-(mouseX/scalefactor))+(dragStartY-(mouseY/scalefactor))*(dragStartY-(mouseY/scalefactor)); //this is squared, always compare with sqaured number
+        double dragDistSQ = (dragStartX-(getMouseX()/scalefactor))*(dragStartX-(getMouseX()/scalefactor))+(dragStartY-(getMouseY()/scalefactor))*(dragStartY-(getMouseY()/scalefactor)); //this is squared, always compare with sqaured number
 
         if (canDragWorld) {
 
-          double newCX = renderer.appXtoTrueX(mouseX/scalefactor);
-          double newCY = renderer.appYtoTrueY(mouseY/scalefactor);
+          double newCX = renderer.appXtoTrueX(getMouseX()/scalefactor);
+          double newCY = renderer.appYtoTrueY(getMouseY()/scalefactor);
 
           if (newCX != clickWorldX || newCY != clickWorldY) {
             doubleClick = false;
@@ -182,7 +195,7 @@ void inputCheck(){
         if (editor.dragAndDropCodonId >= 0) {
           editor.releaseGLdrag();
         } else if (CellType.UGO_Editor.isType(editor.selected) && editor.arrow != null) {
-          if (util.euclidLength(editor.arrow) > settings.min_length_to_produce) {
+          if(euclidLength(editor.arrow) > settings.min_length_to_produce) {
             editor.produce();
           }
         }
@@ -202,14 +215,14 @@ void inputCheck(){
       clickWorldY = -1;
       editor.arrow = null;
     }
-    wasMouseDown = mousePressed;
+    wasMouseDown = getMousePressed();
   }
 
   void checkUGOclick(){
-    clickWorldX = renderer.appXtoTrueX((mouseX/scalefactor));
-    clickWorldY = renderer.appYtoTrueY((mouseY/scalefactor));
+    clickWorldX = renderer.appXtoTrueX((getMouseX()/scalefactor));
+    clickWorldY = renderer.appYtoTrueY((getMouseY()/scalefactor));
     for(Particle ugo: world.pc.get(ParticleType.UGO)){
-      double dis= util.euclidLength(new double[]{ugo.coor[0],ugo.coor[1], clickWorldX, clickWorldY});
+      double dis=euclidLength(new double[]{ugo.coor[0],ugo.coor[1], clickWorldX, clickWorldY});
       if(dis<=0.15){
         editor.openUGO((UGO)ugo);
         break;

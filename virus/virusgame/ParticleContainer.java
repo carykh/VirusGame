@@ -1,13 +1,22 @@
+package virusgame;
+
+import java.util.ArrayList;
 import java.util.Iterator;
 
-class ParticleContainer {
+
+import static virusgame.Var.*;
+import static virusgame.Const.*;
+import static virusgame.Method.*;
+import static virusgame.Util.*;
+
+public class ParticleContainer {
     
     public final ArrayList<Particle> foods = new ArrayList<Particle>();
     public final ArrayList<Particle> wastes = new ArrayList<Particle>();
     public final ArrayList<Particle> ugos = new ArrayList<Particle>();
     
     public ArrayList<Particle> get( ParticleType type ) {
-        
+
         switch( type ){
             case Food: return foods;
             case Waste: return wastes;
@@ -43,12 +52,12 @@ class ParticleContainer {
     }
     
     public void randomTick() {
-        if( frameCount % 10 == 0 ) {
+        if( getFrameCount() % 10 == 0 ) {
             int c = count() / settings.particles_per_rand_update;
         
             for( ; c > 0; c -- ) {
-                ArrayList<Particle> array = get( ParticleType.fromId( util.randomInt(0, 2) ) );
-                int index = util.randomInt(0, array.size() - 1);
+                ArrayList<Particle> array = get( ParticleType.fromId(randomInt(0, 2) ) );
+                int index =randomInt(0, array.size() - 1);
                 if( index != -1 ) array.get( index ).randomTick();
             }
         }

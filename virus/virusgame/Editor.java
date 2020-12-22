@@ -1,12 +1,27 @@
-class Editor {
+package virusgame;
+import processing.core.PFont;
+
+import java.util.*;
+
+import static virusgame.Cell.createCell;
+import static virusgame.Codon.*;
+
+import static processing.core.PConstants.*;
+import static virusgame.Const.*;
+import static virusgame.Var.*;
+import static virusgame.Method.*;
+import static virusgame.Util.*;
+import static java.lang.Math.*;
+
+public class Editor {
 
     private boolean open = false;
     public Cell ugoCell;
     public Cell selected;
     public UGO ugoSelected;
     public int dragAndDropCodonId = -1;
-    double dragAndDropRX;
-    double dragAndDropRY;
+   public double dragAndDropRX;
+   public double dragAndDropRY;
 
 
     public int selx = 0;
@@ -145,14 +160,14 @@ class Editor {
         }
     }
 
-    private void drawSelection() {
+    public void drawSelection() {
 
         if(open && settings.show_ui && !(CellType.UGO_Editor.isType(selected) || ugoSelected != null)) {
             pushMatrix();
             translate( (float) renderer.trueXtoAppX(selx), (float) renderer.trueYtoAppY(sely) );
             scale( (float) (renderer.camS / BIG_FACTOR) );
             noFill();
-            stroke(0,255,255,155 + (int) (100 * Math.sin(frameCount / 10.f)));
+            stroke(0,255,255,155 + (int) (100 * Math.sin(getFrameCount() / 10.f)));
             strokeWeight(4);
             rect(0, 0, BIG_FACTOR, BIG_FACTOR);
             popMatrix();
@@ -162,8 +177,8 @@ class Editor {
 
 
     public void checkInput() {
-        double rmx = (mouseX/scalefactor);
-        double rmy = (mouseY/scalefactor);
+        double rmx = (getMouseX()/scalefactor);
+        double rmy = (getMouseY()/scalefactor);
 
         if(open) {
 
@@ -188,8 +203,8 @@ class Editor {
         double gy = GENOME_LIST_DIMS.getY(); //GENOME_LIST_DIMS[1]
         double gw = GENOME_LIST_DIMS.getW(); //GENOME_LIST_DIMS[2]
         double gh = GENOME_LIST_DIMS.getH(); //GENOME_LIST_DIMS[3]
-        double rmx = (((mouseX/scalefactor)-ORIG_W_H)-gx)/gw;
-        double rmy = ((mouseY/scalefactor)-gy)/gh;
+        double rmx = (((getMouseX()/scalefactor)-ORIG_W_H)-gx)/gw;
+        double rmy = ((getMouseY()/scalefactor)-gy)/gh;
 
         //add arrow
         Genome g = selected.genome;
@@ -202,13 +217,13 @@ class Editor {
 
         double appCodonHeight = gh/GENOME_LENGTH;
 
-        double arrowUIX =  (mouseX/scalefactor) - gx - ORIG_W_H;
-        double arrowUIY = (mouseY/scalefactor) - gy + appCodonHeight/2;
+        double arrowUIX =  (getMouseX()/scalefactor) - gx - ORIG_W_H;
+        double arrowUIY = (getMouseY()/scalefactor) - gy + appCodonHeight/2;
         int arrowRowY = (int)(arrowUIY/appCodonHeight);
         double arrowH = min(80, (float)appCodonHeight);
 
-        double crossUIX =  (mouseX/scalefactor) - gx - ORIG_W_H - gw;
-        double crossUIY = (mouseY/scalefactor) - gy;
+        double crossUIX =  (getMouseX()/scalefactor) - gx - ORIG_W_H - gw;
+        double crossUIY = (getMouseY()/scalefactor) - gy;
         int rowCY = (int)(crossUIY/appCodonHeight);
 
         if(rmx >= 0 && rmx < 1 && rmy >= 0){
@@ -244,8 +259,8 @@ class Editor {
         double eh = EDIT_LIST_DIMS.getH(); //EDIT_LIST_DIMS[3]
 
         //codon rows
-        double rmx = (((mouseX/scalefactor)-ORIG_W_H)-ex)/ew;
-        double rmy = ((mouseY/scalefactor)-ey)/eh;
+        double rmx = (((getMouseX()/scalefactor)-ORIG_W_H)-ex)/ew;
+        double rmy = ((getMouseY()/scalefactor)-ey)/eh;
         if(rmx >= 0 && rmx < 1 && rmy >= 0 && rmy < 1) {
             Button[] currentButtons = codonToEdit[0]==0?codonTypeButtons:codonAttributeButtons;
 
@@ -261,7 +276,7 @@ class Editor {
             boolean changeMade = currentButtons[choice].onClick(rmx, rmy);
             if(changeMade && !CellType.UGO_Editor.isType(selected)){
                 changeMade = true;
-                game.lastEditTimeStamp = frameCount;
+                game.lastEditTimeStamp = getFrameCount();
                 selected.tamper();
             }
 
@@ -271,13 +286,13 @@ class Editor {
                     diff = -1;
                 }
                 if (choice == optionCount-2) {
-                    codonToEdit[2] = util.loopCodonInfo(codonToEdit[2]+diff);
+                    codonToEdit[2] =loopCodonInfo(codonToEdit[2]+diff);
                 } else {
-                    codonToEdit[3] = util.loopCodonInfo(codonToEdit[3]+diff);
+                    codonToEdit[3] =loopCodonInfo(codonToEdit[3]+diff);
                 }
 
                 if(selected != ugoCell) {
-                    world.lastEditFrame = frameCount;
+                    world.lastEditFrame = getFrameCount();
                     selected.tamper();
                 }
             }
@@ -321,7 +336,7 @@ public void divineIntervention( int id ) {
         }
 
         editor.select( selx, sely );
-        world.lastEditFrame = frameCount;
+        world.lastEditFrame = getFrameCount();
 
     }
 
@@ -346,7 +361,7 @@ public void divineIntervention( int id ) {
             UGO u = new UGO(arrow, selected.genome.getGenomeString());
             u.markDivine();
             world.addParticle(u);
-            world.lastEditFrame = frameCount;
+            world.lastEditFrame = getFrameCount();
 
         }
 
@@ -357,8 +372,8 @@ public void divineIntervention( int id ) {
         double gy = GENOME_LIST_DIMS.getY();
         double gw = GENOME_LIST_DIMS.getW();
         double gh = GENOME_LIST_DIMS.getH();
-        double rmx = (((mouseX/scalefactor)-ORIG_W_H)-gx)/gw;
-        double rmy = ((mouseY/scalefactor)-gy)/gh;
+        double rmx = (((getMouseX()/scalefactor)-ORIG_W_H)-gx)/gw;
+        double rmy = ((getMouseY()/scalefactor)-gy)/gh;
 
         Genome g = selected.genome;
         int GENOME_LENGTH = g.codons.size();
@@ -396,8 +411,8 @@ public void divineIntervention( int id ) {
         }
         double appCodonHeight = gh/GENOME_LENGTH;
 
-        double arrowUIX =  (mouseX/scalefactor) - gx - ORIG_W_H;
-        double arrowUIY = (mouseY/scalefactor) - gy + appCodonHeight/2;
+        double arrowUIX =  (getMouseX()/scalefactor) - gx - ORIG_W_H;
+        double arrowUIY = (getMouseY()/scalefactor) - gy + appCodonHeight/2;
         int arrowRowY = (int)(arrowUIY/appCodonHeight);
         if (arrowRowY >= 0 && arrowRowY <= GENOME_LENGTH && arrowUIX > minX && arrowUIX <= maxX) {
             Codon dragged =g.codons.get(dragAndDropCodonId);
@@ -453,198 +468,200 @@ public void divineIntervention( int id ) {
         }
     }
 
-}
+    public static class Button {
+        private String text;
+        int foreColor;
+        int backColor;
 
-class Button {
-    private String text;
-    color foreColor;
-    color backColor;
-
-    public Button(String text, color foreColor, color backColor) {
-        this.text = text;
-        this.foreColor = foreColor;
-        this.backColor = backColor;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public boolean onClick(double rMouseX, double rMouseY) {
-        return false;//noOp
-    }
-
-    protected void drawButton(double x, double y, double w, double h, color back, color fore, String text) {
-        fill(back);
-        renderer.dRect(x,y,w,h);
-        fill(fore);
-        renderer.dText(text,x+ w*0.5,y+h/2+11);
-    }
-
-    public void drawButton(double x, double y, double w, double h) {
-        drawButton(x,y,w,h,backColor,foreColor, getText());
-    }
-}
-
-class ButtonChangeRGL extends Button{
-    boolean start;
-    AttributeRGL editRGL;
-    public ButtonChangeRGL(AttributeRGL editRGL, String text, boolean start) {
-        super(text, color(255,255,255), color(90,90,90));
-        this.start = start;
-        this.editRGL = editRGL;
-    }
-
-    public boolean onClick(double rMouseX, double rMouseY) {
-        int diff = 1;
-        if(rMouseX < 0.5){
-            diff = -1;
+        public Button(String text, int foreColor, int backColor) {
+            this.text = text;
+            this.foreColor = foreColor;
+            this.backColor = backColor;
         }
 
-        if (start) {
-            editRGL.loc += diff;
-        } else {
-
-            editRGL.end += diff;
-        }
-        return false;
-    }
-}
-
-class ButtonChangeMemoryLocation extends Button{
-    private final AttributeMemoryLocation editMemoryLoc;
-
-    public ButtonChangeMemoryLocation(AttributeMemoryLocation editMemoryLoc, String text) {
-        super(text, color(255,255,255), color(90,90,90));
-        this.editMemoryLoc = editMemoryLoc;
-    }
-
-    public boolean onClick(double rMouseX, double rMouseY) {
-        int diff = 1;
-        if(rMouseX < 0.5){
-            diff = -1;
+        public String getText() {
+            return text;
         }
 
-
-        editMemoryLoc.memoryId += diff;
-        return false;
-    }
-}
-
-class ButtonChangeMark extends Button{
-    private final AttributeMark editMark;
-
-    public ButtonChangeMark(AttributeMark editMark, String text) {
-        super(text, color(255,255,255), color(90,90,90));
-        this.editMark = editMark;
-    }
-
-    public boolean onClick(double rMouseX, double rMouseY) {
-        int diff = 1;
-        if(rMouseX < 0.5){
-            diff = -1;
+        public boolean onClick(double rMouseX, double rMouseY) {
+            return false;//noOp
         }
 
-
-        editMark.markId += diff;
-        return false;
-    }
-}
-
-
-class ButtonChangeDegree extends Button{
-    private AttributeDegree editDegree;
-
-    public ButtonChangeDegree(AttributeDegree editDegree, String text) {
-        super(text, color(255,255,255), color(90,90,90));
-        this.editDegree = editDegree;
-    }
-
-    public boolean onClick(double rMouseX, double rMouseY) {
-        int id = (int)(rMouseX*5);
-        switch (id) {
-            case 0:
-                editDegree.setDegree(editDegree.getDegree()-45);
-                break;
-            case 1:
-                editDegree.setDegree(editDegree.getDegree()-1);
-                break;
-            case 2:
-                editDegree.setDegree(0);
-                break;
-            case 3:
-                editDegree.setDegree(editDegree.getDegree()+1);
-                break;
-            case 4:
-                editDegree.setDegree(editDegree.getDegree()+45);
-                break;
+        protected void drawButton(double x, double y, double w, double h, int back, int fore, String text) {
+            fill(back);
+            renderer.dRect(x,y,w,h);
+            fill(fore);
+            renderer.dText(text,x+ w*0.5,y+h/2+11);
         }
-        return false;
-    }
 
-    private String[] buttons = {"--", "-", "0", "+", "++"};
-    public void drawButton(double x, double y, double w, double h) {
-        double offset = w/5;
-        for(int i=0;i<5;i++) {
-            drawButton(x+offset*i,y,w/5,h,backColor,foreColor, buttons[i]);
+        public void drawButton(double x, double y, double w, double h) {
+            drawButton(x,y,w,h,backColor,foreColor, getText());
         }
     }
-}
 
+    public static class ButtonChangeRGL extends Button{
+        boolean start;
+        AttributeRGL editRGL;
+        public ButtonChangeRGL(AttributeRGL editRGL, String text, boolean start) {
+            super(text, color(255,255,255), color(90,90,90));
+            this.start = start;
+            this.editRGL = editRGL;
+        }
 
+        public boolean onClick(double rMouseX, double rMouseY) {
+            int diff = 1;
+            if(rMouseX < 0.5){
+                diff = -1;
+            }
 
-class ButtonCommon extends Button {
-    CommonBase common;
+            if (start) {
+                editRGL.loc += diff;
+            } else {
 
-    public ButtonCommon(CommonBase common) {
-        super(common.getTextSimple(), util.intToColor((common.getTextColor())), util.intToColor(common.getColor()));
-        this.common = common;
-    }
-
-
-    public String getText() {
-        return common.getTextSimple();
-    }
-
-}
-
-
-
-class ButtonEditAttribute extends ButtonCommon {
-    CodonAttribute attribute;
-
-    public ButtonEditAttribute(CodonAttribute attribute) {
-        super(attribute);
-        this.attribute = attribute;
-    }
-
-    public boolean onClick(double rMouseX, double rMouseY) {
-        Codon thisCodon = editor.selected.genome.codons.get(editor.codonToEdit[1]);
-
-        //why what so confused, can we get rid  of this, not supposed to be here!
-        AttributeRGL oldRGL = thisCodon.getAttribute() instanceof AttributeRGL?(AttributeRGL)thisCodon.getAttribute():null;
-        if (oldRGL == null || oldRGL.getStartLocation() != editor.codonToEdit[2] || oldRGL.getEndLocation() != editor.codonToEdit[3]) {
-            thisCodon.setAttribute(new AttributeRGL(editor.codonToEdit[2], editor.codonToEdit[3]));
-        } else {
+                editRGL.end += diff;
+            }
             return false;
         }
-        thisCodon.setAttribute(attribute);
-        return true;
     }
+
+    public static class ButtonChangeMemoryLocation extends Button{
+        private final AttributeMemoryLocation editMemoryLoc;
+
+        public ButtonChangeMemoryLocation(AttributeMemoryLocation editMemoryLoc, String text) {
+            super(text, color(255,255,255), color(90,90,90));
+            this.editMemoryLoc = editMemoryLoc;
+        }
+
+        public boolean onClick(double rMouseX, double rMouseY) {
+            int diff = 1;
+            if(rMouseX < 0.5){
+                diff = -1;
+            }
+
+
+            editMemoryLoc.memoryId += diff;
+            return false;
+        }
+    }
+
+    public static class ButtonChangeMark extends Button{
+        private final AttributeMark editMark;
+
+        public ButtonChangeMark(AttributeMark editMark, String text) {
+            super(text, color(255,255,255), color(90,90,90));
+            this.editMark = editMark;
+        }
+
+        public boolean onClick(double rMouseX, double rMouseY) {
+            int diff = 1;
+            if(rMouseX < 0.5){
+                diff = -1;
+            }
+
+
+            editMark.markId += diff;
+            return false;
+        }
+    }
+
+
+    public static class ButtonChangeDegree extends Button{
+        private AttributeDegree editDegree;
+
+        public ButtonChangeDegree(AttributeDegree editDegree, String text) {
+            super(text, color(255,255,255), color(90,90,90));
+            this.editDegree = editDegree;
+        }
+
+        public boolean onClick(double rMouseX, double rMouseY) {
+            int id = (int)(rMouseX*5);
+            switch (id) {
+                case 0:
+                    editDegree.setDegree(editDegree.getDegree()-45);
+                    break;
+                case 1:
+                    editDegree.setDegree(editDegree.getDegree()-1);
+                    break;
+                case 2:
+                    editDegree.setDegree(0);
+                    break;
+                case 3:
+                    editDegree.setDegree(editDegree.getDegree()+1);
+                    break;
+                case 4:
+                    editDegree.setDegree(editDegree.getDegree()+45);
+                    break;
+            }
+            return false;
+        }
+
+        private String[] buttons = {"--", "-", "0", "+", "++"};
+        public void drawButton(double x, double y, double w, double h) {
+            double offset = w/5;
+            for(int i=0;i<5;i++) {
+                drawButton(x+offset*i,y,w/5,h,backColor,foreColor, buttons[i]);
+            }
+        }
+    }
+
+
+
+    public static class ButtonCommon extends Button {
+        CommonBase common;
+
+        public ButtonCommon(CommonBase common) {
+            super(common.getTextSimple(),intToColor((common.getTextColor())),intToColor(common.getColor()));
+            this.common = common;
+        }
+
+
+        public String getText() {
+            return common.getTextSimple();
+        }
+
+    }
+
+
+
+    public static class ButtonEditAttribute extends ButtonCommon {
+        CodonAttribute attribute;
+
+        public ButtonEditAttribute(CodonAttribute attribute) {
+            super(attribute);
+            this.attribute = attribute;
+        }
+
+        public boolean onClick(double rMouseX, double rMouseY) {
+            Codon thisCodon = editor.selected.genome.codons.get(editor.codonToEdit[1]);
+
+            //why what so confused, can we get rid  of this, not supposed to be here!
+            AttributeRGL oldRGL = thisCodon.getAttribute() instanceof AttributeRGL?(AttributeRGL)thisCodon.getAttribute():null;
+            if (oldRGL == null || oldRGL.getStartLocation() != editor.codonToEdit[2] || oldRGL.getEndLocation() != editor.codonToEdit[3]) {
+                thisCodon.setAttribute(new AttributeRGL(editor.codonToEdit[2], editor.codonToEdit[3]));
+            } else {
+                return false;
+            }
+            thisCodon.setAttribute(attribute);
+            return true;
+        }
+    }
+
+    public static class ButtonEditCodonType extends ButtonCommon {
+        CodonType type;
+
+        public ButtonEditCodonType(CodonType type) {
+            super(type);
+            this.type = type;
+        }
+
+        public boolean onClick(double rMouseX, double rMouseY) {
+            Codon thisCodon = editor.selected.genome.codons.get(editor.codonToEdit[1]);
+            thisCodon.setType(type);
+            return true;
+        }
+
+    }
+    
 }
 
-class ButtonEditCodonType extends ButtonCommon {
-    CodonType type;
 
-    public ButtonEditCodonType(CodonType type) {
-        super(type);
-        this.type = type;
-    }
-
-    public boolean onClick(double rMouseX, double rMouseY) {
-        Codon thisCodon = editor.selected.genome.codons.get(editor.codonToEdit[1]);
-        thisCodon.setType(type);
-        return true;
-    }
-
-}

@@ -1,16 +1,24 @@
-class VirusGame {
+package virusgame;
+
+import virusgame.*;
+
+import static virusgame.Const.*;
+import static virusgame.Var.*;
+import static virusgame.Method.*;
+
+public class VirusGame {
 
 
   //###VAR
-  int lastEditTimeStamp = 0;
-  int displayFormattingError = -1;
+ public int lastEditTimeStamp = 0;
+ public int displayFormattingError = -1;
 
 
-  void setup() {
+  public void setup() {
 
-    surface.setTitle("The Game Of Life, Death And Viruses");
-    surface.setResizable(true);
-    surface.setSize(ORIG_W_W, ORIG_W_H);
+    getSurface().setTitle("The Game Of Life, Death And Viruses");
+    getSurface().setResizable(true);
+    getSurface().setSize(ORIG_W_W, ORIG_W_H);
 
 
     font = loadFont("Jygquip1-96.vlw");
@@ -22,10 +30,10 @@ class VirusGame {
     graph = new Graph( settings.graph_length, ORIG_W_W - ORIG_W_H - 20, ORIG_W_H - 300 );
     graph.setRescan( settings.graph_downscale );
 
-    println("Ready!");
+    System.out.println("Ready!");
   }
 
-  void draw() {
+  public void draw() {
     //####Fixing Aspect ratio
     enforceAspectRatio();
 
@@ -80,12 +88,12 @@ class VirusGame {
   int lastDiffWidth = 0;
   int lastDiffHeight = 0;
   private void enforceAspectRatio() {
-    if (frameCount == 10) {//wait 10 frames for everything to properly init
-      widthSizeDiff = width - getRealWidth(); //calibrate getRealWidth
-      heightSizeDiff = height - getRealHeight(); //calibrate getRealHeight
-      lastWidth = width;
-      lastHeight= height;
-    } else if (frameCount > 10) {
+    if (getFrameCount() == 10) {//wait 10 frames for everything to properly init
+      widthSizeDiff = getAppletWidth() - getRealWidth(); //calibrate getRealWidth
+      heightSizeDiff = getAppletHeight() - getRealHeight(); //calibrate getRealHeight
+      lastWidth = getAppletWidth();
+      lastHeight= getAppletHeight();
+    } else if (getFrameCount() > 10) {
       boolean isWindowMax = isMaximised();
       int newWidth = getRealWidth();
       int newHeight = getRealHeight();
@@ -95,14 +103,14 @@ class VirusGame {
         //println(String.format("%b != %b && %d != %d &&  %d != %d, info: diff=%d, %d", isWindowMax, wasWindowMax, lastWidth, newWidth, lastHeight, newHeight, widthSizeDiff, heightSizeDiff)); //jyou might want to add diff diff debug here
         wasWindowMax = isWindowMax;
         if (isWindowMax) { //in a maximized window there is little point is resizing it, we just have to accept
-          scalefactor = Math.min(width/(float)ORIG_W_W,height/(float)ORIG_W_H); //dont use newWidth border might be different
+          scalefactor = Math.min(getAppletWidth()/(float)ORIG_W_W,getAppletHeight()/(float)ORIG_W_H); //dont use newWidth border might be different
           W_W = (int)(ORIG_W_W*scalefactor);
           W_H = (int)(ORIG_W_H*scalefactor);
-        } else if (lastWidth != newWidth) { //user changed width
+        } else if (lastWidth != newWidth) { //user changed getAppletWidth()
           scalefactor = newWidth/(float)ORIG_W_W;
           W_W = newWidth;
           W_H = (int)(ORIG_W_H*scalefactor);
-        } else { //user changed height
+        } else { //user changed getAppletHeight()
           scalefactor = newHeight/(float)ORIG_W_H;
           W_W = (int)(ORIG_W_W*scalefactor);
           W_H = newHeight;
@@ -118,7 +126,7 @@ class VirusGame {
       if (!isWindowMax && lastResized == 0) {
         forceSize(W_W+1, W_H+1); //invalidate cache that probably is invalid
         forceSize(W_W, W_H); //set actual size
-        surface.setSize(W_W, W_H); //update processing
+        getSurface().setSize(W_W, W_H); //update processing
         lastWidth = W_W; //this was an intended change, lets not recognise this as user trying to change window size
         lastHeight = W_H;
         input.windowResized();
