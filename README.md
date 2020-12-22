@@ -59,7 +59,10 @@ Code: [GitHub](https://github.com/carykh/VirusGame)
 
 Tell me what other codons you want to see!
 
-
+## Run Standalone
+1. Download the newest version [here](https://github.com/sirati97/VirusGame/releases/)
+2. Make sure you have Java installed
+3. Run the file
 
 ## How to run in Processing
 1. Download [Processing](https://processing.org/) (3.5.4 tested, versions after 3.3.3 might work)
