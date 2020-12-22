@@ -1,4 +1,4 @@
-package virusgame;
+package virus;
 
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;

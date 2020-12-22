@@ -1,18 +1,16 @@
-package virusgame;
+package virus;
 
 import java.util.ArrayList;
 import java.util.Random;
 
-import virusgame.Codon.*;
+import virus.Codon.*;
 
 
 import static processing.core.PApplet.*;
-import static processing.core.PConstants.*;
-import static virusgame.Const.*;
-import static virusgame.Var.*;
-import static virusgame.Method.*;
-import static virusgame.Util.*;
-import static java.lang.Math.*;
+import static virus.Const.*;
+import static virus.Var.*;
+import static virus.Method.*;
+import static virus.Util.*;
 import static java.lang.Math.PI;
 
 
@@ -572,5 +570,3 @@ public class Cell{
   }
 
 }
-
-

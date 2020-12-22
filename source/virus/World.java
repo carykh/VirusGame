@@ -1,11 +1,11 @@
-package virusgame;
+package virus;
 
 import java.util.ArrayList;
 
 
-import static virusgame.Var.*;
-import static virusgame.Util.*;
-import static virusgame.Method.*;
+import static virus.Var.*;
+import static virus.Util.*;
+import static virus.Method.*;
 
 public class World {
   
@@ -69,7 +69,7 @@ public class World {
 
         if( getFrameCount()-lastGraphFrame > (settings.graph_update_period/PLAY_SPEED)) {
           lastGraphFrame = getFrameCount();
-            graph.append( new GraphFrame(
+            graph.append( new Graph.GraphFrame(
                 pc.get(ParticleType.Waste).size(),
                 pc.get(ParticleType.UGO).size(),
                 aliveCount + shellCount) );

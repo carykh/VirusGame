@@ -1,10 +1,11 @@
-package virusgame;
+package virus;
 
 import java.util.HashMap;
 
-import static virusgame.Const.*;
-import static virusgame.Var.*;
-import static virusgame.Method.*;
+import static processing.core.PApplet.*;
+import static virus.Const.*;
+import static virus.Var.*;
+import static virus.Method.*;
 
 public class Util {
   public static double[] getRandomVelocity() {

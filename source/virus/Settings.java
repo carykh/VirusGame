@@ -1,13 +1,10 @@
-package virusgame;
+package virus;
 
 import processing.data.JSONArray;
 import processing.data.JSONObject;
 
 
-import static virusgame.Var.*;
-import static virusgame.Const.*;
-import static virusgame.Method.*;
-import static virusgame.Util.*;
+import static virus.Method.*;
 
 public class Settings {
   

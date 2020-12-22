@@ -1,13 +1,13 @@
-package virusgame;
+package virus;
 
 import java.util.HashSet;
 import java.util.List;
 
 
-import static virusgame.Const.*;
-import static virusgame.Var.*;
-import static virusgame.Method.*;
-import static virusgame.Util.*;
+import static virus.Const.*;
+import static virus.Var.*;
+import static virus.Method.*;
+import static virus.Util.*;
 
 public class Codon extends CodonPair { //this includes health
   //id 0 = kind of colon
@@ -1091,6 +1091,3 @@ public class Codon extends CodonPair { //this includes health
   }
 
 }
-
-
-

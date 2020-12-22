@@ -1,10 +1,8 @@
-package virusgame;
+package virus;
 
-import virusgame.*;
-
-import static virusgame.Const.*;
-import static virusgame.Var.*;
-import static virusgame.Method.*;
+import static virus.Const.*;
+import static virus.Var.*;
+import static virus.Method.*;
 
 public class VirusGame {
 

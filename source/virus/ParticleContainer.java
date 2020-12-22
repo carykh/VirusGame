@@ -1,13 +1,12 @@
-package virusgame;
+package virus;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
 
-import static virusgame.Var.*;
-import static virusgame.Const.*;
-import static virusgame.Method.*;
-import static virusgame.Util.*;
+import static virus.Var.*;
+import static virus.Method.*;
+import static virus.Util.*;
 
 public class ParticleContainer {
     

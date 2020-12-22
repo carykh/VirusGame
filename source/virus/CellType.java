@@ -1,4 +1,4 @@
-package virusgame;
+package virus;
 
 public enum CellType {
   Empty,

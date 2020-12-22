@@ -1,13 +1,13 @@
-package virusgame;
+package virus;
 
-import virusgame.Editor.*;
+import virus.Editor.*;
 
 import static processing.core.PApplet.nf;
 import static processing.core.PConstants.*;
-import static virusgame.Const.*;
-import static virusgame.Var.*;
-import static virusgame.Method.*;
-import static virusgame.Util.*;
+import static virus.Const.*;
+import static virus.Var.*;
+import static virus.Method.*;
+import static virus.Util.*;
 import static java.lang.Math.*;
 import static java.lang.Math.PI;
 
@@ -525,4 +525,3 @@ public class Renderer {
     }
 
 }
-

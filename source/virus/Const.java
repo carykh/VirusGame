@@ -1,9 +1,7 @@
-package virusgame;
+package virus;
 
 
-import static virusgame.Const.*;
-import static virusgame.Var.*;
-import static virusgame.Method.*;
+import static virus.Method.*;
 
 public final class Const {
   public static boolean DEBUG_WORLD = false; //todo settings

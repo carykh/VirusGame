@@ -1,8 +1,8 @@
-package virusgame;
+package virus;
 
 import processing.core.PFont;
 
-import static virusgame.Const.*;
+import static virus.Const.*;
 
 public final class Var {
 

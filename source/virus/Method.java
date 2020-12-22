@@ -1,4 +1,4 @@
-package virusgame;
+package virus;
 
 import processing.core.PFont;
 import processing.core.PGraphics;
@@ -17,6 +17,9 @@ public class Method {
   }
 
 
+  public static void fill(int color) {
+    impl.fill(color);
+  }
   public static void fill(float color) {
     impl.fill(color);
   }
@@ -37,7 +40,7 @@ public class Method {
     impl.strokeWeight(i);
   }
 
-  public static void stroke(float i) {
+  public static void stroke(int i) {
     impl.stroke(i);
   }
   public static void rotate(float angle) {
@@ -205,6 +208,7 @@ public class Method {
      void fill(float red, float green, float blue);
 
 
+     void fill(int color);
      void fill(float color);
 
      void noStroke();
@@ -215,7 +219,7 @@ public class Method {
 
      void strokeWeight(float i);
 
-     void stroke(float i);
+     void stroke(int i);
      void rotate(float angle);
 
      void translate(float left, float top);

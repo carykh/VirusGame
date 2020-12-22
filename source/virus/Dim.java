@@ -1,4 +1,4 @@
-package virusgame;
+package virus;
 
 public class Dim {
   private final double x;

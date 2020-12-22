@@ -1,16 +1,15 @@
-package virusgame;
-import processing.core.PFont;
+package virus;
 
 import java.util.*;
 
-import static virusgame.Cell.createCell;
-import static virusgame.Codon.*;
+import static virus.Cell.createCell;
+import static virus.Codon.*;
 
 import static processing.core.PConstants.*;
-import static virusgame.Const.*;
-import static virusgame.Var.*;
-import static virusgame.Method.*;
-import static virusgame.Util.*;
+import static virus.Const.*;
+import static virus.Var.*;
+import static virus.Method.*;
+import static virus.Util.*;
 import static java.lang.Math.*;
 
 public class Editor {
@@ -663,5 +662,3 @@ public void divineIntervention( int id ) {
     }
     
 }
-
-

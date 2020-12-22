@@ -1,6 +1,6 @@
-package virusgame;
+package virus;
 
-import virusgame.Codon.*;
+import virus.Codon.*;
 
 public class CodonPair {//just information
   protected CodonType type;
