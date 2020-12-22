@@ -25,9 +25,15 @@ class Util {
       return (ia != ib);
   }
 
-int randomInt(int min, int max) {
+  int randomInt(int min, int max) {
     return (int) Math.floor(Math.random() * (max - min) ) + min;
-}
+  }
+  double random(double min, double max) {
+    return Math.random() * (max - min) + min;
+  }
+  float random(float min, float max) {
+    return ((float)Math.random()) * (max - min) + min;
+  }
 
 boolean randomBool() {
     return random(0, 1) > 0.5;

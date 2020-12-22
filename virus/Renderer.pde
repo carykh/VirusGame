@@ -143,10 +143,10 @@ class Renderer {
 
     void drawCredits() {
         pushMatrix();
-        translate(4, height - 6);
+        translate(4, ORIG_W_H - 6);
         fill( COPYRIGHT_TEXT_COLOR );
         noStroke();
-        textFont(font, 12);
+        textFont(font, 12/scalefactor);
         textAlign(LEFT);
         text("Copyright (C) 2020 Cary Huang, sirati & magistermaks", 0, 0);
         popMatrix();
@@ -208,10 +208,10 @@ class Renderer {
         text("total: " + world.totalWasteCount, 200, 230);
         text("total: " + world.totalUGOCount, 200, 260);
 
-        graph.drawSelf( 10, height - 10 );
+        graph.drawSelf( 10, ORIG_W_H - 10 );
     }
     
-    void drawDevineTable(Dim dims){ //todo add the devine table if(p < 0){
+    void drawDivineTable(Dim dims){ //todo add the divine table if(p < 0){
         double x = dims.getX();
         double y = dims.getY();
         double w = dims.getW();
@@ -294,7 +294,7 @@ class Renderer {
             pushMatrix();
             dTranslate(0, appCodonHeight*(g.appRO-offset+0.5f));
 
-            if(editor.selected != editor.ugoCell){
+            if(!CellType.UGO_Editor.isType(editor.selected)){
                 if(editor.ugoSelected == null){ //todo verify UGO viewer
                     drawGenomeArrows(w,appCodonHeight);
                 }
@@ -351,7 +351,7 @@ class Renderer {
             dRect(x+w+40-5,scrbar_y,5,scrbar_h);
         }
 
-        if(editor.selected == editor.ugoCell){
+        if(CellType.UGO_Editor.isType(editor.selected)){
             fill(255);
             textFont(font,60);
             double avgY = (h+ORIG_W_H-y)/2;

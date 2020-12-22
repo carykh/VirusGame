@@ -16,7 +16,7 @@ class Editor {
     public double[] arrow = null;
 
     Editor( Settings settings ) {
-        ugoCell = new Cell(-1, -1, CellType.Normal, 0, 1, settings.editor_default);
+        ugoCell = new Cell(-1, -1, CellType.UGO_Editor, 0, 1, settings.editor_default);
     }
 
     public void select( int x, int y ) {
@@ -50,7 +50,7 @@ class Editor {
     }
 
     public void drawSelf() {
-        boolean isNotUGO = (selected != ugoCell);
+        boolean isNotUGO = !CellType.UGO_Editor.isType(selected);
 
         fill(80);
         noStroke();
@@ -67,7 +67,7 @@ class Editor {
             textAlign(LEFT);
             text(selected.getCellName(), 25, 255);
 
-            if(isNotUGO && (selected.type != CellType.Locked)){
+            if(isNotUGO && (!CellType.Locked.isType(selected))){
                 int c = 200;
                 textFont(font, 22);
                 text("This cell is " + (selected.tampered ? "TAMPERED" : "NATURAL"), 555, c);
@@ -79,15 +79,25 @@ class Editor {
 
                 renderer.drawBar(ENERGY_COLOR, selected.energy, "Energy", 290);
                 renderer.drawBar(WALL_COLOR, selected.wall, "Wall health", 360);
+            } else if (!isNotUGO) {
+
+                fill(80);
+                noStroke();
+                rect(625,200,120,60);
+                fill(color(255, 0,0));
+                textAlign(CENTER);
+                textFont(font, 32);
+                text("Random", 625 + 60, 200 + 40);
             }
 
 
 
-            if( selected.type == CellType.Normal ) {
+            if( CellType.Normal.isType(selected) || !isNotUGO) {
                 renderer.drawGenomeAsList(selected.genome, GENOME_LIST_DIMS);
 
                 if(isNotUGO){
                     textFont(font, 32);
+                    fill(255);
                     textAlign(LEFT);
                     text("Memory: " + selected.getMemory(), 25, 940);
 
@@ -114,7 +124,13 @@ class Editor {
                     }
                 }
 
-                renderer.drawButtonTable(EDIT_LIST_DIMS, codonToEdit[0]==0?codonTypeButtons:codonAttributeButtons);
+                if (codonToEdit[0]<0 && isNotUGO) {
+                    renderer.drawDivineTable(EDIT_LIST_DIMS);
+                } else {
+                    renderer.drawButtonTable(EDIT_LIST_DIMS, codonToEdit[0]==0?codonTypeButtons:codonAttributeButtons);
+                }
+            } else if (isNotUGO) {
+                renderer.drawDivineTable(EDIT_LIST_DIMS);
             }
 
         } else if (ugoSelected != null) {
@@ -125,13 +141,13 @@ class Editor {
             renderer.drawGenomeAsList(ugoSelected.genome, GENOME_LIST_DIMS);
         } else{
             text("Empty Cell", 25, 255);
-            renderer.drawEditTable(EDIT_LIST_DIMS);
+            renderer.drawDivineTable(EDIT_LIST_DIMS);
         }
     }
 
     private void drawSelection() {
 
-        if( open && selected != ugo ) {
+        if(open && settings.show_ui && !(CellType.UGO_Editor.isType(selected) || ugoSelected != null)) {
             pushMatrix();
             translate( (float) renderer.trueXtoAppX(selx), (float) renderer.trueYtoAppY(sely) );
             scale( (float) (renderer.camS / BIG_FACTOR) );
@@ -146,21 +162,28 @@ class Editor {
 
 
     public void checkInput() {
+        double rmx = (mouseX/scalefactor);
+        double rmy = (mouseY/scalefactor);
+
         if(open) {
 
-            checkEditListClick(codonToEdit[0] < 0);
-            if( selected != null && selected.hasGenome() )checkGenomeListClick();
-
-            if(mouseX > ORIG_W_W - 160 && mouseY < 160) {
-                close();
+            if(selected != null && selected.hasGenome() && checkGenomeListClick()) {
+                return;
             }
-        } else if(mouseX > ORIG_W_W - 160 && mouseY < 160) {
+            checkEditListClick(codonToEdit[0] < 0);
+
+            if(rmx > ORIG_W_W - 160 && rmy < 160) {
+                close();
+            } else if(CellType.UGO_Editor.isType(selected) && rmx > ORIG_W_W - 160 && rmy > 180 && rmy < 260) {
+                ugoCell.genome.codons.add(Codon.createRandom());
+            }
+        } else if(rmx > ORIG_W_W - 160 && rmy < 160) {
             openUGO();
         }
     }
 
-    void checkGenomeListClick() {
-        if (dragAndDropCodonId > 0)return;
+    boolean checkGenomeListClick() {
+        if (dragAndDropCodonId > 0)return true;
         double gx = GENOME_LIST_DIMS.getX(); //GENOME_LIST_DIMS[0]
         double gy = GENOME_LIST_DIMS.getY(); //GENOME_LIST_DIMS[1]
         double gw = GENOME_LIST_DIMS.getW(); //GENOME_LIST_DIMS[2]
@@ -192,29 +215,33 @@ class Editor {
             if(rmy < 1){
                 codonToEdit[0] = (int) (rmx * 2);
                 codonToEdit[1] = (int)(rmy*min(selected.genome.codons.size(), VIEW_FIELD_DIS_CNT)) + selected.genome.scrollOffset;
-            }else if(selected == ugoCell){
+                return true;
+            }else if(CellType.UGO_Editor.isType(selected)){
                 String genomeString = (rmx < 0.5)
                         ? ugoCell.genome.getGenomeStringShortened()
                         : ugoCell.genome.getGenomeStringLengthened();
 
-                selected = ugoCell = new Cell(-1, -1, CellType.Normal, 0, 1, genomeString);
+                selected = ugoCell = new Cell(-1, -1, CellType.UGO_Editor, 0, 1, genomeString);
+                return true;
             }
         } else if (arrowRowY >= 0 && arrowRowY <= GENOME_LENGTH && arrowUIX >= -50 && arrowUIX <= 5) {
             g.codons.add(arrowRowY + offset, new Codon());
+            return true;
         } else if (rowCY >= 0 && rowCY < GENOME_LENGTH && crossUIX >= -5 && crossUIX <= 50) {
             g.codons.remove(rowCY + offset);
             if (g.codons.size() == 0) {
                 g.codons.add(new Codon());
             }
-
+            return true;
         }
 
+        return false;
     }
     void checkEditListClick( boolean divineControls ) {
         double ex = EDIT_LIST_DIMS.getX(); //EDIT_LIST_DIMS[0]
         double ey = EDIT_LIST_DIMS.getY(); //EDIT_LIST_DIMS[1]
         double ew = EDIT_LIST_DIMS.getW(); //EDIT_LIST_DIMS[2]
-        double eh = EDIT_LIST_DIMS.getH(); //EDIT_LIST_DIMS[3] //todo verify
+        double eh = EDIT_LIST_DIMS.getH(); //EDIT_LIST_DIMS[3]
 
         //codon rows
         double rmx = (((mouseX/scalefactor)-ORIG_W_H)-ex)/ew;
@@ -232,7 +259,7 @@ class Editor {
             }
 
             boolean changeMade = currentButtons[choice].onClick(rmx, rmy);
-            if(changeMade && selected != ugoCell){
+            if(changeMade && !CellType.UGO_Editor.isType(selected)){
                 changeMade = true;
                 game.lastEditTimeStamp = frameCount;
                 selected.tamper();
@@ -272,24 +299,24 @@ public void divineIntervention( int id ) {
 
             case 1: // Revive
                 world.aliveCount ++;
-                world.setCellAt( selx, sely, new Cell( selx, sely, CellType.Normal, 0, 1, settings.genome ) );
+                world.setCellAt( selx, sely, createCell( selx, sely, CellType.Normal, 0, 1, settings.genome ) );
                 break;
 
             case 2: // Heal
-                selected.healWall();
+                if (selected != null)selected.healWall();
                 break;
 
             case 3: // Energize
-                selected.giveEnergy();
+                if (selected != null)selected.giveEnergy();
                 break;
 
             case 4: // Make Wall
-                world.setCellAt( selx, sely, new Cell( selx, sely, CellType.Locked, 0, 1, settings.genome ) );
+                world.setCellAt( selx, sely, createCell( selx, sely, CellType.Locked, 0, 1, settings.genome ) );
                 break;
 
             case 5: // Make Shell
                 world.shellCount ++;
-                world.setCellAt( selx, sely, new Cell( selx, sely, CellType.Shell, 0, 1, settings.genome ) );
+                world.setCellAt( selx, sely, createCell( selx, sely, CellType.Shell, 0, 1, settings.genome ) );
                 break;
         }
 
@@ -302,12 +329,12 @@ public void divineIntervention( int id ) {
         // For meaning of the specific id see 'DIVINE_CONTROLS' defined in 'Virus',
         // where id is the offset into that array.
 
-        if( selected == ugo || !open ) return false;
+        if(!open || CellType.UGO_Editor.isType(selected)) return false;
         if( id == 0 ) return (selected != null);
-        if( id == 2 || id == 3 ) return (selected != null && selected.type != CellType.Locked);
-        if( id == 1 ) return (selected == null || selected.type != CellType.Normal);
-        if( id == 4 ) return (selected == null || selected.type != CellType.Locked);
-        if( id == 5 ) return (selected == null || selected.type != CellType.Shell);
+        if( id == 2 || id == 3 ) return (!CellType.Locked.isType(selected));
+        if( id == 1 ) return (!CellType.Normal.isType(selected));
+        if( id == 4 ) return (!CellType.Locked.isType(selected));
+        if( id == 5 ) return (!CellType.Shell.isType(selected));
         return true;
 
     }
@@ -316,7 +343,7 @@ public void divineIntervention( int id ) {
 
         if(world.getCellAtUnscaled(arrow[0], arrow[1]) == null){
 
-            UGO u = new UGO(arrow, ugoCell.genome.getGenomeString());
+            UGO u = new UGO(arrow, selected.genome.getGenomeString());
             u.markDivine();
             world.addParticle(u);
             world.lastEditFrame = frameCount;

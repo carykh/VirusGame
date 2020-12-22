@@ -110,15 +110,15 @@ class Input {
   double dragStartY;
 
   void windowResized() {
-    graph.resize( width - height - 20, height - 300 );
+    graph.resize( ORIG_W_W - ORIG_W_H - 20, ORIG_W_H - 300 );
 }
 
 void inputCheck(){
 
     if( width != windowSizeX || height != windowSizeY ) {
-         windowSizeX = width;
+         /*windowSizeX = width;
          windowSizeY = height;
-         windowResized();
+         windowResized();*/
     }
     if (mousePressed) {
       editor.arrow = null;
@@ -150,22 +150,7 @@ void inputCheck(){
             return; //fix bug that moven screen when pressing button
           }
         } else {
-          editor.checkInput(); //make sure editor doesnt forget about scale
-          /*if (selected != null) {
-            if (editor.codonToEdit[0] >= 0) {
-              checkETclick();
-            }
-            checkGLclick();
-          }
-          if (selected == ugo) {
-            if (((mouseX/scalefactor) >= ORIG_W_H+530 && editor.codonToEdit[0] == -1) || (mouseY/scalefactor) < 160) {
-              selected = null;
-              ugoSelected=null;
-            }
-          } else if ((mouseX/scalefactor) > ORIG_W_W-160 && (mouseY/scalefactor) < 160) {
-            selected = ugo;
-            ugoSelected=null;
-          }*/
+          editor.checkInput();
           canDragWorld = false;
         }
         doubleClick = true;
@@ -180,7 +165,7 @@ void inputCheck(){
           if (newCX != clickWorldX || newCY != clickWorldY) {
             doubleClick = false;
           }
-          if (editor.selected == editor.ugoCell) {
+          if (CellType.UGO_Editor.isType(editor.selected)) {
             stroke(0, 0, 0);
             editor.arrow = new double[]{clickWorldX, clickWorldY, newCX, newCY};
           } else {
@@ -196,23 +181,18 @@ void inputCheck(){
       if (wasMouseDown) {
         if (editor.dragAndDropCodonId >= 0) {
           editor.releaseGLdrag();
-        } else if (editor.selected == editor.ugoCell && editor.arrow != null) {
+        } else if (CellType.UGO_Editor.isType(editor.selected) && editor.arrow != null) {
           if (util.euclidLength(editor.arrow) > settings.min_length_to_produce) {
             editor.produce();
           }
         }
         if (doubleClick && canDragWorld) {
 
-          if (editor.selected != editor.ugoCell) {
+          if (!CellType.UGO_Editor.isType(editor.selected)) {
             editor.close();
           }
           if (world.isCellValid( clickWorldX, clickWorldY) ){
             editor.select( (int) clickWorldX, (int) clickWorldY);
-          }
-          if (clickedCell != null && clickedCell.type == CellType.Empty) {
-            world.cells[(int)clickWorldY][(int)clickWorldX] = new Cell((int)clickWorldX, (int)clickWorldY, CellType.Normal, 0, 1, settings.editor_default);
-            world.initialCount++;
-            world.aliveCount++;
           }
 
           checkUGOclick();

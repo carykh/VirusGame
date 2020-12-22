@@ -33,8 +33,8 @@ class World {
                 Cell cell = new Cell( x, y, type, 0, 1, settings.genome );
                 cells[y][x] = cell;
                     
-                if( cell.type == CellType.Normal ) initialCount ++;
-                if( cell.type == CellType.Shell ) shellCount ++;
+                if( CellType.Normal.isType(cell) ) initialCount ++;
+                if( CellType.Shell.isType(cell) ) shellCount ++;
                 
             }
         }
@@ -42,10 +42,24 @@ class World {
         aliveCount = initialCount;
       
     }
-    
+
+    public void init() {
+      int size = settings.world_size;
+
+      for( int y = 0; y < size; y++ ) {
+        for( int x = 0; x < size; x++ ) {
+          Cell c =cells[x][y];
+          if (c != null)c.init();
+
+        }
+      }
+    }
+
+    int lastGraphFrame = 0;
     public void tick() {
 
-        if( frameCount % settings.graph_update_period == 0 ) {
+        if( frameCount-lastGraphFrame > (settings.graph_update_period/PLAY_SPEED)) {
+          lastGraphFrame = frameCount;
             graph.append( new GraphFrame(
                 pc.get(ParticleType.Waste).size(),
                 pc.get(ParticleType.UGO).size(),
@@ -61,7 +75,7 @@ class World {
                 Cell c = cells[y][x];
                 if( c != null ) {
                     c.tick();
-                    if( c.type == CellType.Empty ) cells[y][x] = null;
+                    if( CellType.Empty.isType(c) ) cells[y][x] = null;
                 }
             }
         }
@@ -121,7 +135,7 @@ class World {
     }
     
     public void setCellAt( int x, int y, Cell c ) {
-        if( cells[y][x] != null ) cells[y][x].die(true);
+        if( cells[y][x] != null ) cells[y][x].die();
         cells[y][x] = c;
     }
 

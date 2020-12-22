@@ -47,8 +47,8 @@ class ParticleContainer {
             int c = count() / settings.particles_per_rand_update;
         
             for( ; c > 0; c -- ) {
-                ArrayList<Particle> array = get( ParticleType.fromId( randomInt(0, 2) ) );
-                int index = randomInt(0, array.size() - 1);
+                ArrayList<Particle> array = get( ParticleType.fromId( util.randomInt(0, 2) ) );
+                int index = util.randomInt(0, array.size() - 1);
                 if( index != -1 ) array.get( index ).randomTick();
             }
         }

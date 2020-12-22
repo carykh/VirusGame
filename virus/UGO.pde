@@ -63,7 +63,7 @@ class UGO extends Particle {
         Cell fc = world.getCellAt(future[0], future[1]);
         if( fc != null ) {
 
-            if( divine || fc.wall * settings.cell_wall_protection < random(0,1) || fc.type == CellType.Shell ) {
+            if( divine || fc.wall * settings.cell_wall_protection < random(0,1) || CellType.Shell.isType(fc) ) {
 
                 if(type == ParticleType.UGO && ct == CellType.Empty && ft == CellType.Normal && genome.codons.size()+fc.genome.codons.size() <= settings.max_codon_count){
                     // there are few enough codons that we can fit in the new material!
@@ -85,9 +85,9 @@ class UGO extends Particle {
             editor.close();
         }
 
-        if( c.type == CellType.Shell ) {
+        if( CellType.Shell.isType(c) ) {
               
-            c.type = CellType.Normal;
+            CellType.Normal.isType(c);
             c.genome.codons = genome.codons;
             c.genome.rotateOn = 0;
             c.genome.rotateOnNext = 0;

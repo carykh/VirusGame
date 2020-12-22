@@ -3,9 +3,9 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-class Codon extends CodonPair { //this includes health
+static class Codon extends CodonPair { //this includes health
   //id 0 = kind of colon
-
+  public static final Codon EMPTY = new Codon();
 
   double codonHealth = 1;
 
@@ -13,7 +13,6 @@ class Codon extends CodonPair { //this includes health
   public Codon() {
     super(CodonTypes.None.v, CodonAttributes.None.v);
   }
-
 
   public Codon(CodonPair codon) {
     super(codon);
@@ -23,6 +22,10 @@ class Codon extends CodonPair { //this includes health
     super(type, attribute);
   }
 
+  public static Codon createRandom() {
+    return new Codon(CodonTypes.values()[(int)(Math.random()*CodonTypes.values().length)].v.createRandom(),
+            CodonAttributes.values()[(int)(Math.random()*CodonAttributes.values().length)].v.createRandom());
+  }
 
   public color getColor(int p) {
     return util.intToColor(p == 0 ? type.getColor() : attribute.getColor()); //for leg support
@@ -41,15 +44,33 @@ class Codon extends CodonPair { //this includes health
     return ((!(type instanceof CodonNone)) || (!(attribute instanceof AttributeNone))); //probably whether this codon can get hurt?
   }
 
-  public void hurt() {
+  public boolean hurt() {
     if (hasSubstance()) {
       codonHealth -= Math.random() * settings.codon_degrade_speed;
-      if (codonHealth <= 0) {
-        codonHealth = 1;
-        type = CodonTypes.None.v;
-        attribute = CodonAttributes.None.v;
+      if (codonHealth <= 0.2) {
+        if(settings.mutability > Math.random()  ) {
+
+          if(Math.random()  < 0.3 ) {
+            codonHealth += util.random(0.2, 0.4);
+            type = CodonTypes.values()[(int)(Math.random()*CodonTypes.values().length)].v.createRandom();
+          }
+          if(Math.random()  < 0.3 ) {
+            codonHealth += util.random(0.2, 0.4);
+            attribute = CodonAttributes.values()[(int)(Math.random()*CodonAttributes.values().length)].v.createRandom();
+          }
+          codonHealth = Math.min(1, codonHealth);
+        }
+
+        if (codonHealth <= 0) {
+          codonHealth = 1;
+          type = CodonTypes.None.v;
+          attribute = CodonAttributes.None.v;
+          return true;
+        }
+
       }
     }
+    return false;
   }
 
   public void setFullInfo(int[] info) {
@@ -228,6 +249,11 @@ static class CommonBase implements Cloneable {
   public int processExtra(int[] data, int offset) {
     return offset;
   }
+
+
+  public CommonBase createRandom() {
+    return this;
+  }
 }
 
   static int[] c(int v1, int v2, int v3) {
@@ -255,6 +281,11 @@ static class CodonType extends CommonBase {
     return false;
     //noOP
   }
+
+
+  public CodonType createRandom() {
+    return this;
+  }
 }
 
 static class CodonAttribute extends CommonBase {
@@ -265,6 +296,11 @@ static class CodonAttribute extends CommonBase {
 
   public CodonAttribute clone() {
     return (CodonAttribute) super.clone();
+  }
+
+
+  public CodonAttribute createRandom() {
+    return this;
   }
 }
 
@@ -334,7 +370,7 @@ static class AttributeGenomeCursorDirection extends AttributeGenomeCursor {
 
 
   public void setCursor(Cell cell) {
-    cell.genome.directionOn = isInwards() ? 1 : 0;
+    cell.genome.inwards = isInwards();
   }
 }
 
@@ -456,6 +492,11 @@ static class AttributeRGL extends AttributeGenomeRange {
     return offset;
   }
 
+  public CodonAttribute createRandom() {
+    return new AttributeRGL(util.randomInt(util.enMin, util.enMax), util.randomInt(util.enMin, util.enMax));
+  }
+
+
 }
 
 static class AbsoluteRange {
@@ -499,8 +540,8 @@ static class AttributeMemoryLocation extends AttributeGenomeRange {
     int start = r.start;
     int end = r.getEndResolved(cell.genome);
     cell.laserT = cell.getFrameCount();
-    cell.laserCoor.add(cell.getCodonCoor(start, cell.genome.CODON_DIST));
-    cell.laserCoor.add(cell.getCodonCoor(end, cell.genome.CODON_DIST));
+    cell.laserCoor.add(cell.genome.getCodonCoor(start, CODON_DIST, cell.x, cell.y));
+    cell.laserCoor.add(cell.genome.getCodonCoor(end, CODON_DIST, cell.x, cell.y));
     for (int i = 0; i < codons.size(); i++) {
       if (i == start) {
         codons.get(i).memorySetFrom.add(memoryId);
@@ -528,7 +569,7 @@ static class AttributeMemoryLocation extends AttributeGenomeRange {
     for (int i = 0; i < codons.size(); i++) {
       if (codons.get(i).memorySetFrom.contains(memoryId)) {
         cell.laserT = cell.getFrameCount();
-        cell.laserCoor.add(cell.getCodonCoor(i, cell.genome.CODON_DIST));
+        cell.laserCoor.add(cell.genome.getCodonCoor(i, CODON_DIST, cell.x, cell.y));
         return i;
       }
     }
@@ -542,7 +583,7 @@ static class AttributeMemoryLocation extends AttributeGenomeRange {
     for (int i = 0; i < codons.size(); i++) {
       if (codons.get(i).memorySetTo.contains(memoryId)) {
         cell.laserT = cell.getFrameCount();
-        cell.laserCoor.add(cell.getCodonCoor(i, cell.genome.CODON_DIST));
+        cell.laserCoor.add(cell.genome.getCodonCoor(i, CODON_DIST, cell.x, cell.y));
         return i;
       }
     }
@@ -566,6 +607,11 @@ static class AttributeMemoryLocation extends AttributeGenomeRange {
   public int processExtra(int[] data, int offset) {
     memoryId = data[offset++];
     return offset;
+  }
+
+
+  public CodonAttribute createRandom() {
+    return new AttributeMemoryLocation(util.randomInt(util.enMin, util.enMax));
   }
 
   public boolean exists(Cell cell) {
@@ -606,6 +652,11 @@ static class AttributeMark extends CodonAttribute {
   public int processExtra(int[] data, int offset) {
     markId = data[offset++];
     return offset;
+  }
+
+
+  public CodonAttribute createRandom() {
+    return new AttributeMark(util.randomInt(util.enMin, util.enMax));
   }
 
 }
@@ -660,6 +711,11 @@ static class AttributeDegree extends AttributeGenomeLoc {
     degMajor = data[offset++];
     degMinor = data[offset++];
     return offset;
+  }
+
+
+  public CodonAttribute createRandom() {
+    return new AttributeDegree(util.randomInt(0, 360));
   }
 
   public int getLocation(Cell cell) {
@@ -719,7 +775,7 @@ static class CodonRemove extends CodonType {
 
   public boolean exec(Cell cell, CodonAttribute attribute) {
     Genome genome = cell.genome;
-    if (genome.directionOn == 0) {
+    if (!genome.inwards) {
       if (attribute instanceof AttributeParticle) {
         Particle wasteToPushOut = cell.selectParticleInCell(((AttributeParticle) attribute).getParticle()); // pushes out either "food" or "waste". (now even UGO is possible!! no attribute for that yet tho)
         if (wasteToPushOut != null) {

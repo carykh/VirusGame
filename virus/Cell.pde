@@ -1,5 +1,11 @@
 import java.util.Random;
 
+public Cell createCell(int ex, int ey, CellType et, int ed, double ewh, String eg){
+  Cell c = new Cell(ex, ey, et, ed, ewh, eg);
+  c.init();
+  return c;
+}
+
 class Cell{
   int x;
   int y;
@@ -38,25 +44,34 @@ class Cell{
 
     debugFlag = x == 6 && y == 4; //if we only want to inspect one cell
 
-    Random rnd = new Random(x << 16 + y + 1337); //seed based on coords
+    energy = -1;
+  }
 
-    int startpos = rnd.nextInt(genome.codons.size());
+  public void init() {
+    if (type == CellType.Normal) {
+      Random rnd = new Random(x << 16 + y + 1337); //seed based on coords
+      int startpos = rnd.nextInt(genome.codons.size());
 
-    genome.rotateOn = 0;
-    genome.rotateOnNext = genome.loopAroundGenome(1);
+      genome.rotateOn = 0;
+      genome.rotateOnNext = genome.loopAroundGenome(1);
 
-    //we start at a random position but make sure that we are not in an invalid state!
-    for (int i = 0; i < startpos; i++) {
-      doAction();
-      tickGene();
+      energy = 1;
+      //we start at a random position but make sure that we are not in an invalid state!
+      for (int i = 0; i < startpos; i++) {
+        doAction();
+        tickGene();
+      }
+      laserCoor.clear(); //dont display all the preexecuted actions at once
+      laserTarget = null;
+
+      genome.update(); //update drawing postions
+
+      geneTimer = rnd.nextDouble() * settings.gene_tick_time;
+      energy = 0.5;
+    } else {
+      energy = 0;
     }
-    laserCoor.clear(); //dont display all the preexecuted actions at once
-    laserTarget = null;
 
-    genome.update(); //update drawing postions
-
-    geneTimer = rnd.nextDouble() * settings.gene_tick_time;
-    energy = 0.5;
   }
 
   public String getMemory() {
@@ -68,7 +83,7 @@ class Cell{
   }
 
   public boolean hasGenome() {
-    return type == CellType.Normal;
+    return type == CellType.Normal || type == CellType.UGO_Editor;
   }
 
   public boolean isHandInwards() {
@@ -200,12 +215,17 @@ class Cell{
 
     if( energy > 0 ) {
       fill(255,255,0);
-      ellipseMode(CENTER);
-      ellipse(0, 0, 12 * (float) energy + 2, 12 * (float) energy + 2);
+      if (type == CellType.Normal) {
+        drawLightning();
+      } else {
+        ellipseMode(CENTER);
+        ellipse(0, 0, 12 * (float) energy + 2, 12 * (float) energy + 2);
+      }
     }
   }
   public void drawLightning(){
     pushMatrix();
+    scale((float) Math.sqrt(energy));
     scale(1.2);
     noStroke();
     beginShape();
@@ -246,11 +266,10 @@ class Cell{
     if (!didTickGene) return;
     didTickGene = false;
     if (!DEBUG_WORLD) useEnergy(settings.gene_tick_energy * settings.gene_tick_time / 40);
-    genome.rotateOn = genome.loopAroundGenome(genome.rotateOn); //in case it got deleted
-    Codon thisCodon = genome.codons.get(genome.rotateOn);
+    Codon thisCodon = genome.getSelected();
     wasSuccess = thisCodon.exec(this);
 
-    if (!DEBUG_WORLD) genome.hurtCodons();
+    if (!DEBUG_WORLD) genome.hurtCodons(this);
   }
   public void tickGene(){
     didTickGene = true; //this is added to make sure that the genes really operate in the right order
@@ -283,7 +302,7 @@ class Cell{
       if (pos < end) {
         memory = memory + "-";
       }
-      laserCoor.add(getCodonCoor(index, genome.CODON_DIST));
+      laserCoor.add(genome.getCodonCoor(index, CODON_DIST, x, y));
     }
   }
 
@@ -295,12 +314,13 @@ class Cell{
     laserCoor.clear();
     laserT = frameCount;
     for (int pos = start; pos <= end; pos++) {
+      if (genome.codons.size() == 0)return;
       int index = genome.loopAroundGenome((isRelative ? genome.performerOn : 0) + start); //usual constant, but we might wrap around after deleting enough items
       if (genome.rotateOnNext > index) {
         genome.rotateOnNext--;
       }
       genome.codons.remove(index);
-      laserCoor.add(getCodonCoor(index, genome.CODON_DIST));
+      laserCoor.add(genome.getCodonCoor(index, CODON_DIST, x, y));
     }
   }
 
@@ -311,7 +331,7 @@ class Cell{
     laserTarget = null;
     laserCoor.clear();
     laserT = frameCount;
-    if (genome.directionOn == 0) {
+    if (!genome.inwards) {
       writeOutwards(start, end);
     } else {
       writeInwards(start, end, isRelative);
@@ -348,7 +368,7 @@ class Cell{
       if(pos-start < memoryParts.length){
         String memoryPart = memoryParts[pos-start];
         c.setFullInfo(util.stringToInfo(memoryPart));
-        laserCoor.add(genome.getCodonCoor(index,genome.CODON_DIST, x, y));
+        laserCoor.add(genome.getCodonCoor(index, CODON_DIST, x, y));
       }
       useEnergy(settings.gene_tick_energy * settings.gene_tick_time / 40);
     }
@@ -397,7 +417,7 @@ class Cell{
     }else{
       r += HAND_LEN;
     }
-    return genome.getCodonCoor(genome.performerOn,r);
+    return genome.getCodonCoor(genome.performerOn,r, x , y);
   }
   
   public boolean pushOut(Particle waste){
@@ -457,10 +477,13 @@ class Cell{
 
 
   public void die() {
-    for (int i = 0; i < genome.codons.size(); i++) {
-      Particle newWaste = new Particle(getCodonCoor(i, genome.CODON_DIST), ParticleType.Waste, -99999);
-      world.addParticle( newWaste );
+    if (hasGenome()) {
+      for (int i = 0; i < genome.codons.size(); i++) {
+        Particle newWaste = new Particle(genome.getCodonCoor(i, CODON_DIST, x, y), ParticleType.Waste, -99999);
+        world.addParticle( newWaste );
+      }
     }
+
 
     if (this == editor.selected) {
       editor.close();
@@ -499,7 +522,7 @@ class Cell{
   }
 
   public String getCellName(){
-    if(x == -1){
+    if(type == CellType.UGO_Editor){
       return "Custom UGO";
     }else if(type == CellType.Normal){
       return "Cell at ("+x+", "+y+")";
@@ -535,7 +558,8 @@ enum CellType {
   Empty,
   Locked,
   Normal,
-  Shell;
+  Shell,
+  UGO_Editor;
 
   public boolean isAlive() {
     return this == Normal || this == Shell;
@@ -543,6 +567,11 @@ enum CellType {
 
   public boolean isHurtable() {
     return this == Normal;
+  }
+
+  public boolean isType(Cell cell) {
+    if (cell == null)return false;
+    return this == cell.type;
   }
 
 }

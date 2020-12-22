@@ -37,7 +37,8 @@ class Graph {
     }
     
     public void drawSelf( float x, float y ) {
-      
+        if (canvas.height < 1 || canvas.width < 1) return;
+
         if( redraw ) {
           
             final int hi = max( 200, highest );

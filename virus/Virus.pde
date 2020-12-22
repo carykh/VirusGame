@@ -16,9 +16,10 @@ class VirusGame {
     font = loadFont("Jygquip1-96.vlw");
     settings = new Settings();
     world = new World( settings );
+    world.init();
     renderer = new Renderer( settings );
     editor = new Editor( settings );
-graph = new Graph( settings.graph_length, width - height - 20, height - 300 );
+    graph = new Graph( settings.graph_length, ORIG_W_W - ORIG_W_H - 20, ORIG_W_H - 300 );
     graph.setRescan( settings.graph_downscale );
 
     println("Ready!");
@@ -111,6 +112,7 @@ graph = new Graph( settings.graph_length, width - height - 20, height - 300 );
         }
         lastWidth = newWidth;
         lastHeight = newHeight;
+        input.windowResized();
       }
       lastResized--;
       if (!isWindowMax && lastResized == 0) {
@@ -119,6 +121,7 @@ graph = new Graph( settings.graph_length, width - height - 20, height - 300 );
         surface.setSize(W_W, W_H); //update processing
         lastWidth = W_W; //this was an intended change, lets not recognise this as user trying to change window size
         lastHeight = W_H;
+        input.windowResized();
       }
     }
   }
