@@ -41,7 +41,7 @@ Code: [GitHub](https://github.com/carykh/VirusGame)
 
 ## Breaking changes
 
-- if you want to move the hand to the cursor you must useMove `Hand Cursor` instead ofMove `Hand RGL(0,0)`. RGL is always relative to the hand for hand specific commands
+- if you want to move the hand to the cursor you must use `Move Hand Cursor` instead of `Move Hand RGL(0,0)`. RGL is always relative to the hand for hand specific commands
 
 - Also the encoding of the Genome is slightly different to the original, but everything besides the way RGL are saved is the same way.
 
