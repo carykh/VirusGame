@@ -18,7 +18,7 @@ public class ClipboardHelper {
   public static String getStringFromClipboard() {
     Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
     try {
-      return (String)clipboard.getData(DataFlavor.stringFlavor);
+      return (String) clipboard.getData(DataFlavor.stringFlavor);
     } catch (UnsupportedFlavorException e) {
       return null;
     } catch (IOException e) {

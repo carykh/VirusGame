@@ -20,6 +20,7 @@ public class Method {
   public static void fill(int color) {
     impl.fill(color);
   }
+
   public static void fill(float color) {
     impl.fill(color);
   }
@@ -43,6 +44,7 @@ public class Method {
   public static void stroke(int i) {
     impl.stroke(i);
   }
+
   public static void rotate(float angle) {
     impl.rotate(angle);
   }
@@ -90,9 +92,11 @@ public class Method {
   public static float red(int col) {
     return impl.red(col);
   }
+
   public static float green(int col) {
     return impl.green(col);
   }
+
   public static float blue(int col) {
     return impl.blue(col);
   }
@@ -175,6 +179,7 @@ public class Method {
   public static int getKeyCode() {
     return impl.getKeyCode();
   }
+
   public static boolean getMousePressed() {
     return impl.getMousePressed();
   }
@@ -205,44 +210,49 @@ public class Method {
   }
 
   public interface MethodImpl {
-     void fill(float red, float green, float blue);
+    void fill(float red, float green, float blue);
 
 
-     void fill(int color);
-     void fill(float color);
+    void fill(int color);
 
-     void noStroke();
+    void fill(float color);
 
-     void pushMatrix();
+    void noStroke();
 
-     void popMatrix();
+    void pushMatrix();
 
-     void strokeWeight(float i);
+    void popMatrix();
 
-     void stroke(int i);
-     void rotate(float angle);
+    void strokeWeight(float i);
 
-     void translate(float left, float top);
+    void stroke(int i);
 
-     void rect(float left, float top, float width, float height);
+    void rotate(float angle);
 
-     void beginShape();
+    void translate(float left, float top);
 
-     void endShape(int mode);
-     void endShape();
+    void rect(float left, float top, float width, float height);
 
-     void vertex(float left, float top);
+    void beginShape();
 
-     void scale(float scale);
+    void endShape(int mode);
 
-     void ellipse(float i, float j, float l, float k);
+    void endShape();
+
+    void vertex(float left, float top);
+
+    void scale(float scale);
+
+    void ellipse(float i, float j, float l, float k);
 
     int color(float red, float green, float blue, float transparity);
 
     int color(int red, int green, int blue);
 
     float red(int col);
+
     float green(int col);
+
     float blue(int col);
 
 
@@ -285,6 +295,7 @@ public class Method {
 
 
     int getKeyCode();
+
     boolean getMousePressed();
 
     void image(PImage img, float a, float b);

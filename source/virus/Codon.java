@@ -13,7 +13,7 @@ public class Codon extends CodonPair { //this includes health
   //id 0 = kind of colon
   public static final Codon EMPTY = new Codon();
 
- public double codonHealth = 1;
+  public double codonHealth = 1;
 
 
   public Codon() {
@@ -29,8 +29,8 @@ public class Codon extends CodonPair { //this includes health
   }
 
   public static Codon createRandom() {
-    return new Codon(CodonTypes.values()[(int)(Math.random()*CodonTypes.values().length)].v.createRandom(),
-            CodonAttributes.values()[(int)(Math.random()*CodonAttributes.values().length)].v.createRandom());
+    return new Codon(CodonTypes.values()[(int) (Math.random() * CodonTypes.values().length)].v.createRandom(),
+            CodonAttributes.values()[(int) (Math.random() * CodonAttributes.values().length)].v.createRandom());
   }
 
   public int getColor(int p) {
@@ -54,15 +54,15 @@ public class Codon extends CodonPair { //this includes health
     if (hasSubstance()) {
       codonHealth -= Math.random() * settings.codon_degrade_speed;
       if (codonHealth <= 0.2) {
-        if(settings.mutability > Math.random()  ) {
+        if (settings.mutability > Math.random()) {
 
-          if(Math.random()  < 0.3 ) {
+          if (Math.random() < 0.3) {
             codonHealth += random(0.2, 0.4);
-            type = CodonTypes.values()[(int)(Math.random()*CodonTypes.values().length)].v.createRandom();
+            type = CodonTypes.values()[(int) (Math.random() * CodonTypes.values().length)].v.createRandom();
           }
-          if(Math.random()  < 0.3 ) {
+          if (Math.random() < 0.3) {
             codonHealth += random(0.2, 0.4);
-            attribute = CodonAttributes.values()[(int)(Math.random()*CodonAttributes.values().length)].v.createRandom();
+            attribute = CodonAttributes.values()[(int) (Math.random() * CodonAttributes.values().length)].v.createRandom();
           }
           codonHealth = Math.min(1, codonHealth);
         }

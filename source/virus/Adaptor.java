@@ -3,7 +3,7 @@ package virus;
 import processing.core.*;
 import processing.data.JSONObject;
 
-public class Adaptor implements Method.MethodImpl{
+public class Adaptor implements Method.MethodImpl {
   private final PApplet applet;
 
   public Adaptor(PApplet applet) {
@@ -18,6 +18,7 @@ public class Adaptor implements Method.MethodImpl{
   public void fill(int col) {
     applet.fill(col);
   }
+
   public void fill(float col) {
     applet.fill(col);
   }
@@ -41,6 +42,7 @@ public class Adaptor implements Method.MethodImpl{
   public void stroke(int i) {
     applet.stroke(i);
   }
+
   public void rotate(float angle) {
     applet.rotate(angle);
   }
@@ -88,9 +90,11 @@ public class Adaptor implements Method.MethodImpl{
   public float red(int col) {
     return applet.red(col);
   }
+
   public float green(int col) {
     return applet.green(col);
   }
+
   public float blue(int col) {
     return applet.blue(col);
   }
@@ -173,6 +177,7 @@ public class Adaptor implements Method.MethodImpl{
   public int getKeyCode() {
     return applet.keyCode;
   }
+
   public boolean getMousePressed() {
     return applet.mousePressed;
   }

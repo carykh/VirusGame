@@ -9,7 +9,7 @@ import static virus.Var.input;
 
 //This is just the project loader for native Java projects. Make sure to hook into events here, but keep all important code out of here.
 public class JavaLoader extends PApplet {
-  public static void main(String args[]) {
+  public static void main(String[] args) {
     PApplet.main(JavaLoader.class.getName());
   }
 

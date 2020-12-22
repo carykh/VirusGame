@@ -10,9 +10,9 @@ public final class Const {
   //###SCREEN
   public final static int ORIG_W_W = 1728;
   public final static int ORIG_W_H = 972;
-  public final static int UI_THICKNESS = ORIG_W_W-ORIG_W_H;
+  public final static int UI_THICKNESS = ORIG_W_W - ORIG_W_H;
   public final static int MAX_WINDOW = javax.swing.JFrame.MAXIMIZED_BOTH;
-  public final double screenRatio = ORIG_W_W/(double)ORIG_W_H;
+  public final double screenRatio = ORIG_W_W / (double) ORIG_W_H;
 
 
   //###COLOURS
@@ -45,19 +45,18 @@ public final class Const {
   public final static double CODON_DIST = 17;
   public final static double CODON_DIST_UGO = 10.6;
   public final static float CODON_WIDTH = 1.4f;
-  public final static float[][] CODON_SHAPE = {{-2,0},{-2,2},{-1,3},{0,3},{1,3},{2,2},{2,0},{0,0}};
-  public final static float[][] TELOMERE_SHAPE = {{-2,2},{-1,3},{0,3},{1,3},{2,2},{2,-2},{1,-3},{0,-3},{-1,-3},{-2,-2}};
+  public final static float[][] CODON_SHAPE = {{-2, 0}, {-2, 2}, {-1, 3}, {0, 3}, {1, 3}, {2, 2}, {2, 0}, {0, 0}};
+  public final static float[][] TELOMERE_SHAPE = {{-2, 2}, {-1, 3}, {0, 3}, {1, 3}, {2, 2}, {2, -2}, {1, -3}, {0, -3}, {-1, -3}, {-2, -2}};
   public final static float[][] epigeneticsShape = {{1.5f, 2}, {1.5f, 4}, {1.75f, 4.2f}, {2, 4}, {3, 3.33f}, {2.5f, 3}, {2, 2.66f}, {2, 2}, {1.75f, 2}};
   public final static float[][] epigeneticsMiddleShape = {{-0.5f, 2.8f}, {-0.3f, 3.2f}, {-0.2f, 3.6f}, {-0.1f, 3.8f}, {0, 3.8f}, {0.1f, 3.8f}, {0.2f, 3.6f}, {0.3f, 3.2f}, {0.5f, 2.8f}, {0, 3}};
   public final static String[] DIVINE_CONTROLS = {"Remove", "Revive", "Heal", "Energize", "Make Wall", "Make Shell"};
   public final static int VIEW_FIELD_DIS_CNT = 16;
-  
 
 
   //replace double with float regex
   //float.*?(\d+\.\d+)(?!(f|\d))
   //$0f
-  
+
   //add public regex
   //^(\W+)((\w+ )*)(final|static)
   //$1public $2$4
