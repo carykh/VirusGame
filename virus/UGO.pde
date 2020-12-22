@@ -86,12 +86,13 @@ class UGO extends Particle {
         }
 
         if( CellType.Shell.isType(c) ) {
-              
-            CellType.Normal.isType(c);
+
+            c.type = CellType.Normal;
             c.genome.codons = genome.codons;
             c.genome.rotateOn = 0;
-            c.genome.rotateOnNext = 0;
+            c.genome.rotateOnNext = 1;
             c.genome.performerOn = 0;
+            c.init();
             world.shellCount --;
             world.aliveCount ++;
                 
