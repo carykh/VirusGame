@@ -327,19 +327,21 @@ void detectMouse(){
   wasMouseDown = mousePressed;
 }
 void mouseWheel(MouseEvent event) {
-  double ZOOM_F = 1.05;
-  double thisZoomF = 1;
   float e = event.getCount();
-  if(e == 1){
-    thisZoomF = 1/ZOOM_F;
-  }else{
-    thisZoomF = ZOOM_F;
+  if((camS > 50 || e < 0.0) && (camS < 1000 || e > 0.0)) {
+    double ZOOM_F = 1.05;
+    double thisZoomF = 1;
+    if(e > 0.0){
+      thisZoomF = 1/ZOOM_F;
+    }else if(e < 0.0){
+      thisZoomF = ZOOM_F;
+    }
+    double worldX = mouseX/camS+camX;
+    double worldY = mouseY/camS+camY;
+    camX = (camX-worldX)/thisZoomF+worldX;
+    camY = (camY-worldY)/thisZoomF+worldY;
+    camS *= thisZoomF;
   }
-  double worldX = mouseX/camS+camX;
-  double worldY = mouseY/camS+camY;
-  camX = (camX-worldX)/thisZoomF+worldX;
-  camY = (camY-worldY)/thisZoomF+worldY;
-  camS *= thisZoomF;
 }
 double euclidLength(double[] coor){
   return Math.sqrt(Math.pow(coor[0]-coor[2],2)+Math.pow(coor[1]-coor[3],2));
