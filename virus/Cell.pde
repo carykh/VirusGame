@@ -1,3 +1,7 @@
+
+import java.util.Random;
+
+  public final static double E_RECIPROCAL = 0.3678794411;
 class Cell{
   int x;
   int y;
@@ -6,7 +10,6 @@ class Cell{
   Genome genome;
   double geneTimer = 0;
   double energy = 0;
-  double E_RECIPROCAL = 0.3678794411;
   boolean tampered = false;
   ArrayList<ArrayList<Particle>> particlesInCell = new ArrayList<ArrayList<Particle>>(0);
   
@@ -15,6 +18,8 @@ class Cell{
   int laserT = -9999;
   int LASER_LINGER_TIME = 30;
   String memory = "";
+  AbsoluteRange lastRange = new AbsoluteRange(0, -1);
+  boolean wasSuccess;
   /*
   0: empty
   1: empty, inaccessible
@@ -23,6 +28,9 @@ class Cell{
   4: gene-removing cell
   */
   int dire;
+  
+  boolean debugFlag = false;
+  
   public Cell(int ex, int ey, int et, int ed, double ewh, String eg){
     for(int j = 0; j < 3; j++){
       ArrayList<Particle> newList = new ArrayList<Particle>(0);
@@ -34,8 +42,27 @@ class Cell{
     dire = ed;
     wallHealth = ewh;
     genome = new Genome(eg,false);
-    genome.rotateOn = (int)(Math.random()*genome.codons.size());
-    geneTimer = Math.random()*GENE_TICK_TIME;
+    
+    debugFlag = x == 6 && y == 4; //if we only want to inspect one cell
+    
+    Random rnd = new Random(x << 16 + y + 1337); //seed based on coords
+    
+    int startpos = rnd.nextInt(genome.codons.size());
+    
+    genome.rotateOn = 0;
+    genome.rotateOnNext = genome.loopAroundGenome(1);
+    
+    //we start at a random position but make sure that we are not in an invalid state!
+    for(int i=0;i<startpos;i++) {
+       doAction();
+       tickGene();
+    }
+    laserCoor.clear(); //dont display all the preexecuted actions at once
+    laserTarget = null;
+    
+    genome.iterate(); //update drawing postions
+    
+    geneTimer = rnd.nextDouble()*GENE_TICK_TIME;
     energy = 0.5;
   }
   void drawCell(double x, double y, double s){
@@ -99,8 +126,8 @@ class Cell{
     popMatrix();
   }
   public void drawLaser(){
-    if(frameCount < laserT+LASER_LINGER_TIME){
-      double alpha = (double)((laserT+LASER_LINGER_TIME)-frameCount)/LASER_LINGER_TIME;
+    if(frameCount < laserT+(LASER_LINGER_TIME/PLAY_SPEED)){
+      double alpha = (double)((laserT+LASER_LINGER_TIME)-frameCount)/LASER_LINGER_TIME/PLAY_SPEED;
       stroke(transperize(handColor,alpha));
       strokeWeight((float)(0.033333*BIG_FACTOR));
       double[] handCoor = getHandCoor();
@@ -112,6 +139,9 @@ class Cell{
         double[] targetCoor = laserTarget.coor;
         daLine(handCoor,targetCoor);
       }
+    } else {
+      laserTarget = null;
+      laserCoor.clear();
     }
   }
   public void drawEnergy(){
@@ -145,90 +175,74 @@ class Cell{
   }
   public void iterate(){
     if(type == 2){
-      if(energy > 0){
-        double oldGT = geneTimer;
+      if(energy > 0){ 
         geneTimer -= PLAY_SPEED;
-        if(geneTimer <= GENE_TICK_TIME/2.0 && oldGT > GENE_TICK_TIME/2.0){
-          doAction();
-        }
-        if(geneTimer <= 0){
-          tickGene();
-        }
+        do{
+          if(geneTimer <= GENE_TICK_TIME/2.0 && didTickGene){
+            doAction();
+          }
+          if(geneTimer <= 0 && didAction){
+            tickGene();
+          }
+        } while (geneTimer <= 0);//on high speeds we might needs to do multiple interations per frame
       }
       genome.iterate();
     }
   }
   public void doAction(){
-    useEnergy();
+    didAction = true; //this is added to make sure that the genes really operate in the right order
+    if (!didTickGene)return;
+    didTickGene = false;
+    if(!DEBUG_WORLD)useEnergy();
+    try {
     Codon thisCodon = genome.codons.get(genome.rotateOn);
-    int[] info = thisCodon.codonInfo;
-    if(info[0] == 1 && genome.directionOn == 0){
-      if(info[1] == 1 || info[1] == 2){
-        Particle foodToEat = selectParticleInCell(info[1]-1); // digest either "food" or "waste".
-        if(foodToEat != null){
-          eat(foodToEat);
-        }
-      }else if(info[1] == 3){ // digest "wall"
-        energy += (1-energy)*E_RECIPROCAL*0.2;
-        hurtWall(26);
-        laserWall();
-      }
-    }else if(info[0] == 2 && genome.directionOn == 0){
-      if(info[1] == 1 || info[1] == 2){
-        Particle wasteToPushOut = selectParticleInCell(info[1]-1);
-        if(wasteToPushOut != null){
-          pushOut(wasteToPushOut);
-        }
-      }else if(info[1] == 3){
-        die();
-      }
-    }else if(info[0] == 3 && genome.directionOn == 0){
-      if(info[1] == 1 || info[1] == 2){
-        Particle particle = selectParticleInCell(info[1]-1);
-        shootLaserAt(particle);
-      }else if(info[1] == 3){
-        healWall();
-      }
-    }else if(info[0] == 4){
-      if(info[1] == 4){
-        genome.performerOn = genome.getWeakestCodon();
-      }else if(info[1] == 5){
-        genome.directionOn = 1;
-      }else if(info[1] == 6){
-        genome.directionOn = 0;
-      }else if(info[1] == 7){
-        genome.performerOn = loopItInt(genome.rotateOn+info[2],genome.codons.size());
-      }
-    }else if(info[0] == 5 && genome.directionOn == 1){
-      if(info[1] == 7){
-        readToMemory(info[2],info[3]);
-      }
-    }else if(info[0] == 6){
-      if(info[1] == 7 || genome.directionOn == 0){
-        writeFromMemory(info[2],info[3]);
-      }
+    wasSuccess = thisCodon.exec(this);
+    } catch(IndexOutOfBoundsException e) {
+      wasSuccess = false;
     }
-    genome.hurtCodons();
+
+    
+    if(!DEBUG_WORLD)genome.hurtCodons();
   }
+  
   void useEnergy(){
-    energy = Math.max(0,energy-GENE_TICK_ENERGY);
+    energy = Math.max(0,energy-(GENE_TICK_ENERGY*GENE_TICK_TIME/40));
   }
-  void readToMemory(int start, int end){
+  void readToMemory(int start, int end, boolean isRelative){
     memory = "";
     laserTarget = null;
     laserCoor.clear();
     laserT = frameCount;
     for(int pos = start; pos <= end; pos++){
-      int index = loopItInt(genome.performerOn+pos,genome.codons.size());
+      int index = genome.loopAroundGenome((isRelative?genome.performerOn:0)+pos);
       Codon c = genome.codons.get(index);
-      memory = memory+infoToString(c.codonInfo);
+      memory = memory+infoToString(c);
       if(pos < end){
         memory = memory+"-";
       }
       laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
     }
   }
-  void writeFromMemory(int start, int end){
+  
+  
+  void removeCodons(int start, int end, boolean isRelative){
+    
+    
+    laserTarget = null;
+    laserCoor.clear();
+    laserT = frameCount;
+    for(int pos = start; pos <= end; pos++){
+      int index = genome.loopAroundGenome((isRelative?genome.performerOn:0)+start); //usual constant, but we might wrap around after deleting enough items
+      if (genome.rotateOnNext > index) {
+        genome.rotateOnNext--;
+      }
+      genome.codons.remove(index);
+      laserCoor.add(getCodonCoor(index,genome.CODON_DIST));
+    }
+  }
+  
+  
+  void writeFromMemory(int start, int end, boolean isRelative){
     if(memory.length() == 0){
       return;
     }
@@ -238,7 +252,7 @@ class Cell{
     if(genome.directionOn == 0){
       writeOutwards();
     }else{
-      writeInwards(start,end);
+      writeInwards(start,end, isRelative);
     }
   }
   public void writeOutwards(){
@@ -257,11 +271,11 @@ class Cell{
       useEnergy();
     }
   }
-  public void writeInwards(int start, int end){
+  public void writeInwards(int start, int end, boolean isRelative){
     laserTarget = null;
     String[] memoryParts = memory.split("-");
     for(int pos = start; pos <= end; pos++){
-      int index = loopItInt(genome.performerOn+pos,genome.codons.size());
+      int index = genome.loopAroundGenome((isRelative?genome.performerOn:0)+pos);
       Codon c = genome.codons.get(index);
       if(pos-start < memoryParts.length){
         String memoryPart = memoryParts[pos-start];
@@ -319,10 +333,17 @@ class Cell{
   }
   public void pushOut(Particle waste){
     int[][] dire = {{0,1},{0,-1},{1,0},{-1,0}};
-    int chosen = -1;
-    while(chosen == -1 || cells[y+dire[chosen][1]][x+dire[chosen][0]].type != 0){
-      chosen = (int)random(0,4);
+    boolean canPushOut = false;
+    for(int i = 0; i < 4; i++) {
+      if(!(y+dire[i][1] > WORLD_SIZE - 1 || y+dire[i][1] < 0 || x+dire[i][0] > WORLD_SIZE - 1 || x+dire[i][0] < 0 || cells[y+dire[i][1]][x+dire[i][0]].type != 0)) {
+        canPushOut = true;
+      }
     }
+    if(canPushOut) {
+      int chosen = -1;
+      while(chosen == -1 || y+dire[chosen][1] > WORLD_SIZE - 1 || y+dire[chosen][1] < 0 || x+dire[chosen][0] > WORLD_SIZE - 1 || x+dire[chosen][0] < 0 || cells[y+dire[chosen][1]][x+dire[chosen][0]].type != 0){
+        chosen = (int)random(0,4);
+      }
     double[] oldCoor = waste.copyCoor();
     for(int dim = 0; dim < 2; dim++){
       if(dire[chosen][dim] == -1){
@@ -340,14 +361,28 @@ class Cell{
     n_cell.addParticleToCell(waste);
     laserT = frameCount;
     laserTarget = waste;
+    }
   }
+  
+  boolean didAction = false;
+  boolean didTickGene = true;
   public void tickGene(){
+    didTickGene = true; //this is added to make sure that the genes really operate in the right order
+    if (!didAction) {
+      geneTimer += GENE_TICK_TIME/2;
+      doAction();
+      return;
+    }
+    didAction = false;
+    
     geneTimer += GENE_TICK_TIME;
-    genome.rotateOn = (genome.rotateOn+1)%genome.codons.size();
+    
+    genome.rotateOn = genome.rotateOnNext;
+    genome.rotateOnNext = genome.loopAroundGenome(genome.rotateOnNext+1);
   }
   public void hurtWall(double multi){
     if(type >= 2){
-      wallHealth -= WALL_DAMAGE*multi;
+      wallHealth -= WALL_DAMAGE*multi*(DEBUG_WORLD?0.4:1);
       if(wallHealth <= 0){
         die();
       }
@@ -388,7 +423,7 @@ class Cell{
       }
     }
   }
-  public Particle selectParticleInCell(int type){
+  public Particle selectParticleInCell(int type){ //type 0=food 1=waste 2=ngo?
     ArrayList<Particle> myList = particlesInCell.get(type);
     if(myList.size() == 0){
       return null;
@@ -416,5 +451,13 @@ class Cell{
     }else{
       return particlesInCell.get(t).size();
     }
+  }
+  
+  int getFrameCount() {
+    return frameCount;  
+  }
+  
+  public void DEBUG_SET_PLAY_SPEED(float d) {
+    PLAY_SPEED = d; 
   }
 }
