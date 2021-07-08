@@ -11,7 +11,7 @@ public final class Var {
   public static int W_H = ORIG_W_H;
 
   //###VAR
-  public static float PLAY_SPEED = DEBUG_WORLD ? 40 : 0.6f;
+  public static float PLAY_SPEED = DEBUG_WORLD ? 0.1f : 0.6f;
   public static float scalefactor = 1;
 
   public static Settings settings;

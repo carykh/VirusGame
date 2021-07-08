@@ -1,8 +1,10 @@
 package virus;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
+import processing.core.PConstants;
 import virus.Codon.*;
 
 
@@ -64,24 +66,27 @@ public class Cell {
 
   public void init() {
     if (type == CellType.Normal) {
-      Random rnd = new Random(x << 16 + y + 1337); //seed based on coords
-      int startpos = rnd.nextInt(genome.codons.size());
+      if (!DEBUG_WORLD) {
+        Random rnd = new Random(x << 16 + y + 1337); //seed based on coords
+        int startpos = rnd.nextInt(genome.codons.size());
 
-      genome.rotateOn = 0;
-      genome.rotateOnNext = genome.loopAroundGenome(1);
+        genome.rotateOn = 0;
+        genome.rotateOnNext = genome.loopAroundGenome(1);
 
-      energy = 1;
-      //we start at a random position but make sure that we are not in an invalid state!
-      for (int i = 0; i < startpos; i++) {
-        doAction();
-        tickGene();
+        energy = 1;
+        //we start at a random position but make sure that we are not in an invalid state!
+        for (int i = 0; i < startpos; i++) {
+          doAction();
+          tickGene();
+        }
+        laserCoor.clear(); //dont display all the preexecuted actions at once
+        laserTarget = null;
+
+        genome.update(); //update drawing postions
+
+        geneTimer = rnd.nextDouble() * settings.gene_tick_time;
       }
-      laserCoor.clear(); //dont display all the preexecuted actions at once
-      laserTarget = null;
 
-      genome.update(); //update drawing postions
-
-      geneTimer = rnd.nextDouble() * settings.gene_tick_time;
       energy = 0.5;
     } else {
       energy = 0;
@@ -422,7 +427,9 @@ public class Cell {
 
   public void eat(Particle food) {
     if (food.type == ParticleType.Food) {
-      Particle newWaste = new Particle(food.coor, combineVelocity(food.velo, getRandomVelocity()), ParticleType.Waste, -99999);
+
+      double dirChange = (Math.random()- 0.5f)* PConstants.PI;
+      Particle newWaste = new Particle(food.coor, food.speed, food.direction+dirChange, ParticleType.Waste, -99999);
       shootLaserAt(newWaste);
       world.addParticle(newWaste);
       food.removeParticle(this);
@@ -448,35 +455,23 @@ public class Cell {
   }
 
   public boolean pushOut(Particle waste) {
-    int[][] dire = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
-    int chosen = -1;
-    int iter = 0;
-
-    while (iter < 64 && chosen == -1) {
-
-      int c = (int) random(0, 4);
-
-      if (world.isCellValid(x + dire[c][0], y + dire[c][1]) && world.getCellAt(y + dire[c][1], x + dire[c][0]) == null) {
-        chosen = c;
+    Direction dir = null;
+    for (Direction dirLoop:shuffleArray(Direction.values())) {
+      if (world.isCellValid(x + dirLoop.modX, y + dirLoop.modY) && world.getCellAt(y + dirLoop.modY, x + dirLoop.modX) == null) {
+        dir = dirLoop;
+        break;
       }
-
-      iter++;
-
     }
 
-    if (chosen == -1) return false;
+    if (dir == null) return false;
 
     double[] oldCoor = waste.copyCoor();
-    for (int dim = 0; dim < 2; dim++) {
-      if (dire[chosen][dim] == -1) {
-        waste.coor[dim] = Math.floor(waste.coor[dim]) - EPS;
-        waste.velo[dim] = -Math.abs(waste.velo[dim]);
-      } else if (dire[chosen][dim] == 1) {
-        waste.coor[dim] = Math.ceil(waste.coor[dim]) + EPS;
-        waste.velo[dim] = Math.abs(waste.velo[dim]);
-      }
-      waste.loopCoor(dim);
-    }
+
+
+    waste.coor[0] = Math.floor(waste.coor[0]) + dir.modX * 0.5 + dir.modX * EPS + 0.5;
+    waste.coor[1] = Math.floor(waste.coor[1]) + dir.modY * 0.5 + dir.modY * EPS + 0.5;
+    waste.direction = dir.stdAngle + (waste.direction-PI-dir.stdAngle)*0.5;
+
     Cell p_cell = world.getCellAt(oldCoor[0], oldCoor[1]);
     if (p_cell != null) p_cell.removeParticle(waste);
     Cell n_cell = world.getCellAt(waste.coor[0], waste.coor[1]);
@@ -505,7 +500,9 @@ public class Cell {
 
   public void die() {
     if (hasGenome()) {
-      for (int i = 0; i < genome.codons.size(); i++) {
+      int garbage = Const.AdvGenome?(int)Math.sqrt( genome.codons.size()): genome.codons.size();
+
+      for (int i = 0; i < garbage; i++) {
         Particle newWaste = new Particle(genome.getCodonCoor(i, CODON_DIST, x, y), ParticleType.Waste, -99999);
         world.addParticle(newWaste);
       }

@@ -14,6 +14,12 @@ public class Util {
     double[] result = {sp * Math.cos(ang), sp * Math.sin(ang)};
     return result;
   }
+  public static double[] getRandomVelocityDirection() {
+    double sp = Math.random() * (SPEED_HIGH - SPEED_LOW) + SPEED_LOW;
+    double ang = Math.random() * 2 * PI;
+    double[] result = {sp, ang};
+    return result;
+  }
 
   public static double[] combineVelocity(double[] a, double[] b) {
     double ac = a[0] + b[0] + SPEED_LOW;
@@ -49,9 +55,27 @@ public class Util {
     return random(0, 1) > 0.5;
   }
 
+  public static <T> T[] shuffleArray(T[] array){
+
+    for (int i=0; i<array.length; i++) {
+      int randomPosition = randomInt(0, array.length);
+      T temp = array[i];
+      array[i] = array[randomPosition];
+      array[randomPosition] = temp;
+    }
+
+    return array;
+  }
 
   // BEGIN JUNK //
 
+  public static String repeat(String str, int num) {
+    StringBuilder sb = new StringBuilder(str.length()*num);
+    for (int i = 0; i < num; i++) {
+        sb.append(str);
+    }
+    return sb.toString();
+  }
 
   public static int loopCodonInfo(int val) {
     while (val < -30) val += 61;

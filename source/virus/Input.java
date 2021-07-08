@@ -142,7 +142,7 @@ public class Input {
 
     double ZOOM_F = 1.05f;
 
-    if((renderer.camS > 50 || e < 0.0) && (renderer.camS < 1000 || e > 0.0)) {
+    if((renderer.camS > 50 || e < 0.0) && (renderer.camS < 4000 || e > 0.0)) {
       double thisZoomF = 1;
       if(e > 0.0){
         thisZoomF = 1/ZOOM_F;

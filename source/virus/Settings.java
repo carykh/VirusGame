@@ -5,6 +5,7 @@ import processing.data.JSONObject;
 
 
 import static virus.Method.*;
+import static virus.Util.repeat;
 
 public class Settings {
 
@@ -47,9 +48,9 @@ public class Settings {
     settings = loadJSONObject("settings.json");
     world = loadJSONObject("world.json");
 
-    genome = settings.getString("genome");
+    genome = Const.AdvGenome? repeat(settings.getString("adv_genome"), 3): settings.getString("genome");
     editor_default = settings.getString("editor_default");
-    gene_tick_time = settings.getDouble("gene_tick_time");
+    gene_tick_time = settings.getDouble("gene_tick_time") * (Const.AdvGenome?0.1:1) ;
     max_food = settings.getInt("max_food");
     max_waste = settings.getInt("max_waste");
     codon_degrade_speed = settings.getDouble("codon_degrade_speed");
@@ -64,7 +65,7 @@ public class Settings {
     waste_disposal_chance_random = settings.getDouble("waste_disposal_chance_random");
     cell_wall_protection = settings.getDouble("cell_wall_protection");
     particles_per_rand_update = settings.getInt("particles_per_rand_update");
-    max_codon_count = settings.getInt("max_codon_count");
+    max_codon_count = genome.length() + settings.getInt("max_codon_count");
     laser_linger_time = settings.getInt("laser_linger_time");
     age_grow_speed = settings.getDouble("age_grow_speed");
     min_length_to_produce = settings.getDouble("min_length_to_produce");

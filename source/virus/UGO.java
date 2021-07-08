@@ -21,8 +21,8 @@ public class UGO extends Particle {
     double dx = coor[2] - coor[0];
     double dy = coor[3] - coor[1];
     double dist = Math.sqrt(dx * dx + dy * dy);
-    double sp = dist * (SPEED_HIGH - SPEED_LOW) + SPEED_LOW;
-    velo = new double[]{dx / dist * sp, dy / dist * sp};
+    speed = dist * (SPEED_HIGH - SPEED_LOW) + SPEED_LOW;
+    direction = Math.atan2(dy, dx);
     world.totalUGOCount++;
   }
 
@@ -41,7 +41,7 @@ public class UGO extends Particle {
       genome.hurtCodons(null);
       if (genome.codons.size() == 0) {
         removeParticle(world.getCellAt(coor[0], coor[1]));
-        Particle p = new Particle(coor, velo, ParticleType.Waste, -99999);
+        Particle p = new Particle(coor, speed, direction, ParticleType.Waste, -99999);
         world.addParticle(p);
       }
     }
@@ -127,7 +127,10 @@ public class UGO extends Particle {
 
     if (!c.tamper()) world.infectedCount++;
     removeParticle(world.getCellAt(coor[0], coor[1]));
-    Particle p = new Particle(coor, combineVelocity(this.velo, getRandomVelocity()), ParticleType.Waste, -99999);
+
+    double dirChange = (Math.random()- 0.5f)*PI;
+
+    Particle p = new Particle(coor, speed, direction+dirChange, ParticleType.Waste, -99999);
     world.addParticle(p);
 
     return true;

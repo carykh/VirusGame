@@ -4,8 +4,8 @@ package virus;
 import static virus.Method.*;
 
 public final class Const {
-  public static boolean DEBUG_WORLD = false; //todo settings
-  public static boolean AdvGenome = false;
+  public static boolean DEBUG_WORLD = true; //todo settings
+  public static boolean AdvGenome = true;
 
   //###SCREEN
   public final static int ORIG_W_W = 1728;
