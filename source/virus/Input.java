@@ -141,12 +141,22 @@ public class Input {
     }
 
     double ZOOM_F = 1.05f;
-    double thisZoomF = event.getCount() == 1 ? 1 / ZOOM_F : ZOOM_F;
-    double worldX = (getMouseX() / scalefactor) / renderer.camS + renderer.camX;
-    double worldY = (getMouseY() / scalefactor) / renderer.camS + renderer.camY;
-    renderer.camX = (renderer.camX - worldX) / thisZoomF + worldX;
-    renderer.camY = (renderer.camY - worldY) / thisZoomF + worldY;
-    renderer.camS *= thisZoomF;
+
+    if((renderer.camS > 50 || e < 0.0) && (renderer.camS < 1000 || e > 0.0)) {
+      double thisZoomF = 1;
+      if(e > 0.0){
+        thisZoomF = 1/ZOOM_F;
+      }else if(e < 0.0){
+        thisZoomF = ZOOM_F;
+      }
+      double worldX = (getMouseX() / scalefactor) / renderer.camS + renderer.camX;
+      double worldY = (getMouseY() / scalefactor) / renderer.camS + renderer.camY;
+      renderer.camX = (renderer.camX - worldX) / thisZoomF + worldX;
+      renderer.camY = (renderer.camY - worldY) / thisZoomF + worldY;
+      renderer.camS *= thisZoomF;
+    }
+
+
 
   }
 
