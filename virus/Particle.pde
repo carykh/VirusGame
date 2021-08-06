@@ -7,6 +7,7 @@ class Particle{
   int laserT = -9999;
   int birthFrame;
   double AGE_GROW_SPEED = 0.08;
+  int outlineThickness = 2;
   Genome UGO_genome;
   
   public Particle(double[] tcoor, int ttype, int b){
@@ -117,10 +118,13 @@ class Particle{
     double ageScale = Math.min(1.0,(frameCount-birthFrame)*AGE_GROW_SPEED);
     scale((float)(s/BIG_FACTOR*ageScale));
     noStroke();
+    strokeWeight(outlineThickness);
     if(type == 0){
       fill(255,0,0);
+      stroke(0, 0, 0);
     }else if(type == 1){
       fill(WASTE_COLOR);
+      stroke(0, 0, 0);
     }else if(type == 2){
       fill(0);
     }

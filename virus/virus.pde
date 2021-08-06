@@ -33,7 +33,7 @@ Cell UGOcell;
 int lastEditTimeStamp = 0;
 color handColor = color(0,128,0);
 color TELOMERE_COLOR = color(0,0,0);
-color WASTE_COLOR = color(100,65,0);
+color WASTE_COLOR = color(255,255,255);
 int MAX_CODON_COUNT = 20; // If a cell were to have more codons in its DNA than this number if it were to absorb a cirus particle, it won't absorb it.
 
 double SPEED_LOW = 0.01;
