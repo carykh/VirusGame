@@ -1,6 +1,8 @@
 int WORLD_SIZE = 12;
 int W_W = 1728;
 int W_H = 972;
+float SCALE = 1; //Chage this to a number from 0 to ! if window is too big
+
 Cell[][] cells = new Cell[WORLD_SIZE][WORLD_SIZE];
 ArrayList<ArrayList<Particle>> particles = new ArrayList<ArrayList<Particle>>(0);
 int foodLimit = 180;
@@ -61,6 +63,9 @@ void setup(){
   size(1728,972);
   noSmooth();
   UGOcell = new Cell(-1,-1,2,0,1,"00-00-00-00-00");
+  surface.setResizable(true);
+  surface.setSize((int)(W_W * SCALE), (int)(W_H * SCALE));
+  surface.setResizable(false);
 }
 int getTypeFromXY(int preX, int preY){
   int[] weirdo = {0,1,1,2};
@@ -92,6 +97,7 @@ double camY = 0;
 double MIN_CAM_S = ((float)W_H)/WORLD_SIZE;
 double camS = MIN_CAM_S;
 void draw(){
+  scale(SCALE);
   doParticleCountControl();
   iterate();
   detectMouse();
@@ -176,11 +182,11 @@ void drawParticles(){
   }
 }
 void checkGLclick(){
-  double gx = genomeListDims[0];
-  double gy = genomeListDims[1];
-  double gw = genomeListDims[2];
-  double gh = genomeListDims[3];
-  double rMouseX = ((mouseX-W_H)-gx)/gw;
+  double gx = genomeListDims[0]*SCALE;
+  double gy = genomeListDims[1]*SCALE;
+  double gw = genomeListDims[2]*SCALE;
+  double gh = genomeListDims[3]*SCALE;
+  double rMouseX = ((mouseX-W_H*SCALE)-gx)/gw;
   double rMouseY = (mouseY-gy)/gh;
   if(rMouseX >= 0 && rMouseX < 1 && rMouseY >= 0){
     if(rMouseY < 1){
@@ -198,11 +204,11 @@ void checkGLclick(){
   }
 }
 void checkETclick(){
-  double ex = editListDims[0];
-  double ey = editListDims[1];
-  double ew = editListDims[2];
-  double eh = editListDims[3];
-  double rMouseX = ((mouseX-W_H)-ex)/ew;
+  double ex = editListDims[0]*SCALE;
+  double ey = editListDims[1]*SCALE;
+  double ew = editListDims[2]*SCALE;
+  double eh = editListDims[3]*SCALE;
+  double rMouseX = ((mouseX-W_H*SCALE)-ex)/ew;
   double rMouseY = (mouseY-ey)/eh;
   if(rMouseX >= 0 && rMouseX < 1 && rMouseY >= 0 && rMouseY < 1){
     int optionCount = CodonInfo.getOptionSize(codonToEdit[0]);
@@ -265,7 +271,7 @@ void detectMouse(){
   if (mousePressed){
     arrowToDraw = null;
     if(!wasMouseDown) {
-      if(mouseX < W_H){
+      if(mouseX < W_H*SCALE){
         codonToEdit[0] = codonToEdit[1] = -1;
         clickWorldX = appXtoTrueX(mouseX);
         clickWorldY = appYtoTrueY(mouseY);
@@ -278,10 +284,10 @@ void detectMouse(){
           checkGLclick();
         }
         if(selectedCell == UGOcell){
-          if((mouseX >= W_H+530 && codonToEdit[0] == -1) || mouseY < 160){
+          if((mouseX >= (W_H+530)*SCALE && codonToEdit[0] == -1) || mouseY < 160*SCALE){
             selectedCell = null;
           }
-        }else if(mouseX > W_W-160 && mouseY < 160){
+        }else if(mouseX > (W_W-160)*SCALE && mouseY < 160*SCALE){
           selectedCell = UGOcell;
         }
         canDrag = false;
@@ -513,7 +519,7 @@ void drawGenomeAsList(Genome g, double[] dims){
   if(selectedCell == UGOcell){
     fill(255);
     textFont(font,60);
-    double avgY = (h+height-y)/2;
+    double avgY = (h+W_H-y)/2;
     dText("( - )",w*0.25,avgY+11);
     dText("( + )",w*0.75-margin,avgY+11);
   }
@@ -614,10 +620,10 @@ double trueYtoAppY(double y){
   return (y-camY)*camS;
 }
 double appXtoTrueX(double x){
-  return x/camS+camX;
+  return x/(camS*SCALE)+camX;
 }
 double appYtoTrueY(double y){
-  return y/camS+camY;
+  return y/(camS*SCALE)+camY;
 }
 double trueStoAppS(double s){
   return s*camS;
