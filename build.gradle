@@ -1,0 +1,59 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'org.john-tipper.gradle:git-semantic-versioning:1.1'
+    }
+}
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+
+apply plugin: 'git-semantic-versioning'
+
+repositories {
+    mavenLocal()
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+}
+
+dependencies {
+    implementation 'org.processing:core:3.3.7'
+}
+
+sourceSets.main.java.srcDirs = ['/source']
+sourceSets.main.resources.srcDirs = ['/source/virus/data']
+
+
+
+group = 'me.sirati97'
+version = '0.2.1-SNAPSHOT' //https://semver.org/
+description = 'virusgame'
+//java.sourceCompatibility = JavaVersion.VERSION_1_8
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from(components.java)
+        }
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'virus.JavaLoader'
+        )
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
