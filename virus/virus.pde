@@ -91,10 +91,16 @@ double camX = 0;
 double camY = 0;
 double MIN_CAM_S = ((float)W_H)/WORLD_SIZE;
 double camS = MIN_CAM_S;
+double KEY_STRIDE = 5;
+boolean leftDown = false;
+boolean rightDown = false;
+boolean upDown = false;
+boolean downDown = false;
 void draw(){
   doParticleCountControl();
   iterate();
   detectMouse();
+  keyActions();
   drawBackground();
   drawCells();
   drawParticles();
@@ -325,6 +331,48 @@ void detectMouse(){
     arrowToDraw = null;
   }
   wasMouseDown = mousePressed;
+}
+void keyPressed() {
+  if(key == 'a' || (key == CODED && keyCode == LEFT)) {
+    leftDown = true;
+  } 
+  if(key == 'd' || (key == CODED && keyCode == RIGHT)) {
+    rightDown = true;
+  } 
+  if(key == 'w' || (key == CODED && keyCode == UP)) {
+    upDown = true;
+  } 
+  if(key == 's' || (key == CODED && keyCode == DOWN)) {
+    downDown = true;
+  }
+}
+void keyReleased() {
+  if(key == 'a' || (key == CODED && keyCode == LEFT)) {
+    leftDown = false;
+  } 
+  if(key == 'd' || (key == CODED && keyCode == RIGHT)) {
+    rightDown = false;
+  } 
+  if(key == 'w' || (key == CODED && keyCode == UP)) {
+    upDown = false;
+  } 
+  if(key == 's' || (key == CODED && keyCode == DOWN)) {
+    downDown = false;
+  }
+}
+void keyActions() {
+  if(leftDown) {
+    camX -= KEY_STRIDE/camS + 0.01;
+  }
+  if(rightDown) {
+    camX += KEY_STRIDE/camS + 0.01;
+  }
+  if(upDown) {
+    camY -= KEY_STRIDE/camS + 0.01;
+  }
+  if(downDown) {
+    camY += KEY_STRIDE/camS + 0.01;
+  }
 }
 void mouseWheel(MouseEvent event) {
   float e = event.getCount();
