@@ -398,8 +398,8 @@ void drawUI(){
   fill(255);
   textFont(font,48);
   textAlign(LEFT);
-  text(framesToTime(frameCount)+" start",25,60);
-  text(framesToTime(frameCount-lastEditTimeStamp)+" edit",25,108);
+  text(framesToTime(framesPaused(frameCount))+" start",25,60);
+  text(framesToTime(framesPaused(frameCount)-lastEditTimeStamp)+" edit",25,108);
   textFont(font,36);
   text("Healthy: "+cellCounts[0]+" / "+START_LIVING_COUNT,360,50);
   text("Tampered: "+cellCounts[1]+" / "+START_LIVING_COUNT,360,90);
@@ -711,4 +711,32 @@ int[] stringToInfo(String str){
     }
   }
   return info;
+}
+double framePaused = 0;
+double framesPaused = 0;
+double frameLastCalled = 0;
+boolean isPaused = false;
+double framesPaused(double f) {
+    
+    if (isPaused == true) {
+      framesPaused += f-frameLastCalled;
+    }
+    frameLastCalled = f;
+    return f-framesPaused;
+}
+float UNPAUSED_PLAY_SPEED = PLAY_SPEED;
+void keyPressed() {
+  if (key == ' ') {
+    if (isPaused == false) {
+    framePaused = frameCount;
+    
+    PLAY_SPEED = 0;
+    isPaused = true;
+    } else {
+      framePaused = 0;
+      PLAY_SPEED = UNPAUSED_PLAY_SPEED;
+      isPaused = false;
+      
+    }
+  }
 }
