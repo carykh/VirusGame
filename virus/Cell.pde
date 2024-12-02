@@ -8,6 +8,7 @@ class Cell{
   double energy = 0;
   double E_RECIPROCAL = 0.3678794411;
   boolean tampered = false;
+  int tampered_team = -1;
   ArrayList<ArrayList<Particle>> particlesInCell = new ArrayList<ArrayList<Particle>>(0);
   
   ArrayList<double[]> laserCoor = new ArrayList<double[]>();
@@ -47,15 +48,18 @@ class Cell{
       fill(60,60,60);
       rect(0,0,BIG_FACTOR,BIG_FACTOR);
     }else if(type == 2){
-      if(this == selectedCell){
-        fill(0,255,255);
-      }else if(tampered){
-        fill(205,225,70);
+      if(tampered){
+        fill(TAMPERED_COLOR[tampered_team]);
       }else{
-        fill(225,190,225);
+        fill(HEALTHY_COLOR);
       }
       rect(0,0,BIG_FACTOR,BIG_FACTOR);
-      fill(170,100,170);
+      if(this == selectedCell){
+        float highlightFac = 0.5+0.5*sin(frameCount*0.5);
+        fill(255,255,255,highlightFac*255);
+        rect(0,0,BIG_FACTOR,BIG_FACTOR);
+      }
+      fill(WALL_COLOR);
       float w = (float)(BIG_FACTOR*0.08*wallHealth);
       rect(0,0,BIG_FACTOR,w);
       rect(0,BIG_FACTOR-w,BIG_FACTOR,w);
@@ -68,7 +72,7 @@ class Cell{
       strokeWeight(1);
       drawInterpreter();
       drawEnergy();
-      genome.drawCodons();
+      genome.drawCodons(true);
       genome.drawHand();
       popMatrix();
     }
@@ -99,8 +103,8 @@ class Cell{
     popMatrix();
   }
   public void drawLaser(){
-    if(frameCount < laserT+LASER_LINGER_TIME){
-      double alpha = (double)((laserT+LASER_LINGER_TIME)-frameCount)/LASER_LINGER_TIME;
+    if(frame_count < laserT+LASER_LINGER_TIME){
+      double alpha = (double)((laserT+LASER_LINGER_TIME)-frame_count)/LASER_LINGER_TIME;
       stroke(transperize(handColor,alpha));
       strokeWeight((float)(0.033333*BIG_FACTOR));
       double[] handCoor = getHandCoor();
@@ -147,7 +151,7 @@ class Cell{
     if(type == 2){
       if(energy > 0){
         double oldGT = geneTimer;
-        geneTimer -= PLAY_SPEED;
+        geneTimer -= MOVE_SPEED;
         if(geneTimer <= GENE_TICK_TIME/2.0 && oldGT > GENE_TICK_TIME/2.0){
           doAction();
         }
@@ -181,11 +185,6 @@ class Cell{
         }
       }else if(info[1] == 3){
         die();
-      }else if(info[1] == 8){
-        Particle wasteToPushOut = selectParticleInCell(2);
-        if(wasteToPushOut != null){
-          pushOut(wasteToPushOut);
-        }
       }
     }else if(info[0] == 3 && genome.directionOn == 0){
       if(info[1] == 1 || info[1] == 2){
@@ -222,7 +221,7 @@ class Cell{
     memory = "";
     laserTarget = null;
     laserCoor.clear();
-    laserT = frameCount;
+    laserT = frame_count;
     for(int pos = start; pos <= end; pos++){
       int index = loopItInt(genome.performerOn+pos,genome.codons.size());
       Codon c = genome.codons.get(index);
@@ -239,7 +238,7 @@ class Cell{
     }
     laserTarget = null;
     laserCoor.clear();
-    laserT = frameCount;
+    laserT = frame_count;
     if(genome.directionOn == 0){
       writeOutwards();
     }else{
@@ -252,8 +251,10 @@ class Cell{
     double ugo_vy = Math.sin(theta);
     double[] startCoor = getHandCoor();
     double[] newUGOcoor = new double[]{startCoor[0],startCoor[1],startCoor[0]+ugo_vx,startCoor[1]+ugo_vy};
-    Particle newUGO = new Particle(newUGOcoor,2,memory,frameCount);
+    Particle newUGO = new Particle(newUGOcoor,2,memory,frame_count,tampered_team);
     particles.get(2).add(newUGO);
+    sfx[2].play();
+    cellCounts[7+tampered_team]++; // one more virus in the cells
     newUGO.addToCellList();
     laserTarget = newUGO;
     
@@ -281,7 +282,7 @@ class Cell{
     laserWall();
   }
   public void laserWall(){
-    laserT = frameCount;
+    laserT = frame_count;
     laserCoor.clear();
     for(int i = 0; i < 4; i++){
       double[] result = {x+(i/2),y+(i%2)};
@@ -302,7 +303,7 @@ class Cell{
     }
   }
   void shootLaserAt(Particle food){
-    laserT = frameCount;
+    laserT = frame_count;
     laserTarget = food;
   }
   public double[] getHandCoor(){
@@ -343,7 +344,7 @@ class Cell{
     p_cell.removeParticleFromCell(waste);
     Cell n_cell = getCellAt(waste.coor,true);
     n_cell.addParticleToCell(waste);
-    laserT = frameCount;
+    laserT = frame_count;
     laserTarget = waste;
   }
   public void tickGene(){
@@ -358,14 +359,23 @@ class Cell{
       }
     }
   }
-  public void tamper(){
+  public void tamper(int team){
     if(!tampered){
       tampered = true;
       cellCounts[0]--;
-      cellCounts[1]++;
+      cellCounts[1+team]++;
+      tampered_team = team;
     }
   }
   public void die(){
+    int freedVirusCount = particlesInCell.get(2).size();
+    if(tampered_team >= 0){
+      if(tampered){
+        cellCounts[7+tampered_team]--; // virus in its own body is decreased by one
+      }
+      cellCounts[7+tampered_team] -= freedVirusCount; // viruses in the cells decreased (since they're free)
+      cellCounts[5+tampered_team] += freedVirusCount; // viruses in the bloodstream increased (since they're free)
+    }
     for(int i = 0; i < genome.codons.size(); i++){
       Particle newWaste = new Particle(getCodonCoor(i,genome.CODON_DIST),1,-99999);
       newWaste.addToCellList();
@@ -375,12 +385,21 @@ class Cell{
     if(this == selectedCell){
       selectedCell = null;
     }
-    if(tampered){
-      cellCounts[1]--;
+    if(tampered && tampered_team >= 0){
+      cellCounts[1+tampered_team]--;
+      cellCounts[3+tampered_team]++;
     }else{
       cellCounts[0]--;
+      cellCounts[3]++;
+      // when a cell dies without being tampered with, it's considered a death by Team 0.
+      // I know this isn't "fair", but this happens so rarely that I didn't want to bother
+      // coding a whole new section of the graph just for that edge case.
     }
-    cellCounts[2]++;
+    sfx[0].play();
+    if(cellCounts[0] == 0 && cellCounts[1] == 0 && cellCounts[2] == 0){
+      deathTimeStamp = frame_count;
+      sfx[3].play();
+    }
   }
   public void addParticleToCell(Particle food){
     particlesInCell.get(food.type).add(food);

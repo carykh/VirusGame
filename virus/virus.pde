@@ -1,15 +1,36 @@
-int WORLD_SIZE = 12;
+import processing.sound.*;
+
+String[] soundFileNames = {"die.wav","absorb.wav","emit.wav","end.wav","menu1.wav","menu2.wav","menu3.wav","release.wav","plug.wav"};
+SoundFile[] sfx;
+int WORLD_SIZE = 36;
 int W_W = 1728;
 int W_H = 972;
 Cell[][] cells = new Cell[WORLD_SIZE][WORLD_SIZE];
 ArrayList<ArrayList<Particle>> particles = new ArrayList<ArrayList<Particle>>(0);
-int foodLimit = 180;
+int foodLimit = 1440;
 float BIG_FACTOR = 100;
-float PLAY_SPEED = 0.6;
+int ITER_SPEED = 1;
+float MOVE_SPEED = 0.6;
 double GENE_TICK_TIME = 40.0;
+double HISTORY_TICK_TIME = 160.0;
 double margin = 4;
 int START_LIVING_COUNT = 0;
-int[] cellCounts = {0,0,0};
+int[] cellCounts = {0,0,0,0,0,0,0,0,0};
+/*
+CATEGORIES FOR THE VIRUS SIM CENSUS
+
+0 - Cell - healthy
+1 - Cell - tampered by Team 0
+2 - Cell - tampered by Team 1
+3 - Cell - dead by Team 0, or not by virus
+4 - Cell - dead by Team 1
+5 - Virus - in blood, Team 0
+6 - Virus - in blood, Team 1
+7 - Virus - in cells, Team 0
+8 - Virus - in cells, Team 1
+*/
+
+int frame_count = 0;
 
 double REMOVE_WASTE_SPEED_MULTI = 0.001;
 double removeWasteTimer = 1.0;
@@ -26,15 +47,21 @@ double clickWorldY = -1;
 boolean DQclick = false;
 int[] codonToEdit = {-1,-1,0,0};
 double[] genomeListDims = {70,430,360,450};
-double[] editListDims = {550,430,180,450};
+double[] editListDims = {550,330,180,450};
 double[] arrowToDraw = null;
 Cell selectedCell = null;
 Cell UGOcell;
 int lastEditTimeStamp = 0;
+int deathTimeStamp = 0;
 color handColor = color(0,128,0);
 color TELOMERE_COLOR = color(0,0,0);
 color WASTE_COLOR = color(100,65,0);
+color HEALTHY_COLOR = color(225,190,225);
+color[] TAMPERED_COLOR = {color(205,225,70), color(160,160,255)};
+color DEAD_COLOR = color(80,80,80);
+color WALL_COLOR = color(170,100,170);
 int MAX_CODON_COUNT = 20; // If a cell were to have more codons in its DNA than this number if it were to absorb a cirus particle, it won't absorb it.
+int team_produce = 0; // starts as Team 0, but as soon as the first UGO is created, it switches to Team 1.
 
 double SPEED_LOW = 0.01;
 double SPEED_HIGH = 0.02;
@@ -42,7 +69,12 @@ double MIN_ARROW_LENGTH_TO_PRODUCE = 0.4;
 
 double ZOOM_THRESHOLD = 0;//80;
 PFont font;
+ArrayList<int[]> history = new ArrayList<int[]>(0);
 void setup(){
+  sfx = new SoundFile[soundFileNames.length];
+  for(int s = 0; s < soundFileNames.length; s++){
+    sfx[s] = new SoundFile(this, "audio/"+soundFileNames[s]);
+  }
   font = loadFont("Jygquip1-96.vlw");
   for(int j = 0; j < 3; j++){
     ArrayList<Particle> newList = new ArrayList<Particle>(0);
@@ -92,8 +124,9 @@ double camY = 0;
 double MIN_CAM_S = ((float)W_H)/WORLD_SIZE;
 double camS = MIN_CAM_S;
 void draw(){
-  doParticleCountControl();
-  iterate();
+  for(int i = 0; i < ITER_SPEED; i++){
+    iterate();
+  }
   detectMouse();
   drawBackground();
   drawCells();
@@ -102,13 +135,26 @@ void draw(){
   drawUI();
 }
 void drawExtras(){
+  boolean valid = false;
   if(arrowToDraw != null){
     if(euclidLength(arrowToDraw) > MIN_ARROW_LENGTH_TO_PRODUCE){
       stroke(0);
+      valid = true;
     }else{
       stroke(0,0,0,80);
     }
     drawArrow(arrowToDraw[0],arrowToDraw[1],arrowToDraw[2],arrowToDraw[3]);
+  }
+  if(selectedCell == UGOcell){
+    double newCX = appXtoTrueX(mouseX);
+    double newCY = appYtoTrueY(mouseY);
+    double[] coor = {newCX, newCY, newCX+1, newCY};
+    if(arrowToDraw != null){
+      coor = arrowToDraw;
+    }
+    String genomeString = UGOcell.genome.getGenomeString();
+    Particle UGOcursor = new Particle(coor,2,genomeString,-9999,min(1,team_produce));
+    UGOcursor.drawParticle(valid);
   }
 }
 void doParticleCountControl(){
@@ -125,7 +171,7 @@ void doParticleCountControl(){
     double x = choiceX+extraX;
     double y = choiceY+extraY;
     double[] coor = {x,y};
-    Particle newFood = new Particle(coor,0,frameCount);
+    Particle newFood = new Particle(coor,0,frame_count);
     foods.add(newFood);
     newFood.addToCellList();
   }
@@ -153,6 +199,7 @@ double[] getRandomVelo(){
   return result;
 }
 void iterate(){
+  doParticleCountControl();
   for(int z = 0; z < 3; z++){
     ArrayList<Particle> sparticles = particles.get(z);
     for(int i = 0; i < sparticles.size(); i++){
@@ -165,13 +212,21 @@ void iterate(){
       cells[y][x].iterate();
     }
   }
+  recordHistory(frame_count);
+  frame_count++;
+}
+color setAlpha(color c, float a){
+  float newR = red(c);
+  float newG = green(c);
+  float newB = blue(c);
+  return color(newR, newG, newB, a);
 }
 void drawParticles(){
   for(int z = 0; z < 3; z++){
     ArrayList<Particle> sparticles = particles.get(z);
     for(int i = 0; i < sparticles.size(); i++){
       Particle p = sparticles.get(i);
-      p.drawParticle(trueXtoAppX(p.coor[0]),trueYtoAppY(p.coor[1]),trueStoAppS(1));
+      p.drawParticle(true);
     }
   }
 }
@@ -186,6 +241,7 @@ void checkGLclick(){
     if(rMouseY < 1){
       codonToEdit[0] = (int)(rMouseX*2);
       codonToEdit[1] = (int)(rMouseY*selectedCell.genome.codons.size());
+      sfx[5].play();
     }else if(selectedCell == UGOcell){
       if(rMouseX < 0.5){
         String genomeString = UGOcell.genome.getGenomeStringShortened();
@@ -194,6 +250,7 @@ void checkGLclick(){
         String genomeString = UGOcell.genome.getGenomeStringLengthened();
         selectedCell = UGOcell = new Cell(-1,-1,2,0,1,genomeString);
       }
+      sfx[6].play();
     }
   }
 }
@@ -217,6 +274,7 @@ void checkETclick(){
       }else{
         codonToEdit[3] = loopCodonInfo(codonToEdit[3]+diff);
       }
+      sfx[5].play();
     }else{
       Codon thisCodon = selectedCell.genome.codons.get(codonToEdit[1]);
       if(codonToEdit[0] == 1 && choice == 7){
@@ -226,17 +284,19 @@ void checkETclick(){
           thisCodon.setInfo(2,codonToEdit[2]);
           thisCodon.setInfo(3,codonToEdit[3]);
           if(selectedCell != UGOcell){
-            lastEditTimeStamp = frameCount;
-            selectedCell.tamper();
+            lastEditTimeStamp = frame_count;
+            selectedCell.tamper(0); // if you tamper with it yourself, it's considered Team 0.
           }
+          sfx[6].play();
         }
       }else{
         if(thisCodon.codonInfo[codonToEdit[0]] != choice){
           thisCodon.setInfo(codonToEdit[0],choice);
           if(selectedCell != UGOcell){
-            lastEditTimeStamp = frameCount;
-            selectedCell.tamper();
+            lastEditTimeStamp = frame_count;
+            selectedCell.tamper(0); // if you tamper with it yourself, it's considered Team 0.
           }
+          sfx[6].play();
         }
       }
     }
@@ -270,6 +330,9 @@ void detectMouse(){
         clickWorldX = appXtoTrueX(mouseX);
         clickWorldY = appYtoTrueY(mouseY);
         canDrag = true;
+        if(selectedCell == UGOcell){
+          sfx[8].play();
+        }
       }else{
         if(selectedCell != null){
           if(codonToEdit[0] >= 0){
@@ -278,11 +341,22 @@ void detectMouse(){
           checkGLclick();
         }
         if(selectedCell == UGOcell){
-          if((mouseX >= W_H+530 && codonToEdit[0] == -1) || mouseY < 160){
+          if(mouseY < 160){
             selectedCell = null;
+            sfx[5].play();
           }
         }else if(mouseX > W_W-160 && mouseY < 160){
           selectedCell = UGOcell;
+          sfx[5].play();
+        }
+        if(mouseY >= height-70 && mouseY < height-20){
+          if(mouseX >= width-120 && mouseX < width-70){
+            ITER_SPEED = max(0,ITER_SPEED-1);
+            sfx[4].play();
+          }else if(mouseX >= width-70 && mouseX < width-20){
+            ITER_SPEED = min(100,ITER_SPEED+1);
+            sfx[4].play();
+          }
         }
         canDrag = false;
       }
@@ -327,32 +401,34 @@ void detectMouse(){
   wasMouseDown = mousePressed;
 }
 void mouseWheel(MouseEvent event) {
+  double ZOOM_F = 1.05;
+  double thisZoomF = 1;
   float e = event.getCount();
-  if((camS > 50 || e < 0.0) && (camS < 1000 || e > 0.0)) {
-    double ZOOM_F = 1.05;
-    double thisZoomF = 1;
-    if(e > 0.0){
-      thisZoomF = 1/ZOOM_F;
-    }else if(e < 0.0){
-      thisZoomF = ZOOM_F;
-    }
-    double worldX = mouseX/camS+camX;
-    double worldY = mouseY/camS+camY;
-    camX = (camX-worldX)/thisZoomF+worldX;
-    camY = (camY-worldY)/thisZoomF+worldY;
-    camS *= thisZoomF;
+  if(e == 1){
+    thisZoomF = 1/ZOOM_F;
+  }else{
+    thisZoomF = ZOOM_F;
   }
+  double worldX = mouseX/camS+camX;
+  double worldY = mouseY/camS+camY;
+  camX = (camX-worldX)/thisZoomF+worldX;
+  camY = (camY-worldY)/thisZoomF+worldY;
+  camS *= thisZoomF;
 }
 double euclidLength(double[] coor){
   return Math.sqrt(Math.pow(coor[0]-coor[2],2)+Math.pow(coor[1]-coor[3],2));
 }
 void produceUGO(double[] coor){
   if(getCellAt(coor,false) != null && getCellAt(coor,false).type == 0){
+    sfx[7].play();
+    int team = min(1,team_produce);
     String genomeString = UGOcell.genome.getGenomeString();
-    Particle newUGO = new Particle(coor,2,genomeString,frameCount);
+    Particle newUGO = new Particle(coor,2,genomeString,-9999,team);
     particles.get(2).add(newUGO);
     newUGO.addToCellList();
-    lastEditTimeStamp = frameCount;
+    lastEditTimeStamp = frame_count;
+    cellCounts[5+team]++; // one more virus in the bloodstream
+    team_produce += 1;
   }
 }
 void drawBackground(){
@@ -374,6 +450,19 @@ void drawArrow(double dx1, double dx2, double dy1, double dy2){
   float y4 = y2+head_size*sin(angle-PI*0.8);
   line(x2,y2,x4,y4);
 }
+void recordHistory(double f){
+  double ticks = f/HISTORY_TICK_TIME;
+  if(ticks >= history.size()-1){
+    int[] datum = new int[cellCounts.length];
+    for(int i = 0; i < cellCounts.length; i++){
+      datum[i] = cellCounts[i];
+    }
+    history.add(datum);
+  }
+}
+void removeHistory(){
+  history.remove(history.size()-1);
+}
 String framesToTime(double f){
   double ticks = f/GENE_TICK_TIME;
   String timeStr = nf((float)ticks,0,1);
@@ -389,6 +478,22 @@ String count(int count, String s){
     return count+" "+s+"s";
   }
 }
+void twoSizeFont(String str, float s1, float s2, float x, float y){
+  String[] parts = str.split(",");
+  textAlign(LEFT);
+  textFont(font,s1);
+  text(parts[0],x,y);
+  float x2 = x+textWidth(parts[0]);
+  textFont(font,s2);
+  text(parts[1],x2,y);
+}
+int bc(int i){ // basic count
+  if(i == 0){
+    return cellCounts[0];
+  }else{
+    return cellCounts[i*2-1]+cellCounts[i*2];
+  } 
+}
 void drawUI(){
   pushMatrix();
   translate(W_H,0);
@@ -396,20 +501,203 @@ void drawUI(){
   noStroke();
   rect(0,0,W_W-W_H,W_H);
   fill(255);
-  textFont(font,48);
   textAlign(LEFT);
-  text(framesToTime(frameCount)+" start",25,60);
-  text(framesToTime(frameCount-lastEditTimeStamp)+" edit",25,108);
   textFont(font,36);
-  text("Healthy: "+cellCounts[0]+" / "+START_LIVING_COUNT,360,50);
-  text("Tampered: "+cellCounts[1]+" / "+START_LIVING_COUNT,360,90);
-  text("Dead: "+cellCounts[2]+" / "+START_LIVING_COUNT,360,130);
+  text(framesToTime(frame_count)+" start",20,50);
+  text(framesToTime(frame_count-lastEditTimeStamp)+" edit",20,90);
+  String[] names = {"Healthy","Tampered","Dead","Viruses in blood", "Viruses in cells"};
   if(selectedCell != null){
+    text("H: "+bc(0)+",  T: "+bc(1)+",  D: "+bc(2),330,50);
+    for(int i = 3; i < 5; i++){
+      String suffix = (i < 3) ? (" / "+START_LIVING_COUNT) : "";
+      text(names[i]+": "+bc(i)+suffix,330,50+40*(i-2));
+    }
     drawCellStats();
+  }else{
+    for(int i = 0; i < 5; i++){
+      String suffix = (i < 3) ? (" / "+START_LIVING_COUNT) : "";
+      text(names[i]+": "+bc(i)+suffix,330,50+40*i);
+    }
+    drawHistory();
   }
-  //image(loadImage("nygi6iodek151.jpg"),0,0);
   popMatrix();
   drawUGObutton((selectedCell != UGOcell));
+  drawSpeedButtons();
+}
+void drawSpeedButtons(){
+  fill(128);
+  rect(width-120,height-70,48,50);
+  rect(width-70,height-70,48,50);
+  fill(255);
+  textFont(font,50);
+  textAlign(CENTER);
+  text("<",width-96,height-28);
+  text(">",width-46,height-28);
+  textFont(font,36);
+  textAlign(RIGHT);
+  text("Play speed: "+ITER_SPEED+"x",width-20,height-80);
+  
+}
+void drawHistory(){
+  recordHistory(frame_count);
+  if(team_produce <= 1){
+    int[] indices = {0,1,3};
+    int[] labels = {0,1,2,3};
+    color[] colors = {WALL_COLOR, TAMPERED_COLOR[0], DEAD_COLOR};
+    String[] names = {"H","T","D"};
+    int[] indices2 = {7,5};
+    int[] labels2 = {0,1,2};
+    color[] colors2 = {darken(TAMPERED_COLOR[0],0.5),TAMPERED_COLOR[0]};
+    String[] names2 = {"C","B"};
+    drawGraph(indices,labels,colors,names,20,613,358,true);
+    drawGraph(indices2,labels2,colors2,names2,20,835,185,false);
+  }else{
+    int[] indices = {0,2,4,1,3};
+    int[] labels = {0,1,3,5};
+    color[] colors = {WALL_COLOR, TAMPERED_COLOR[1], darken(TAMPERED_COLOR[1],0.5), TAMPERED_COLOR[0], darken(TAMPERED_COLOR[0],0.5)};
+    String[] names = {"CH","CB","CA"};
+    int[] indices2 = {8,6,7,5};
+    int[] labels2 = {0,2,4};
+    color[] colors2 = {darken(TAMPERED_COLOR[1],0.5),TAMPERED_COLOR[1], darken(TAMPERED_COLOR[0],0.5), TAMPERED_COLOR[0]};
+    String[] names2 = {"VB","VA"};
+    drawGraph(indices,labels,colors,names,20,613,358,true);
+    drawGraph(indices2,labels2,colors2,names2,20,835,185,false);
+  }
+  removeHistory();
+}
+color darken(color c, float fac){
+  float newR = red(c)*fac;
+  float newG = green(c)*fac;
+  float newB = blue(c)*fac;
+  return color(newR, newG, newB);
+}
+void drawGraph(int[] indices, int[] labels, color[] colors, String[] names, float x, float y, float H, boolean SHOW_TIMESPAN){
+  int LEN = indices.length;
+  pushMatrix();
+  translate(x,y);
+  textFont(font,24);
+  float T_W = 6.3; // width per tick
+  float H_C = -H/396; // height per cell
+  int MAX_WINDOW = 100;
+  int window = min(history.size(),MAX_WINDOW);
+  int start_i = history.size()-window;
+  if(!SHOW_TIMESPAN){
+    int county = 6;
+    for(int i = 0; i < window; i++){
+      int[] datum = history.get(start_i+i);
+      county = max(county,datum[5]+datum[6]+datum[7]+datum[8]);
+    }
+    H_C = -H/county;
+  }
+  int[][] runningTotals = new int[window][LEN+1];
+  for(int i = 0; i < window; i++){
+    int[] datum = history.get(start_i+i);
+    runningTotals[i][0] = 0;
+    for(int t = 0; t < LEN; t++){
+      runningTotals[i][t+1] = runningTotals[i][t]+datum[indices[t]];
+    }
+    if(i == 0){
+      continue;
+    }
+    float x1 = (i-1)*T_W;
+    float x2 = i*T_W;
+    for(int t = 0; t < LEN; t++){
+      fill(colors[t]);
+      beginShape();
+      float y1 = runningTotals[i][t]*H_C;
+      float y2 = runningTotals[i][t+1]*H_C;
+      float py1 = runningTotals[i-1][t]*H_C;
+      float py2 = runningTotals[i-1][t+1]*H_C;
+      vertex(x1,py1);
+      vertex(x1,py2);
+      vertex(x2,y2);
+      vertex(x2,y1);
+      endShape(CLOSE);
+    }
+    int j = i+start_i;
+    if(j > 1 && j < history.size()-1 && j%10 == 0){
+      fill(255,255,255,80);
+      rect(x1-2,-H,4,H);
+      if(SHOW_TIMESPAN){
+        textAlign(CENTER);
+        fill(255,255,255,130);
+        String s = ""+(int)(j*HISTORY_TICK_TIME/GENE_TICK_TIME);
+        text(s,x1,27);
+      }
+    }
+  }
+  float[] text_coors = new float[names.length];
+  int[] r = runningTotals[window-1];
+  for(int n = 0; n < names.length; n++){
+    text_coors[n] = (r[labels[n]]+r[labels[n+1]])/2;
+    text_coors[n] *= H_C;
+    if(n == 0){
+      continue;
+    }
+    float gap = text_coors[n-1]-text_coors[n];
+    if(gap < 28){
+      float smallBy = 28-gap;
+      text_coors[n-1] += smallBy/2;
+      text_coors[n] -= smallBy/2;
+    }
+  }
+  fill(255,255,255,255);
+  textAlign(LEFT);
+  int[] d = history.get(history.size()-1);
+  for(int n = 0; n < names.length; n++){
+    String val = "";
+    for(int k = labels[n]; k < labels[n+1]; k++){
+      if(k > labels[n]){
+        val += ",";
+      }
+      if(SHOW_TIMESPAN){
+        val += d[indices[k]];
+      }else{
+        int k2 = labels[n+1]+labels[n]-1-k;
+        val += d[indices[k2]];
+      }
+    }
+    text(names[n]+": "+val,(window-1)*T_W+10,text_coors[n]+8);
+  }
+  String title = SHOW_TIMESPAN ? "Number of cells" : "Number of viruses";
+  float tY = 31;
+  if(SHOW_TIMESPAN){
+    tY = -8;
+  }
+  fill(255,255,255,255);
+  textAlign(LEFT);
+  text(title,5,tY);
+  
+  if(SHOW_TIMESPAN && lastEditTimeStamp >= 1){
+    int editChunk = (int)(lastEditTimeStamp/HISTORY_TICK_TIME);
+    float x_e = (editChunk-start_i+1)*T_W;
+    fill(255,255,255);
+    if(x_e > 0){
+      rect(x_e-2,-H,4,H);
+    }else{
+      x_e = 0;
+    }
+    fill(255,0,100);
+    float end = (deathTimeStamp == 0) ? frame_count : deathTimeStamp;
+    int endChunk = (int)(end/HISTORY_TICK_TIME);
+    float x_n = (endChunk-start_i+1)*T_W;
+    if(deathTimeStamp != 0){
+      x_n += T_W;
+    }
+    if(x_e > 0){
+      rect(x_e-2,-H-30,4,20);
+    }
+    rect(x_n-2,-H-30,4,20);
+    rect(x_e-2,-H-30,x_n-x_e+4,4);
+    float midX = min(240,(x_n+x_e)/2);
+    textAlign(CENTER);
+    text(framesToTime(end-lastEditTimeStamp).split(" ")[0],midX,-H-40);
+    
+    if(x_n >= 0 && deathTimeStamp != 0){
+      rect(x_n-2,-H,4,H);
+    }
+  }
+  popMatrix();
 }
 void drawUGObutton(boolean drawUGO){
   fill(80);
@@ -504,9 +792,21 @@ void drawGenomeAsList(Genome g, double[] dims){
       dText(codon.getText(p),extraX+w*0.25,appY+appCodonHeight/2+11);
       
       if(p == codonToEdit[0] && i == codonToEdit[1]){
-        double highlightFac = 0.5+0.5*sin(frameCount*0.25);
+        double highlightFac = 0.5+0.5*sin(frameCount*0.5);
         fill(255,255,255,(float)(highlightFac*140));
         dRect(extraX+margin,appY+margin,appW,appCodonHeight-margin*2);
+      }
+      if(codon.altered[p]){
+        fill(0,255,0,255);
+        pushMatrix();
+        double mx = -20;
+        if(p == 1){
+          mx = w+20;
+        }
+        dTranslate(mx,appY+margin+appCodonHeight/2-margin);
+        rotate(PI/4);
+        rect(-7,-7,14,14);
+        popMatrix();
       }
     }
   }

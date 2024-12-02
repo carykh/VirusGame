@@ -1,9 +1,13 @@
 class Codon{
   public int[] codonInfo = new int[4];
+  boolean[] altered = new boolean[4];
   double codonHealth;
-  public Codon(int[] info, double health){
+  public Codon(int[] info, double health, boolean isUGOp){
     codonInfo = info;
     codonHealth = health;
+    for(int i = 0; i < 4; i++){
+      altered[i] = isUGOp;
+    }
   }
   public color getColor(int p){
     return intToColor(CodonInfo.getColor(p,codonInfo[p]));
@@ -29,6 +33,7 @@ class Codon{
   }
   public void setInfo(int p, int val){
     codonInfo[p] = val;
+    altered[p] = true;
     codonHealth = 1.0;
   }
   public void setFullInfo(int[] info){

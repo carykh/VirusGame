@@ -22,7 +22,7 @@ class Genome{
     String[] parts = s.split("-");
     for(int i = 0; i < parts.length; i++){
       int[] info = stringToInfo(parts[i]);
-      codons.add(new Codon(info,1.0));
+      codons.add(new Codon(info,1.0,isUGO));
     }
     appRO = 0;
     appPO = 0;
@@ -33,9 +33,9 @@ class Genome{
     }
   }
   public void iterate(){
-    appRO += loopIt(rotateOn-appRO, codons.size(),true)*VISUAL_TRANSITION*PLAY_SPEED;
-    appPO += loopIt(performerOn-appPO, codons.size(),true)*VISUAL_TRANSITION*PLAY_SPEED;
-    appDO += (directionOn-appDO)*VISUAL_TRANSITION*PLAY_SPEED;
+    appRO += loopIt(rotateOn-appRO, codons.size(),true)*VISUAL_TRANSITION*MOVE_SPEED;
+    appPO += loopIt(performerOn-appPO, codons.size(),true)*VISUAL_TRANSITION*MOVE_SPEED;
+    appDO += (directionOn-appDO)*VISUAL_TRANSITION*MOVE_SPEED;
     appRO = loopIt(appRO, codons.size(),false);
     appPO = loopIt(appPO, codons.size(),false);
   }
@@ -59,15 +59,16 @@ class Genome{
     endShape(CLOSE);
     popMatrix();
   }
-  public void drawCodons(){
+  public void drawCodons(boolean full){
     for(int i = 0; i < codons.size(); i++){
-      drawCodon(i);
+      drawCodon(i, full);
     }
   }
-  public void drawCodon(int i){
+  public void drawCodon(int i, boolean full){
     if(camS < ZOOM_THRESHOLD){
       return;
     }
+    float alpha = full ? 255 : 128;
     int VIS_GENOME_LENGTH = max(4,codons.size());
     double CODON_ANGLE = (double)(1.0)/VIS_GENOME_LENGTH*2*PI;
     double PART_ANGLE = CODON_ANGLE/5.0;
@@ -78,7 +79,7 @@ class Genome{
     Codon c = codons.get(i);
     if(c.codonHealth != 1.0){
       beginShape();
-      fill(TELOMERE_COLOR);
+      fill(setAlpha(TELOMERE_COLOR,alpha));
       for(int v = 0; v < telomereShape.length; v++){
         double[] cv = telomereShape[v];
         double ang = cv[0]*PART_ANGLE;
@@ -89,7 +90,7 @@ class Genome{
     endShape(CLOSE);
     for(int p = 0; p < 2; p++){
       beginShape();
-      fill(c.getColor(p));
+      fill(setAlpha(c.getColor(p),alpha));
       for(int v = 0; v < codonShape.length; v++){
         double[] cv = codonShape[v];
         double ang = cv[0]*PART_ANGLE*c.codonHealth;
