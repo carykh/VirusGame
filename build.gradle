@@ -25,8 +25,8 @@ dependencies {
     implementation 'org.processing:core:3.3.7'
 }
 
-sourceSets.main.java.srcDirs = ['/source']
-sourceSets.main.resources.srcDirs = ['/source/virus/data']
+sourceSets.main.java.srcDirs = ['source']
+sourceSets.main.resources.srcDirs = ['source/virus/data']
 
 
 
